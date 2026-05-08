@@ -2,30 +2,33 @@
   "name": "pet-alert",
   "version": "1.0.0",
   "description": "",
-  "main": "index.js",
+  "private": true,
+  "workspaces": [
+    "packages/*"
+  ],
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "node dist/server.js",
-    "build": "tsc",
-    "dev": "tsx watch src/server.ts"
+    "prisma:generate": "dotenv -e .env -- prisma generate --schema packages/shared/prisma/schema.prisma",
+    "prisma:migrate": "dotenv -e .env -- prisma migrate dev --schema packages/shared/prisma/schema.prisma"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/lautigrz/pet_alert.git"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "dependencies": {
-    "@prisma/client": "^7.8.0",
-    "cors": "^2.8.6",
-    "dotenv": "^17.4.2",
-    "express": "^5.2.1",
-    "winston": "^3.19.0"
+  "bugs": {
+    "url": "https://github.com/lautigrz/pet_alert/issues"
   },
+  "homepage": "https://github.com/lautigrz/pet_alert#readme",
   "devDependencies": {
-    "@types/cors": "^2.8.19",
-    "@types/express": "^5.0.6",
-    "@types/node": "^25.6.0",
-    "prisma": "^7.8.0",
-    "ts-node": "^10.9.2",
-    "tsx": "^4.21.0",
-    "typescript": "^6.0.3"
+    "@vitest/coverage-v8": "^4.1.5",
+    "dotenv-cli": "^11.0.0",
+    "prisma": "^6.19.3",
+    "vitest": "^4.1.5"
+  },
+  "dependencies": {
+    "@prisma/client": "^6.19.3"
   }
 }

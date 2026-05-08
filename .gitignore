@@ -1,21 +1,8 @@
-# Dependencies
-node_modules/
+node_modules
+.vscode
 
-# Build
-dist/
-
-# Environment
 .env
+packages/api/.env
+packages/pet-matcher/.env
 
-# Logs
-logs/
-*.log
-
-# OS
-.DS_Store
-Thumbs.db
-
-# IDE
-.vscode/
-.idea/
-/src/generated/prisma
+dist/
