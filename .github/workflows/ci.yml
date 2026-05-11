@@ -3,10 +3,12 @@ name: CI
 on:
   push:
     branches:
-      - ci/setup-tests
+      - main
+      - dev
   pull_request:
     branches:
       - main
+      - dev
 
 jobs:
   test:
@@ -51,3 +53,12 @@ jobs:
         with:
           name: coverage
           path: "**/coverage/**"
+
+  # Proximamente se agregará un job de deploy que se ejecutará solo en la rama main        
+  deploy:
+    runs-on: ubuntu-latest
+    needs: test
+    if: github.ref == 'refs/heads/main'
+    steps:
+      - name: Deploy
+        run: echo "deploy"
