@@ -8,14 +8,20 @@
     "dev": {
       "dependsOn": ["^build"],
       "persistent": true,
-      "cache": false
+      "cache": false,
+      "env": ["NODE_ENV", "PORT", "CORS_ORIGIN", "REDIS_HOST", "REDIS_PORT"]
     },
     "test": {
       "dependsOn": ["^build"],
       "outputs": ["coverage/**"]
     },
+    "test:coverage": {
+      "dependsOn": ["^build"],
+      "outputs": ["coverage/**"]
+    },
     "lint": {
-      "outputs": []
+      "outputs": [],
+      "env": ["NODE_ENV", "PORT", "CORS_ORIGIN", "REDIS_HOST", "REDIS_PORT"]
     }
   }
 }
