@@ -40,7 +40,7 @@ jobs:
             ${{ runner.os }}-turbo-
 
       - name: Run tests
-        run: npx turbo test --filter=...[HEAD^1]
+        run: npx turbo test:coverage --filter=...[HEAD^1]
 
       - name: Upload coverage
         uses: actions/upload-artifact@v4
