@@ -38,6 +38,10 @@ jobs:
           key: ${{ runner.os }}-turbo-${{ github.sha }}
           restore-keys: |
             ${{ runner.os }}-turbo-
+      
+
+      - name: Run lint
+        run: npx turbo lint --filter=...[HEAD^1]
 
       - name: Run tests
         run: npx turbo test:coverage --filter=...[HEAD^1]

@@ -8,6 +8,7 @@
     "test": "vitest run --passWithNoTests",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage --passWithNoTests",
+    "lint": "eslint src --ext .ts",
     "build": "tsc",
     "dev": "tsx watch src/worker.ts",
     "start": "node dist/worker.js"
