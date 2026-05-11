@@ -1,6 +1,6 @@
 node_modules
 .vscode
-
+.turbo
 .env
 packages/api/.env
 packages/pet-matcher/.env
