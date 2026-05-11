@@ -8,6 +8,7 @@ export default defineConfig({
         coverage: {
             provider: "v8",
             reporter: ["text", "html"],
+            reportsDirectory: "coverage",
         },
         include: ["src/**/*.test.ts", "e2e/**/*.test.ts"],
     },
