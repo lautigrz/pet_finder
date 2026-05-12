@@ -1,7 +1,7 @@
 import IORedis from 'ioredis';
 
-export const redisConnection = new IORedis({
-    host: process.env.REDIS_HOST,
-    port: parseInt(process.env.REDIS_PORT || '6379', 10),
+export const redisConnection = new IORedis(
+    process.env.REDIS_URL!,
+    {
     maxRetriesPerRequest: null, // Permite reintentos indefinidos
 })
