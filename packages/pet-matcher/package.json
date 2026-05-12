@@ -10,6 +10,7 @@
     "test:coverage": "vitest run --coverage --passWithNoTests",
     "lint": "eslint src --ext .ts",
     "build": "prisma generate --schema=../shared/prisma/schema.prisma && tsc",
+    "migrate:deploy": "prisma migrate deploy --schema=../shared/prisma/schema.prisma",
     "dev": "tsx watch src/worker.ts",
     "start": "node dist/worker.js"
 },
