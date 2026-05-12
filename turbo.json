@@ -9,7 +9,7 @@
       "dependsOn": ["^build"],
       "persistent": true,
       "cache": false,
-      "env": ["NODE_ENV", "PORT", "CORS_ORIGIN", "REDIS_HOST", "REDIS_PORT"]
+      "env": ["NODE_ENV", "PORT", "CORS_ORIGIN", "REDIS_HOST", "REDIS_PORT", "DATABASE_URL","REDIS_URL"]
     },
     "test": {
       "dependsOn": ["^build"],
@@ -21,7 +21,7 @@
     },
     "lint": {
       "outputs": [],
-      "env": ["NODE_ENV", "PORT", "CORS_ORIGIN", "REDIS_HOST", "REDIS_PORT"]
+      "env": ["NODE_ENV", "PORT", "CORS_ORIGIN", "REDIS_HOST", "REDIS_PORT", "DATABASE_URL","REDIS_URL"]
     }
   }
 }
