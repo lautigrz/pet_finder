@@ -9,7 +9,7 @@
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage --passWithNoTests",
     "lint": "eslint src --ext .ts",
-    "build": "tsc",
+    "build": "prisma generate --schema=../shared/prisma/schema.prisma && tsc",
     "dev": "tsx watch src/worker.ts",
     "start": "node dist/worker.js"
 },
