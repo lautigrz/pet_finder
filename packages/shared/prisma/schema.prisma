@@ -13,7 +13,74 @@ datasource db {
 
 }
 
+model Role {
+  role_id Int @id @default(autoincrement()) @db.SmallInt
+  name    String @db.Char(20)
+
+  users User[]
+
+  @@map("roles")
+}
+
+
+model User {
+  user_id   Int      @id @default(autoincrement())
+  public_id String   @unique @default(dbgenerated("gen_random_uuid()")) @db.Uuid 
+  email     String   @unique @db.VarChar
+  password  String   @db.VarChar 
+
+  role_id   Int?
+  role      Role?    @relation(fields: [role_id], references: [role_id])
+
+  createed_at DateTime @db.Timestamp(6)
+  updated_at DateTime? @db.Timestamp(6)
+
+  is_verified Boolean @default(false)
+  photo_url String? @db.VarChar
+
+  refresh_tokens        RefreshToken[]
+  password_reset_tokens PasswordResetToken[]
+
+  @@map("users")
+
+}
+
+
+
+model RefreshToken {
+  refresh_token_id Int @id @default(autoincrement())
+
+  user_id Int
+  user    User @relation(fields: [user_id], references: [user_id])
+
+  token String @unique @db.VarChar
+
+  expires_at DateTime  @db.Timestamp(6)
+  revoked_at DateTime? @db.Timestamp(6) /// NULL si el token sigue activo. Se setea al hacer logout o al rotar el token
+  created_at DateTime  @db.Timestamp(6)
+
+  @@map("refresh_tokens")
+}
+
+model PasswordResetToken {
+  password_reset_token_id Int @id @default(autoincrement())
+
+  user_id Int
+  user    User @relation(fields: [user_id], references: [user_id])
+
+  token String @db.VarChar
+
+  used_at    DateTime? @db.Timestamp(6) /// NULL si no fue usado. Se setea al momento en que el usuario resetea la contraseña
+  expires_at DateTime  @db.Timestamp(6)
+  created_at DateTime  @db.Timestamp(6)
+
+  @@map("password_reset_tokens")
+}
+
+
 model Pet {
   id        String                  @id @default(uuid())
   name      String
+
+  @@map("pets")
 }
