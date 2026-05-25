@@ -54,7 +54,8 @@ describe("CreateUserUseCase", () => {
 
       // Then el repo busca y guarda con el email normalizado
       expect(userRepository.findByEmail).toHaveBeenCalledWith("juan@example.com");
-      const savedUser = vi.mocked(userRepository.save).mock.calls[0][0];
+      expect(userRepository.save).toHaveBeenCalledOnce();
+      const savedUser = vi.mocked(userRepository.save).mock.calls[0]![0];
       expect(savedUser.email).toBe("juan@example.com");
     });
   });
