@@ -29,7 +29,7 @@ describe("SendEmailVerificationUseCase", () => {
 
     // Then se persiste el token con expiracion futura y se envia el email
     expect(tokenRepository.save).toHaveBeenCalledOnce();
-    const savedToken = vi.mocked(tokenRepository.save).mock.calls[0][0];
+    const savedToken = vi.mocked(tokenRepository.save).mock.calls[0]![0];
     expect(savedToken.userId).toBe(42);
     expect(savedToken.value).toBe(VALID_TOKEN);
     expect(savedToken.expiresAt.getTime()).toBeGreaterThan(Date.now());
