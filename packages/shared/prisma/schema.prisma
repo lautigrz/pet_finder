@@ -1,20 +1,17 @@
 // This is your Prisma schema file,
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
-// Get a free hosted Postgres database in seconds: `npx create-db`
-
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
   provider = "postgresql"
-   url      = env("DATABASE_URL")
-
+  url      = env("DATABASE_URL")
 }
 
 model Role {
-  role_id Int @id @default(autoincrement()) @db.SmallInt
+  role_id Int    @id @default(autoincrement()) @db.SmallInt
   name    String @db.Char(20)
 
   users User[]
@@ -22,30 +19,27 @@ model Role {
   @@map("roles")
 }
 
-
 model User {
-  user_id   Int      @id @default(autoincrement())
-  public_id String   @unique @default(dbgenerated("gen_random_uuid()")) @db.Uuid 
-  email     String   @unique @db.VarChar
-  password  String   @db.VarChar 
+  user_id   Int    @id @default(autoincrement())
+  public_id String @unique @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  email     String @unique @db.VarChar(255)
+  password  String @db.VarChar(100)
 
-  role_id   Int?
-  role      Role?    @relation(fields: [role_id], references: [role_id])
+  role_id Int?
+  role    Role? @relation(fields: [role_id], references: [role_id])
 
-  createed_at DateTime @db.Timestamp(6)
-  updated_at DateTime? @db.Timestamp(6)
+  created_at DateTime  @default(now()) @db.Timestamp(6)
+  updated_at DateTime? @updatedAt @db.Timestamp(6)
 
   is_verified Boolean @default(false)
-  photo_url String? @db.VarChar
+  photo_url   String? @db.VarChar
 
-  refresh_tokens        RefreshToken[]
-  password_reset_tokens PasswordResetToken[]
+  refresh_tokens            RefreshToken[]
+  password_reset_tokens     PasswordResetToken[]
+  email_verification_tokens EmailVerificationToken[]
 
   @@map("users")
-
 }
-
-
 
 model RefreshToken {
   refresh_token_id Int @id @default(autoincrement())
@@ -57,7 +51,7 @@ model RefreshToken {
 
   expires_at DateTime  @db.Timestamp(6)
   revoked_at DateTime? @db.Timestamp(6) /// NULL si el token sigue activo. Se setea al hacer logout o al rotar el token
-  created_at DateTime  @db.Timestamp(6)
+  created_at DateTime  @default(now()) @db.Timestamp(6)
 
   @@map("refresh_tokens")
 }
@@ -72,15 +66,29 @@ model PasswordResetToken {
 
   used_at    DateTime? @db.Timestamp(6) /// NULL si no fue usado. Se setea al momento en que el usuario resetea la contraseña
   expires_at DateTime  @db.Timestamp(6)
-  created_at DateTime  @db.Timestamp(6)
+  created_at DateTime  @default(now()) @db.Timestamp(6)
 
   @@map("password_reset_tokens")
 }
 
+model EmailVerificationToken {
+  email_verification_token_id Int @id @default(autoincrement())
+
+  user_id Int
+  user    User @relation(fields: [user_id], references: [user_id])
+
+  token String @unique @db.VarChar
+
+  used_at    DateTime? @db.Timestamp(6) /// NULL si no fue usado. Se setea cuando el usuario confirma el email
+  expires_at DateTime  @db.Timestamp(6)
+  created_at DateTime  @default(now()) @db.Timestamp(6)
+
+  @@map("email_verification_tokens")
+}
 
 model Pet {
-  id        String                  @id @default(uuid())
-  name      String
+  id   String @id @default(uuid())
+  name String
 
   @@map("pets")
 }
