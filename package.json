@@ -7,6 +7,9 @@
   "workspaces": [
     "packages/*"
   ],
+   "prisma": {
+    "seed": "dotenv -e .env -- tsx packages/shared/prisma/seed.ts"
+  },
   "scripts": {
     "dev": "turbo run dev",
     "build": "turbo run build",
