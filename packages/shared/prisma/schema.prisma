@@ -26,6 +26,9 @@ model Role {
 model User {
   user_id   Int      @id @default(autoincrement())
   public_id String   @unique @default(dbgenerated("gen_random_uuid()")) @db.Uuid 
+  name    String   @db.VarChar
+  lastname String   @db.VarChar
+  
   email     String   @unique @db.VarChar
   password  String   @db.VarChar 
 
