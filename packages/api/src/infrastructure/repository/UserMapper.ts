@@ -7,6 +7,7 @@ export class UserMapper {
       record.user_id,
       record.public_id,
       record.email,
+      record.username,
       record.password,
       record.is_verified,
       record.created_at,
@@ -17,6 +18,7 @@ export class UserMapper {
     return {
       public_id: user.id,
       email: user.email,
+      username: user.username,
       password: user.passwordHash,
       is_verified: user.isVerified,
     };
