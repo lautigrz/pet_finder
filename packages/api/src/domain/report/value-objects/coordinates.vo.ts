@@ -1,0 +1,26 @@
+export class Coordinates {
+    constructor(
+        public readonly _latitude: number,
+        public readonly _longitude: number
+    ){
+        this.validate()
+    }
+
+    get latitude(): number {
+        return this._latitude
+    }
+
+    get longitude(): number {
+        return this._longitude
+    }
+
+
+    private validate(): void {
+        if (this._latitude < -90 || this._latitude > 90) {
+            throw new Error('Latitude must be between -90 and 90')
+        }
+        if (this._longitude < -180 || this._longitude > 180) {
+            throw new Error('Longitude must be between -180 and 180')
+        }
+    }
+}
