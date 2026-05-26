@@ -7,12 +7,16 @@ import { VerifyEmailUseCase } from "../../application/usecase/verify-email/verif
 import { VerifyEmailInput } from "../../application/usecase/verify-email/verify-email.input";
 import { EmailAlreadyExistsError } from "../../domain/errors/EmailAlreadyExistsError";
 import { InvalidEmailError } from "../../domain/errors/InvalidEmailError";
+import { InvalidUsernameError } from "../../domain/errors/InvalidUsernameError";
 import { InvalidVerificationTokenError } from "../../domain/errors/InvalidVerificationTokenError";
 import { CreateUserRequest } from "../dto/CreateUserRequest";
 import { VerifyEmailRequest } from "../dto/VerifyEmailRequest";
 import { ValidationError } from "../errors/ValidationError";
 
 const PASSWORD_MIN_LENGTH = 8;
+const PASSWORD_MAX_LENGTH = 100;
+const EMAIL_MAX_LENGTH = 255;
+const USERNAME_MAX_LENGTH = 30;
 
 export class UserController {
   constructor(
@@ -49,11 +53,20 @@ export class UserController {
     const data = (body ?? {}) as Partial<CreateUserRequest>;
     if (typeof data.email !== "string" || data.email.trim().length === 0) {
       issues.push("email is required");
+    } else if (data.email.length > EMAIL_MAX_LENGTH) {
+      issues.push(`email must be at most ${EMAIL_MAX_LENGTH} characters`);
+    }
+    if (typeof data.username !== "string" || data.username.trim().length === 0) {
+      issues.push("username is required");
+    } else if (data.username.length > USERNAME_MAX_LENGTH) {
+      issues.push(`username must be at most ${USERNAME_MAX_LENGTH} characters`);
     }
     if (typeof data.password !== "string") {
       issues.push("password is required");
     } else if (data.password.length < PASSWORD_MIN_LENGTH) {
       issues.push(`password must be at least ${PASSWORD_MIN_LENGTH} characters`);
+    } else if (data.password.length > PASSWORD_MAX_LENGTH) {
+      issues.push(`password must be at most ${PASSWORD_MAX_LENGTH} characters`);
     }
     if (issues.length > 0) throw new ValidationError(issues);
     return data as CreateUserRequest;
@@ -68,11 +81,15 @@ export class UserController {
   }
 
   private toCreateInput(body: CreateUserRequest): CreateUserInput {
-    return new CreateUserInput(body.email, body.password);
+    return new CreateUserInput(body.email, body.username, body.password);
   }
 
   private handleError(error: unknown, res: Response): void {
-    if (error instanceof ValidationError || error instanceof InvalidEmailError) {
+    if (
+      error instanceof ValidationError ||
+      error instanceof InvalidEmailError ||
+      error instanceof InvalidUsernameError
+    ) {
       res.status(400).json({ error: error.message });
       return;
     }
