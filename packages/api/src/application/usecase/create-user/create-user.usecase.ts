@@ -13,9 +13,10 @@ export class CreateUserUseCase {
 
   async execute(input: CreateUserInput): Promise<CreateUserOutput> {
     const normalizedEmail = this.normalizeEmail(input.email);
+    const cleanedUsername = input.username.trim();
     await this.assertEmailIsAvailable(normalizedEmail);
     const passwordHash = await this.passwordHasher.hash(input.plainPassword);
-    const newUser = User.create(normalizedEmail, passwordHash);
+    const newUser = User.create(normalizedEmail, cleanedUsername, passwordHash);
     const persisted = await this.userRepository.save(newUser);
     return new CreateUserOutput(persisted.id, persisted.internalId!, persisted.email);
   }

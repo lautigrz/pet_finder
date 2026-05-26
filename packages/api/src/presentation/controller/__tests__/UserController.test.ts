@@ -36,7 +36,7 @@ describe("UserController", () => {
       vi.mocked(createUserUseCase.execute).mockResolvedValue(validCreateOutput);
 
       // When llamo al controller con body valido
-      const req = buildReq({ email: "juan@example.com", password: "miPass123" });
+      const req = buildReq({ email: "juan@example.com", username: "juancho", password: "miPass123" });
       await controller.create(req as Request, res as Response);
 
       // Then devuelve 201 y dispara el envio de verificacion
@@ -49,7 +49,7 @@ describe("UserController", () => {
   describe("create — when the body is missing fields", () => {
     it("returns 400 if email is missing", async () => {
       // Given body sin email
-      const req = buildReq({ password: "miPass123" });
+      const req = buildReq({ username: "juancho", password: "miPass123" });
 
       // When llamo al controller
       await controller.create(req as Request, res as Response);
@@ -62,7 +62,7 @@ describe("UserController", () => {
 
     it("returns 400 if password is missing", async () => {
       // Given body sin password
-      const req = buildReq({ email: "juan@example.com" });
+      const req = buildReq({ email: "juan@example.com", username: "juancho" });
 
       // When llamo al controller
       await controller.create(req as Request, res as Response);
@@ -74,7 +74,7 @@ describe("UserController", () => {
 
     it("returns 400 if password is shorter than 8 characters", async () => {
       // Given password de 3 chars
-      const req = buildReq({ email: "juan@example.com", password: "123" });
+      const req = buildReq({ email: "juan@example.com", username: "juancho", password: "123" });
 
       // When llamo al controller
       await controller.create(req as Request, res as Response);
@@ -91,7 +91,7 @@ describe("UserController", () => {
       vi.mocked(createUserUseCase.execute).mockRejectedValue(new InvalidEmailError("no-es-email"));
 
       // When llamo al controller con body sintacticamente valido
-      const req = buildReq({ email: "no-es-email", password: "miPass123" });
+      const req = buildReq({ email: "no-es-email", username: "juancho", password: "miPass123" });
       await controller.create(req as Request, res as Response);
 
       // Then devuelve 400 con el mensaje del error de dominio
@@ -110,7 +110,7 @@ describe("UserController", () => {
       );
 
       // When llamo al controller
-      const req = buildReq({ email: "juan@example.com", password: "miPass123" });
+      const req = buildReq({ email: "juan@example.com", username: "juancho", password: "miPass123" });
       await controller.create(req as Request, res as Response);
 
       // Then devuelve 409 con el mensaje del error
@@ -127,7 +127,7 @@ describe("UserController", () => {
       vi.mocked(createUserUseCase.execute).mockRejectedValue(new Error("db is down"));
 
       // When llamo al controller
-      const req = buildReq({ email: "juan@example.com", password: "miPass123" });
+      const req = buildReq({ email: "juan@example.com", username: "juancho", password: "miPass123" });
       await controller.create(req as Request, res as Response);
 
       // Then devuelve 500 sin filtrar detalles internos
