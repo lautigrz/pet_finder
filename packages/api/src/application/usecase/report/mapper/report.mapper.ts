@@ -1,0 +1,54 @@
+import { Report } from "@domain/report/aggregates/report.aggregate";
+import { LostReportOutputDto, ReportOutputDto, SightingReportOutputDto } from "../get.report.output";
+import { Pet } from "@domain/pet/aggregates/pet.aggregate";
+import { ReportType } from "@domain/report/types/report.type";
+import { SightingReportDetails } from "@domain/report/value-objects/sighting-report-details.vo";
+import { MappingError } from "@application/errors/errors";
+
+export class ReportMapper {
+
+    static toOutput(report: Report, pet?: Pet): ReportOutputDto {
+        return {
+            publicId: report.publicId,
+            user: {
+                publicId: report.userPublicId
+            },
+            type: report.reportType,
+            status: report.status,
+            description: report.description ? report.description.value : "",
+            location: {
+                address: report.location.address || "",
+                latitude: report.location.latitude,
+                longitude: report.location.longitude
+            },
+            details: this.buildDetails(report, pet),
+            occurredAt: report.occurredAt,
+            createdAt: report.createdAt
+        }
+    }
+
+    static buildDetails(reporty: Report, pet?: Pet): SightingReportOutputDto | LostReportOutputDto {
+        if (reporty.reportType === ReportType.SIGHTING) {
+            const details = reporty.details as SightingReportDetails;
+            return {
+                animalType: details.animalType,
+                hasIdCollar: details.hasIdCollar,
+                color: details.color
+            }
+        } else {
+            if (!pet) {
+                throw new MappingError("Pet details are required for a lost report");
+            }
+            return {
+                publicId: pet.publicId,
+                name: pet.name,
+                animalType: pet.animalType,
+                genderType: pet.genderType,
+                sizeType: pet.sizeType,
+                color: pet.color,
+                hasIdCollar: pet.hasIdCollar,
+                breed: pet.breed
+            }
+        }
+    }
+}
