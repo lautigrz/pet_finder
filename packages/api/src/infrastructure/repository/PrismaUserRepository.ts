@@ -20,4 +20,34 @@ export class PrismaUserRepository implements IUserRepository {
       data: { is_verified: true },
     });
   }
+
+  async findByPublicId(publicId: string): Promise<User | null> {
+      const record = await prisma.user.findUnique({
+        where: { public_id: publicId },
+      });
+      
+      return record ? UserMapper.toDomain(record) : null;
+  }
+
+  async updateProfile(
+    publicId: string,
+    data: {
+      name?: string;
+      lastname?: string;
+      username?: string;
+      photoUrl?: string;
+      },
+    ): Promise<User>{
+      const record = await prisma.user.update({
+        where: { public_id: publicId },
+        data: {
+          name: data.name,
+          lastname: data.lastname,
+          username: data.username,
+          photo_url: data.photoUrl
+        },
+      });
+      
+      return UserMapper.toDomain(record);
+  }
 }
