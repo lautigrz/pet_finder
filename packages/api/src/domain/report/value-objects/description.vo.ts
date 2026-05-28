@@ -1,3 +1,5 @@
+import { InvalidReportDescriptionError } from "../../errors/InvalidReportDescriptionError";
+
 export class ReportDescription {
   constructor(
     public readonly value: string,
@@ -11,11 +13,11 @@ export class ReportDescription {
 
   private validate(): void {
     if (!this.value.trim()) {
-      throw new Error('Description cannot be empty')
+      throw new InvalidReportDescriptionError('Description cannot be empty')
     }
 
     if (this.value.length > 1000) {
-      throw new Error('Description too long')
+      throw new InvalidReportDescriptionError('Description too long')
     }
   }
 }

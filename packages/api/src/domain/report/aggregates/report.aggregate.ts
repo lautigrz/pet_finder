@@ -5,111 +5,156 @@ import { ReportDescription } from "../value-objects/description.vo"
 import { Location } from "../value-objects/location.vo"
 import { LostReportDetails } from "../value-objects/lost-report-details.vo"
 import { SightingReportDetails } from "../value-objects/sighting-report-details.vo"
+import { InvalidStatusTransitionError } from "../../errors/InvalidStatusTransitionError"
+import { InvalidReportDetailsError } from "../../errors/InvalidReportDetailsError"
 
 
 export interface CreateReportParams {
-  userId: number
-  type: ReportType
-  description: ReportDescription | null
-  details: ReportDetails
-  location: Location
-  occurredAt: Date
+    userId: number
+    userPublicId: string
+    type: ReportType
+    description: ReportDescription | null
+    details: ReportDetails
+    location: Location
+    occurredAt: Date
+}
+
+interface RestoreReportParams {
+    idReport: number,
+    publicId: string
+    userId: number
+    userPublicId: string
+    type: ReportType
+    currentStatus: ReportStatus
+    description: ReportDescription | null
+    details: ReportDetails
+    location: Location
+    occurredAt: Date
+    createdAt: Date
+    updatedAt: Date | null
 }
 
 
 export class Report {
- 
+
     private constructor(
-    private readonly _publicId: string,
-    private readonly _userId: number,
-    private readonly type: ReportType,
-    private currentStatus: ReportStatus,
-    private readonly _location: Location,
-    private _description: ReportDescription | null,
-    private readonly _details: ReportDetails,
-    private readonly _occurredAt: Date,
-    private readonly _createdAt: Date,
-    private _updatedAt: Date | null = null,
-    ) {}
+        private readonly _idReport: number | null,
+        private readonly _publicId: string,
+        private readonly _userId: number,        // solo para persistencia, no se expone en la API
+        private readonly _userPublicId: string,
+        private readonly type: ReportType,
+        private currentStatus: ReportStatus,
+        private readonly _location: Location,
+        private _description: ReportDescription | null,
+        private readonly _details: ReportDetails,
+        private readonly _occurredAt: Date,
+        private readonly _createdAt: Date,
+        private _updatedAt: Date | null = null,
+    ) { }
 
 
     static create(params: CreateReportParams): Report {
         Report.validateDetails(params.type, params.details)
 
         return new Report(
+            null,
             crypto.randomUUID(),
             params.userId,
+            params.userPublicId,
             params.type,
             ReportStatus.ACTIVE,
             params.location,
-            params.description ?? null,
+            params.description,
             params.details,
             params.occurredAt,
             new Date(),
         )
     }
 
-    changeDescription(
-    description: ReportDescription | null,
-    ): void {
-    this._description = description
+
+    static restore(params: RestoreReportParams): Report {
+        return new Report(
+            params.idReport,
+            params.publicId,
+            params.userId,
+            params.userPublicId,
+            params.type,
+            params.currentStatus,
+            params.location,
+            params.description,
+            params.details,
+            params.occurredAt,
+            params.createdAt,
+            params.updatedAt
+        )
     }
 
-    get userId(): number {
-    return this._userId
+    changeDescription(
+        description: ReportDescription,
+    ): void {
+        this._description = description
+    }
+
+    get idReport(): number | null {
+        return this._idReport
+    }
+    get userPublicId(): string {
+        return this._userPublicId
     }
 
     resolve(): void {
-    this.transitionTo(ReportStatus.RESOLVED)
+        this.transitionTo(ReportStatus.RESOLVED)
     }
 
     close(): void {
-    this.transitionTo(ReportStatus.CLOSED)
+        this.transitionTo(ReportStatus.CLOSED)
+    }
+
+    get userId(): number {
+        return this._userId
     }
 
     get location(): Location {
-    return this._location
+        return this._location
     }
 
     get occurredAt(): Date {
-    return this._occurredAt
+        return this._occurredAt
     }
 
     get status(): ReportStatus {
-    return this.currentStatus
+        return this.currentStatus
     }
 
     get reportType(): ReportType {
-    return this.type
+        return this.type
     }
 
     get publicId(): string {
-    return this._publicId
+        return this._publicId
     }
 
     get description(): ReportDescription | null {
-    return this._description
+        return this._description
     }
 
     get createdAt(): Date {
-    return this._createdAt
+        return this._createdAt
     }
 
     get updatedAt(): Date | null {
-    return this._updatedAt
+        return this._updatedAt
     }
-    
+
     get details(): ReportDetails {
-    return this._details
+        return this._details
     }
-    
+
     private transitionTo(newStatus: ReportStatus): void {
         const allowed = Report.validTransitions[this.currentStatus]
 
         if (!allowed.includes(newStatus)) {
-            throw new Error(
-            `Cannot transition from "${this.currentStatus}" to "${newStatus}"`
-            )
+            throw new InvalidStatusTransitionError(this.currentStatus, newStatus);
         }
 
         this.currentStatus = newStatus
@@ -124,16 +169,16 @@ export class Report {
 
 
     private static validateDetails(type: ReportType, details: ReportDetails): void {
-    const expectedClass = Report.detailsMap[type]
+        const expectedClass = Report.detailsMap[type]
 
         if (!(details instanceof expectedClass)) {
-            throw new Error(`Report of type "${type}" requires ${expectedClass.name}`)
+            throw new InvalidReportDetailsError(type, expectedClass.name);
         }
     }
 
     private static readonly detailsMap = {
 
-    [ReportType.LOST]: LostReportDetails,
-    [ReportType.SIGHTING]: SightingReportDetails,
+        [ReportType.LOST]: LostReportDetails,
+        [ReportType.SIGHTING]: SightingReportDetails,
     } as const
 }
