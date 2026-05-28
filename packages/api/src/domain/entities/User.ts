@@ -18,13 +18,16 @@ export class User {
     public readonly passwordHash: string,
     public readonly isVerified: boolean,
     public readonly createdAt: Date,
+    public readonly name: string | null,
+    public readonly lastname: string | null,
+    public readonly photoUrl: string | null,
   ) {}
 
   static create(email: string, username: string, passwordHash: string): User {
     User.assertValidEmail(email);
     User.assertValidUsername(username);
     User.assertValidPasswordHash(passwordHash);
-    return new User(null, randomUUID(), email, username, passwordHash, false, new Date());
+    return new User(null, randomUUID(), email, username, passwordHash, false, new Date(), null, null, null);
   }
 
   static reconstruct(
@@ -35,8 +38,11 @@ export class User {
     passwordHash: string,
     isVerified: boolean,
     createdAt: Date,
+    name: string | null,
+    lastname: string | null,
+    photoUrl: string | null,
   ): User {
-    return new User(internalId, id, email, username, passwordHash, isVerified, createdAt);
+    return new User(internalId, id, email, username, passwordHash, isVerified, createdAt,name, lastname, photoUrl);
   }
 
   private static assertValidEmail(email: string): void {

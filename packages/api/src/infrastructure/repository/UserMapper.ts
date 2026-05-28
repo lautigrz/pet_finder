@@ -11,6 +11,9 @@ export class UserMapper {
       record.password,
       record.is_verified,
       record.created_at,
+      record.name,
+      record.lastname,
+      record.photo_url,
     );
   }
 
@@ -21,6 +24,9 @@ export class UserMapper {
       username: user.username,
       password: user.passwordHash,
       is_verified: user.isVerified,
+      name: user.name,
+      lastname: user.lastname,
+      photo_url: user.photoUrl,
     };
   }
 }
