@@ -8,11 +8,14 @@ import { VerifyEmailUseCase } from "../../../application/usecase/verify-email/ve
 import { EmailAlreadyExistsError } from "../../../domain/errors/EmailAlreadyExistsError";
 import { InvalidEmailError } from "../../../domain/errors/InvalidEmailError";
 import { InvalidVerificationTokenError } from "../../../domain/errors/InvalidVerificationTokenError";
+import { UpdateProfileUseCase } from "../../../application/usecase/update-profile/update-profile.usecase";
+import { UserNotFoundError } from "../../../domain/errors/UserNotFoundError";
 
 describe("UserController", () => {
   let createUserUseCase: CreateUserUseCase;
   let sendEmailVerificationUseCase: SendEmailVerificationUseCase;
   let verifyEmailUseCase: VerifyEmailUseCase;
+  let updateProfileUseCase: UpdateProfileUseCase;
   let controller: UserController;
   let res: Partial<Response>;
 
@@ -20,7 +23,8 @@ describe("UserController", () => {
     createUserUseCase = { execute: vi.fn() } as unknown as CreateUserUseCase;
     sendEmailVerificationUseCase = { execute: vi.fn() } as unknown as SendEmailVerificationUseCase;
     verifyEmailUseCase = { execute: vi.fn() } as unknown as VerifyEmailUseCase;
-    controller = new UserController(createUserUseCase, sendEmailVerificationUseCase, verifyEmailUseCase);
+    updateProfileUseCase = { execute: vi.fn() } as unknown as UpdateProfileUseCase;
+    controller = new UserController(createUserUseCase, sendEmailVerificationUseCase, verifyEmailUseCase, updateProfileUseCase);
     res = {
       status: vi.fn().mockReturnThis(),
       json: vi.fn().mockReturnThis(),
@@ -184,4 +188,121 @@ describe("UserController", () => {
       });
     });
   });
+
+  describe("updateProfile — when the update succeeds", () => {
+  it("returns 200 with the updated user", async () => {
+    // Given un usuario autenticado y un update exitoso
+    vi.mocked(updateProfileUseCase.execute).mockResolvedValue({
+      id: "user-123",
+      email: "facu@test.com",
+      username: "facu_updated",
+      name: "Facundo",
+      lastname: "Pereira",
+      photoUrl: null,
+    });
+
+    const req = {
+      body: {
+        username: "facu_updated",
+        name: "Facundo",
+        lastname: "Pereira",
+      },
+      auth: {
+        sub: "user-123",
+      },
+    } as Partial<Request>;
+
+    // When llamo al controller
+    await controller.updateProfile(req as Request, res as Response);
+
+    // Then devuelve 200 con el usuario actualizado
+    expect(res.status).toHaveBeenCalledWith(200);
+
+    expect(res.json).toHaveBeenCalledWith({
+      id: "user-123",
+      email: "facu@test.com",
+      username: "facu_updated",
+      name: "Facundo",
+      lastname: "Pereira",
+      photoUrl: null,
+    });
+  });
+  });
+
+  describe("updateProfile — when body fields are invalid", () => {
+  it("returns 400 if username is not a string", async () => {
+    // Given username invalido
+    const req = {
+      body: {
+        username: 123,
+      },
+      auth: {
+        sub: "user-123",
+      },
+    } as Partial<Request>;
+
+    // When llamo al controller
+    await controller.updateProfile(req as Request, res as Response);
+
+    // Then devuelve 400
+    expect(res.status).toHaveBeenCalledWith(400);
+
+    expect(updateProfileUseCase.execute).not.toHaveBeenCalled();
+  });
+  });
+
+  describe("updateProfile — when the user does not exist", () => {
+  it("returns 404", async () => {
+    // Given un use case que lanza UserNotFoundError
+    vi.mocked(updateProfileUseCase.execute).mockRejectedValue(
+      new UserNotFoundError(),
+    );
+
+    const req = {
+      body: {
+        username: "nuevo_username",
+      },
+      auth: {
+        sub: "user-123",
+      },
+    } as Partial<Request>;
+
+    // When llamo al controller
+    await controller.updateProfile(req as Request, res as Response);
+
+    // Then devuelve 404
+    expect(res.status).toHaveBeenCalledWith(404);
+
+    expect(res.json).toHaveBeenCalledWith({
+      error: "User not found",
+    });
+  });
+});
+describe("updateProfile — when an unexpected error happens", () => {
+  it("returns 500", async () => {
+    // Given un error inesperado
+    vi.mocked(updateProfileUseCase.execute).mockRejectedValue(
+      new Error("db down"),
+    );
+
+    const req = {
+      body: {
+        username: "nuevo_username",
+      },
+      auth: {
+        sub: "user-123",
+      },
+    } as Partial<Request>;
+
+    // When llamo al controller
+    await controller.updateProfile(req as Request, res as Response);
+
+    // Then devuelve 500
+    expect(res.status).toHaveBeenCalledWith(500);
+
+    expect(res.json).toHaveBeenCalledWith({
+      error: "Internal server error",
+    });
+  });
+});
 });

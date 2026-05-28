@@ -12,6 +12,10 @@ import { InvalidVerificationTokenError } from "../../domain/errors/InvalidVerifi
 import { CreateUserRequest } from "../dto/CreateUserRequest";
 import { VerifyEmailRequest } from "../dto/VerifyEmailRequest";
 import { ValidationError } from "../errors/ValidationError";
+import { UpdateProfileUseCase } from "../../application/usecase/update-profile/update-profile.usecase";
+import { UpdateProfileInput } from "../../application/usecase/update-profile/update-profile.input";
+import { UpdateProfileRequest } from "../dto/UpdateProfileRequest";
+import { UserNotFoundError } from "../../domain/errors/UserNotFoundError";
 
 const PASSWORD_MIN_LENGTH = 8;
 const PASSWORD_MAX_LENGTH = 100;
@@ -23,6 +27,7 @@ export class UserController {
     private readonly createUserUseCase: CreateUserUseCase,
     private readonly sendEmailVerificationUseCase: SendEmailVerificationUseCase,
     private readonly verifyEmailUseCase: VerifyEmailUseCase,
+    private readonly updateProfileUseCase: UpdateProfileUseCase,
   ) {}
 
   create = async (req: Request, res: Response): Promise<void> => {
@@ -47,6 +52,25 @@ export class UserController {
       this.handleError(error, res);
     }
   };
+
+  updateProfile = async (req: Request, res:Response): Promise<void> => {
+    try{
+      const body = this.validateUpdateProfileBody(req.body);
+      
+      const updated = await this.updateProfileUseCase.execute(
+        new UpdateProfileInput(
+          req.auth!.sub,
+          body.name,
+          body.lastname,
+          body.username,
+          body.photoUrl,
+          ),
+      );
+      res.status(200).json(updated);
+    } catch (error){
+      this.handleError(error, res);
+    }
+  }
 
   private validateCreateBody(body: unknown): CreateUserRequest {
     const issues: string[] = [];
@@ -84,6 +108,30 @@ export class UserController {
     return new CreateUserInput(body.email, body.username, body.password);
   }
 
+  private validateUpdateProfileBody(body:unknown): UpdateProfileRequest{
+    const data = (body ?? {}) as Partial<UpdateProfileRequest>;
+    const issues: string[] = [];
+
+    if(data.name && typeof data.name !== "string"){
+      issues.push("name must be a string");
+    }
+    if (data.lastname && typeof data.lastname !== "string") {
+      issues.push("lastname must be a string");
+    }
+      if (data.username && typeof data.username !== "string") {
+      issues.push("username must be a string");
+    }
+    if (data.photoUrl && typeof data.photoUrl !== "string") {
+      issues.push("photoUrl must be a string");
+    }
+
+    if(issues.length > 0){
+      throw new ValidationError(issues);
+    }
+
+    return data as UpdateProfileRequest;
+  }
+
   private handleError(error: unknown, res: Response): void {
     if (
       error instanceof ValidationError ||
@@ -99,6 +147,10 @@ export class UserController {
     }
     if (error instanceof InvalidVerificationTokenError) {
       res.status(400).json({ error: error.message, reason: error.reason });
+      return;
+    }
+    if(error instanceof UserNotFoundError){
+      res.status(404).json({ error: error.message });
       return;
     }
     res.status(500).json({ error: "Internal server error" });
