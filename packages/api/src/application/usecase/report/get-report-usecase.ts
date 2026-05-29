@@ -1,5 +1,5 @@
 import { PetRepository } from "@domain/pet/repositories/pet.repository";
-import { Report } from "@domain/report/aggregates/report.aggregate";
+import { Report } from "@domain/report/aggregates/ReportAggregate";
 import { ReportRepository } from "@domain/report/repositories/report.repository";
 import { ReportOutputMapper } from "./mapper/report.mapper";
 import { LostReportDetails } from "@domain/report/value-objects/lost-report-details.vo";

@@ -1,4 +1,4 @@
-import { Report } from "@domain/report/aggregates/report.aggregate";
+import { Report } from "@domain/report/aggregates/ReportAggregate";
 import { ReportRepository } from "@domain/report/repositories/report.repository";
 
 import { ReportMapper } from "./report.mapper";

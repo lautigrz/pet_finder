@@ -1,6 +1,5 @@
 import { CreateReportUseCase } from "@application/usecase/report/create-report.usecase";
 import { Request, Response } from "express";
-import { CreateReportDTO } from "@application/usecase/report/create-report.usecase"
 import { createReportSchema } from "../schemas/create-report.schema";
 import logger from "@infrastructure/logger/";
 import { GetReportUseCase } from "@application/usecase/report/get-report-usecase";
@@ -38,15 +37,21 @@ export class CreateReportController {
 
 
         try {
+            const userId = req.auth!.sub;
+            logger.info("User ID", { userId });
+            if (!userId) {
+                res.status(401).json({
+                    error: "Unauthorizedd"
+                });
 
-            // TODO: reemplazar con el email del usuario autenticado (req.user.email)
-            const email = "test.user@example.com";
+                return;
+            }
 
-            await this.useCase.execute(parsed.data, email);
+            await this.useCase.execute(parsed.data, userId);
             logger.info("Report created successfully", { type: parsed.data.type });
             res.status(201).json({ message: "Report created successfully" });
         } catch (error) {
-            // Map validation and business rule violations to 400 Bad Request
+
             if (
                 error instanceof InvalidCoordinatesError ||
                 error instanceof InvalidLocationError ||
@@ -62,7 +67,6 @@ export class CreateReportController {
                 return;
             }
 
-            // Map missing entity dependencies to 404 Not Found
             if (error instanceof PetNotFoundError) {
                 logger.warn("Dependency error on report creation", { message: error.message });
                 res.status(404).json({ error: error.message });

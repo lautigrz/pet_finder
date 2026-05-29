@@ -15,15 +15,15 @@ async function seedReportStatuses(): Promise<void> {
     data: [
       {
         report_status_id: 1,
-        name: 'ACTIVO',
+        name: 'ACTIVE',
       },
       {
         report_status_id: 2,
-        name: 'RESUELTO',
+        name: 'RESOLVED',
       },
       {
         report_status_id: 3,
-        name: 'CERRADO',
+        name: 'CLOSED',
       },
     ],
     skipDuplicates: true,
@@ -35,12 +35,12 @@ async function seedReportTypes(): Promise<void> {
     data: [
       {
         report_type_id: 1,
-        name: 'PERDIDO',
+        name: 'LOST',
 
       },
       {
         report_type_id: 2,
-        name: 'AVISTAMIENTO'
+        name: 'SIGHTING'
       },
     ],
     skipDuplicates: true,
@@ -52,11 +52,11 @@ async function seedAnimalTypes(): Promise<void> {
     data: [
       {
         animal_type_id: 1,
-        name: 'PERRO',
+        name: 'DOG',
       },
       {
         animal_type_id: 2,
-        name: 'GATO',
+        name: 'CAT',
       },
     ],
     skipDuplicates: true,
@@ -68,11 +68,11 @@ async function seedGenders(): Promise<void> {
     data: [
       {
         gender_id: 1,
-        name: 'MACHO',
+        name: 'MALE',
       },
       {
         gender_id: 2,
-        name: 'HEMBRA',
+        name: 'FEMALE',
       },
     ],
     skipDuplicates: true,
@@ -84,15 +84,15 @@ async function seedPetSizes(): Promise<void> {
     data: [
       {
         size_id: 1,
-        name: 'CHICO',
+        name: 'SMALL',
       },
       {
         size_id: 2,
-        name: 'MEDIANO',
+        name: 'MEDIUM',
       },
       {
         size_id: 3,
-        name: 'GRANDE',
+        name: 'LARGE',
       },
     ],
     skipDuplicates: true,

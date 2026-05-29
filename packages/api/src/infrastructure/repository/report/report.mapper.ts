@@ -1,4 +1,4 @@
-import { Report } from '@domain/report/aggregates/report.aggregate'
+import { Report } from '@domain/report/aggregates/ReportAggregate'
 import { ReportStatus } from '@domain/report/types/report.status'
 import { ReportType } from '@domain/report/types/report.type'
 import { Location } from '@domain/report/value-objects/location.vo'
