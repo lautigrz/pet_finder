@@ -1,19 +1,212 @@
 // This is your Prisma schema file,
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
-// Get a free hosted Postgres database in seconds: `npx create-db`
-
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
   provider = "postgresql"
-   url      = env("DATABASE_URL")
+  url      = env("DATABASE_URL")
+}
+
+model Role {
+  role_id Int    @id @default(autoincrement()) @db.SmallInt
+  name    String @db.Char(20)
+
+  users User[]
+
+  @@map("roles")
+}
+
+model User {
+  user_id   Int      @id @default(autoincrement())
+  public_id String   @unique @default(dbgenerated("gen_random_uuid()")) @db.Uuid 
+  name    String   @db.VarChar
+  lastname String   @db.VarChar
+  
+  email     String   @unique @db.VarChar
+  password  String   @db.VarChar 
+
+  role_id Int?
+  role    Role? @relation(fields: [role_id], references: [role_id])
+
+  created_at DateTime  @default(now()) @db.Timestamp(6)
+  updated_at DateTime? @updatedAt @db.Timestamp(6)
+
+  is_verified Boolean @default(false)
+  photo_url   String? @db.VarChar
+
+  refresh_tokens            RefreshToken[]
+  password_reset_tokens     PasswordResetToken[]
+  email_verification_tokens EmailVerificationToken[]
+  reports Report[]
+  pets Pet[]
+  @@map("users")
+}
+
+model RefreshToken {
+  refresh_token_id Int @id @default(autoincrement())
+
+  user_id Int
+  user    User @relation(fields: [user_id], references: [user_id])
+
+  token String @unique @db.VarChar
+
+  expires_at DateTime  @db.Timestamp(6)
+  revoked_at DateTime? @db.Timestamp(6) /// NULL si el token sigue activo. Se setea al hacer logout o al rotar el token
+  created_at DateTime  @default(now()) @db.Timestamp(6)
+
+  @@map("refresh_tokens")
+}
+
+model PasswordResetToken {
+  password_reset_token_id Int @id @default(autoincrement())
+
+  user_id Int
+  user    User @relation(fields: [user_id], references: [user_id])
+
+  token String @db.VarChar
+
+  used_at    DateTime? @db.Timestamp(6) /// NULL si no fue usado. Se setea al momento en que el usuario resetea la contraseña
+  expires_at DateTime  @db.Timestamp(6)
+  created_at DateTime  @default(now()) @db.Timestamp(6)
+
+  @@map("password_reset_tokens")
+}
+
+model EmailVerificationToken {
+  email_verification_token_id Int @id @default(autoincrement())
+
+  user_id Int
+  user    User @relation(fields: [user_id], references: [user_id])
+
+  token String @unique @db.VarChar
+
+  used_at    DateTime? @db.Timestamp(6) /// NULL si no fue usado. Se setea cuando el usuario confirma el email
+  expires_at DateTime  @db.Timestamp(6)
+  created_at DateTime  @default(now()) @db.Timestamp(6)
+
+  @@map("email_verification_tokens")
+}
+
+
+model Report {
+  report_id   Int      @id @default(autoincrement())
+  public_id   String   @unique @db.Uuid
+  user_id     Int
+  report_type_id    Int    @db.SmallInt
+  report_status_id  Int    @db.SmallInt
+  description String?  @db.Text
+  
+  occurred_at DateTime
+
+  location_address String?
+  location_lat Decimal
+  location_lng Decimal
+
+  created_at  DateTime
+  updated_at  DateTime? @updatedAt
+
+
+  user User @relation(fields: [user_id], references: [user_id])
+  reportType ReportType @relation(fields: [report_type_id], references: [report_type_id])
+  reportStatus ReportStatus @relation(fields: [report_status_id], references: [report_status_id])
+  lost_report_detail    LostReportDetail?
+  sighting_report_detail SightingReportDetail?
+  @@map("reports")
 
 }
 
+model ReportStatus {
+  report_status_id Int    @id @db.SmallInt
+  name             String
+
+  reports Report[]
+
+  @@map("report_statuses")
+}
+
+model ReportType {
+  report_type_id        Int     @id @db.SmallInt
+  name                  String
+
+  reports Report[]
+
+  @@map("report_types")
+}
+
+model LostReportDetail {
+  report_id         Int      @id
+  pet_id            Int
+
+  report Report @relation(fields: [report_id], references: [report_id])
+  pet    Pet    @relation(fields: [pet_id], references: [pet_id])
+
+  @@map("lost_report_details")
+}
+
+
+model SightingReportDetail {
+  report_id      Int      @id
+  animal_type_id Int
+  color          String
+  has_id_collar  Boolean  @default(false)
+
+  report      Report     @relation(fields: [report_id], references: [report_id])
+  animal_type AnimalType @relation(fields: [animal_type_id], references: [animal_type_id])
+
+  @@map("sighting_report_details")
+}
+
+
 model Pet {
-  id        String                  @id @default(uuid())
+  pet_id         Int      @id @default(autoincrement())
+  public_id      String   @unique @db.Uuid
+  user_id        Int
+  animal_type_id Int
+  gender_id      Int      @db.SmallInt
+  size_id        Int      @db.SmallInt
+  pet_name       String
+  color          String
+  has_id_collar  Boolean  @default(false)
+  is_vaccinated  Boolean  @default(false)
+  breed          String?
+  created_at     DateTime
+  updated_at     DateTime? @updatedAt
+
+  user        User      @relation(fields: [user_id], references: [user_id])
+  animal_type AnimalType @relation(fields: [animal_type_id], references: [animal_type_id])
+  gender      Gender    @relation(fields: [gender_id], references: [gender_id])
+  size        PetSize   @relation(fields: [size_id], references: [size_id])
+
+  lost_report_details LostReportDetail[]
+
+  @@map("pets")
+}
+
+
+model AnimalType {
+  animal_type_id Int    @id @db.SmallInt
+  name           String
+
+  sighting_report_details SightingReportDetail[]
+  pets Pet[]
+  @@map("animal_types")
+}
+
+
+model Gender{
+  gender_id Int    @id @db.SmallInt
   name      String
+  pets      Pet[]
+  @@map("genders")
+} 
+
+model PetSize{
+  size_id Int    @id @db.SmallInt
+  name        String
+  pets        Pet[]
+
+  @@map("pet_sizes")
 }
