@@ -21,12 +21,12 @@ model Role {
 
 model User {
   user_id   Int      @id @default(autoincrement())
-  public_id String   @unique @default(dbgenerated("gen_random_uuid()")) @db.Uuid 
-  name    String   @db.VarChar
-  lastname String   @db.VarChar
-  
-  email     String   @unique @db.VarChar
-  password  String   @db.VarChar 
+  public_id String   @unique @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name      String?  @db.VarChar
+  lastname  String?  @db.VarChar
+  email     String   @unique @db.VarChar(255)
+  username  String   @db.VarChar(30)
+  password  String   @db.VarChar(100)
 
   role_id Int?
   role    Role? @relation(fields: [role_id], references: [role_id])

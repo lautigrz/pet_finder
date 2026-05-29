@@ -8,6 +8,12 @@ import { PrismaEmailVerificationTokenRepository } from "../../../infrastructure/
 import { BcryptPasswordHasher } from "../../../infrastructure/security/BcryptPasswordHasher";
 import { CryptoTokenGenerator } from "../../../infrastructure/security/CryptoTokenGenerator";
 import { LogEmailService } from "../../../infrastructure/email/LogEmailService";
+import { UpdateProfileUseCase } from "../../../application/usecase/update-profile/update-profile.usecase";
+import { JwtTokenSigner } from "../../../infrastructure/security/JwtTokenSigner";
+import { readAuthConfig } from "../../config/authConfig";
+import { requireAuth } from "../../middleware/requireAuth.middleware";
+import { GetProfileUseCase } from "../../../application/usecase/get-profile/get-profile.usecase";
+
 
 const router = Router();
 
@@ -16,6 +22,11 @@ const tokenRepository = new PrismaEmailVerificationTokenRepository();
 const passwordHasher = new BcryptPasswordHasher();
 const tokenGenerator = new CryptoTokenGenerator();
 const emailService = new LogEmailService();
+const { jwtSecret, accessTtl } = readAuthConfig();
+const tokenSigner = new JwtTokenSigner(jwtSecret, accessTtl);
+const updateProfileUseCase = new UpdateProfileUseCase(userRepository);
+const getProfileUseCase = new GetProfileUseCase(userRepository);
+
 
 const createUserUseCase = new CreateUserUseCase(userRepository, passwordHasher);
 const sendEmailVerificationUseCase = new SendEmailVerificationUseCase(
@@ -29,9 +40,13 @@ const userController = new UserController(
   createUserUseCase,
   sendEmailVerificationUseCase,
   verifyEmailUseCase,
+  updateProfileUseCase,
+  getProfileUseCase
 );
 
 router.post("/", userController.create);
 router.post("/verify-email", userController.verifyEmail);
+router.patch("/me", requireAuth(tokenSigner), userController.updateProfile);
+router.get("/me", requireAuth(tokenSigner), userController.getProfile);
 
 export default router;
