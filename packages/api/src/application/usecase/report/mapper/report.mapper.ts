@@ -5,8 +5,7 @@ import { ReportType } from "@domain/report/types/report.type";
 import { SightingReportDetails } from "@domain/report/value-objects/sighting-report-details.vo";
 import { MappingError } from "@application/errors/errors";
 
-/** Maps a Report aggregate to the API output DTO. Not to be confused with
- *  ReportMapper in infrastructure/repository/report (which handles persistence). */
+
 export class ReportOutputMapper {
 
     static toOutput(report: Report, pet?: Pet): ReportOutputDto {
@@ -35,7 +34,10 @@ export class ReportOutputMapper {
             return {
                 animalType: details.animalType,
                 hasIdCollar: details.hasIdCollar,
-                color: details.color
+                color: details.color,
+                images: details.images.map(img => ({
+                    photoUrl: img.photoUrl
+                }))
             }
         } else {
             if (!pet) {

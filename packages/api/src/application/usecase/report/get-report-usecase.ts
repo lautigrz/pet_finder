@@ -28,6 +28,8 @@ export class GetReportUseCase {
             return ReportOutputMapper.toOutput(report, pet)
         }
 
+
+
         return ReportOutputMapper.toOutput(report)
     }
 

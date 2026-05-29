@@ -113,6 +113,7 @@ model Report {
   reportStatus           ReportStatus          @relation(fields: [report_status_id], references: [report_status_id])
   lost_report_detail     LostReportDetail?
   sighting_report_detail SightingReportDetail?
+  reportImages           ReportImage[]
 
   @@map("reports")
 }
@@ -172,14 +173,38 @@ model Pet {
   created_at     DateTime  @db.Timestamp(6)
   updated_at     DateTime? @updatedAt
 
-  user        User       @relation(fields: [user_id], references: [user_id])
-  animal_type AnimalType @relation(fields: [animal_type_id], references: [animal_type_id])
-  gender      Gender     @relation(fields: [gender_id], references: [gender_id])
-  size        PetSize    @relation(fields: [size_id], references: [size_id])
-
+  user                User               @relation(fields: [user_id], references: [user_id])
+  animal_type         AnimalType         @relation(fields: [animal_type_id], references: [animal_type_id])
+  gender              Gender             @relation(fields: [gender_id], references: [gender_id])
+  size                PetSize            @relation(fields: [size_id], references: [size_id])
+  petImages           PetImage[]
   lost_report_details LostReportDetail[]
 
   @@map("pets")
+}
+
+model PetImage {
+  imageId      Int      @id @default(autoincrement()) @map("image_id")
+  cloudinaryId String   @unique @map("cloudinary_id")
+  petId        Int      @map("pet_id")
+  photoUrl     String   @map("photo_url")
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  pet Pet @relation(fields: [petId], references: [pet_id])
+
+  @@map("pet_images")
+}
+
+model ReportImage {
+  imageId      Int      @id @default(autoincrement()) @map("image_id")
+  cloudinaryId String   @unique @map("cloudinary_id")
+  reportId     Int      @map("report_id")
+  photoUrl     String   @map("photo_url")
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  report Report @relation(fields: [reportId], references: [report_id])
+
+  @@map("report_images")
 }
 
 model AnimalType {

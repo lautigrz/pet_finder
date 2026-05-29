@@ -11,6 +11,7 @@ import { SizeType } from "@domain/pet/types/size.type";
 import { InvalidFieldError } from "@application/errors/errors";
 import { IUserRepository } from "@domain/repositories/IUserRepository";
 import { PetRepository } from "@domain/pet/repositories/pet.repository";
+import { StorageService } from "@application/ports/StorageService";
 
 const TEST_EMAIL = "test.user@example.com";
 
@@ -52,6 +53,7 @@ describe("CreateReportUseCase", () => {
   let userRepository: IUserRepository;
   let petRepository: PetRepository;
   let useCase: CreateReportUseCase;
+  let storageService: StorageService;
 
   beforeEach(() => {
     reportRepository = {
@@ -71,7 +73,15 @@ describe("CreateReportUseCase", () => {
       delete: vi.fn(),
     } as unknown as PrismaPetRepository;
 
-    useCase = new CreateReportUseCase(reportRepository, userRepository, petRepository);
+    storageService = {
+      upload: vi.fn().mockResolvedValue({
+        publicId: 'image1',
+        url: 'https://image1.com',
+      }),
+    } as unknown as StorageService;
+
+
+    useCase = new CreateReportUseCase(reportRepository, userRepository, petRepository, storageService);
   });
 
   describe("reporte LOST", () => {
@@ -133,6 +143,7 @@ describe("CreateReportUseCase", () => {
       occurredAt: new Date("2024-05-01"),
       location: validLocation,
       description: "Vi un perro suelto en el parque",
+      images: []
     };
 
     it("crea y guarda un reporte SIGHTING correctamente", async () => {

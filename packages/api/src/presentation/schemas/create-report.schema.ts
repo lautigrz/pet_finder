@@ -31,4 +31,4 @@ export const createReportSchema = z.discriminatedUnion('type', [
     })
 ])
 
-export type CreateReportDTO = z.infer<typeof createReportSchema>
+export type CreateReportInput = z.infer<typeof createReportSchema>

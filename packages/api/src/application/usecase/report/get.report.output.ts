@@ -22,7 +22,7 @@ export interface SightingReportOutputDto {
   animalType: string
   hasIdCollar: boolean
   color: string
-
+  images: { photoUrl: string }[];
 }
 
 export interface LostReportOutputDto {

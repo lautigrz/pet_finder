@@ -9,6 +9,7 @@ import { Prisma } from '@prisma/client'
 import { ReportDescription } from '@domain/report/value-objects/description.vo'
 import { ReportDetails } from '@domain/report/types/report-details.type'
 import { PersistenceMappingError } from '@infrastructure/errors/PersistenceMappingError'
+import { SightingImage } from '@domain/report/value-objects/sighting.images'
 
 
 const reportTypeMap: Record<ReportType, number> = {
@@ -41,6 +42,7 @@ type PrismaReport = Prisma.ReportGetPayload<{
     },
     lost_report_detail: true,
     sighting_report_detail: true,
+    reportImages: true
   }
 }>
 
@@ -102,10 +104,17 @@ export class ReportMapper {
     if (reportType === ReportType.SIGHTING) {
       if (!raw.sighting_report_detail) throw new PersistenceMappingError("Missing sighting report details")
       const details = raw.sighting_report_detail as { animal_type_id: number, has_id_collar: boolean, color: string };
+      const images: SightingImage[] = raw.reportImages.map((img: any) =>
+        SightingImage.create({
+          cloudinaryId: img.cloudinaryId,
+          photoUrl: img.photoUrl,
+        })
+      );
       return new SightingReportDetails(
         AnimalReverseTypeMap[details.animal_type_id]!,
         details.has_id_collar,
-        details.color
+        details.color,
+        images
       );
     }
 
@@ -134,6 +143,12 @@ export class ReportMapper {
             has_id_collar: d.hasIdCollar,
             color: d.color,
           }
+        },
+        reportImages: {
+          create: d.images.map(img => ({
+            cloudinaryId: img.cloudinaryId,
+            photoUrl: img.photoUrl,
+          }))
         }
       }
     }
