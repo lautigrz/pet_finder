@@ -10,12 +10,15 @@ import { InvalidEmailError } from "../../../domain/errors/InvalidEmailError";
 import { InvalidVerificationTokenError } from "../../../domain/errors/InvalidVerificationTokenError";
 import { UpdateProfileUseCase } from "../../../application/usecase/update-profile/update-profile.usecase";
 import { UserNotFoundError } from "../../../domain/errors/UserNotFoundError";
+import { GetProfileUseCase } from "../../../application/usecase/get-profile/get-profile.usecase";
 
 describe("UserController", () => {
   let createUserUseCase: CreateUserUseCase;
   let sendEmailVerificationUseCase: SendEmailVerificationUseCase;
   let verifyEmailUseCase: VerifyEmailUseCase;
   let updateProfileUseCase: UpdateProfileUseCase;
+  let getProfileUseCase: GetProfileUseCase;
+
   let controller: UserController;
   let res: Partial<Response>;
 
@@ -24,7 +27,9 @@ describe("UserController", () => {
     sendEmailVerificationUseCase = { execute: vi.fn() } as unknown as SendEmailVerificationUseCase;
     verifyEmailUseCase = { execute: vi.fn() } as unknown as VerifyEmailUseCase;
     updateProfileUseCase = { execute: vi.fn() } as unknown as UpdateProfileUseCase;
-    controller = new UserController(createUserUseCase, sendEmailVerificationUseCase, verifyEmailUseCase, updateProfileUseCase);
+    getProfileUseCase = { execute: vi.fn(), } as unknown as GetProfileUseCase;
+
+    controller = new UserController(createUserUseCase, sendEmailVerificationUseCase, verifyEmailUseCase, updateProfileUseCase, getProfileUseCase);
     res = {
       status: vi.fn().mockReturnThis(),
       json: vi.fn().mockReturnThis(),
@@ -296,6 +301,91 @@ describe("updateProfile — when an unexpected error happens", () => {
 
     // When llamo al controller
     await controller.updateProfile(req as Request, res as Response);
+
+    // Then devuelve 500
+    expect(res.status).toHaveBeenCalledWith(500);
+
+    expect(res.json).toHaveBeenCalledWith({
+      error: "Internal server error",
+    });
+  });
+});
+
+describe("getProfile — when the user exists", () => {
+  it("returns 200 with the user profile", async () => {
+    // Given un usuario autenticado
+    vi.mocked(getProfileUseCase.execute).mockResolvedValue({
+      id: "user-123",
+      email: "facu@test.com",
+      username: "facu_updated",
+      name: "Facundo",
+      lastname: "Pereira",
+      photoUrl: undefined,
+    });
+
+    const req = {
+      auth: {
+        sub: "user-123",
+      },
+    } as Partial<Request>;
+
+    // When llamo al controller
+    await controller.getProfile(req as Request, res as Response);
+
+    // Then devuelve 200 con el perfil
+    expect(res.status).toHaveBeenCalledWith(200);
+
+    expect(res.json).toHaveBeenCalledWith({
+      id: "user-123",
+      email: "facu@test.com",
+      username: "facu_updated",
+      name: "Facundo",
+      lastname: "Pereira",
+      photoUrl: undefined,
+    });
+  });
+});
+
+describe("getProfile — when the user does not exist", () => {
+  it("returns 404", async () => {
+    // Given un use case que lanza UserNotFoundError
+    vi.mocked(getProfileUseCase.execute).mockRejectedValue(
+      new UserNotFoundError(),
+    );
+
+    const req = {
+      auth: {
+        sub: "user-123",
+      },
+    } as Partial<Request>;
+
+    // When llamo al controller
+    await controller.getProfile(req as Request, res as Response);
+
+    // Then devuelve 404
+    expect(res.status).toHaveBeenCalledWith(404);
+
+    expect(res.json).toHaveBeenCalledWith({
+      error: "User not found",
+    });
+  });
+});
+
+describe("getProfile — when an unexpected error happens", () => {
+  it("returns 500", async () => {
+    // Given un error inesperado
+    vi.mocked(getProfileUseCase.execute).mockRejectedValue(
+      new Error("db down"),
+    );
+
+    const req = {
+      auth: {
+        sub: "user-123",
+      },
+    } as Partial<Request>;
+
+    // When llamo al controller
+    await controller.getProfile(req as Request, res as Response);
 
     // Then devuelve 500
     expect(res.status).toHaveBeenCalledWith(500);

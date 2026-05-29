@@ -12,6 +12,8 @@ import { UpdateProfileUseCase } from "../../../application/usecase/update-profil
 import { JwtTokenSigner } from "../../../infrastructure/security/JwtTokenSigner";
 import { readAuthConfig } from "../../config/authConfig";
 import { requireAuth } from "../../middleware/requireAuth.middleware";
+import { GetProfileUseCase } from "../../../application/usecase/get-profile/get-profile.usecase";
+
 
 const router = Router();
 
@@ -23,6 +25,7 @@ const emailService = new LogEmailService();
 const { jwtSecret, accessTtl } = readAuthConfig();
 const tokenSigner = new JwtTokenSigner(jwtSecret, accessTtl);
 const updateProfileUseCase = new UpdateProfileUseCase(userRepository);
+const getProfileUseCase = new GetProfileUseCase(userRepository);
 
 
 const createUserUseCase = new CreateUserUseCase(userRepository, passwordHasher);
@@ -38,10 +41,12 @@ const userController = new UserController(
   sendEmailVerificationUseCase,
   verifyEmailUseCase,
   updateProfileUseCase,
+  getProfileUseCase
 );
 
 router.post("/", userController.create);
 router.post("/verify-email", userController.verifyEmail);
 router.patch("/me", requireAuth(tokenSigner), userController.updateProfile);
+router.get("/me", requireAuth(tokenSigner), userController.getProfile);
 
 export default router;
