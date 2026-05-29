@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { GetPetsUseCase } from "@application/usecase/pet-usecase/get-user-pets.usecase";
 import { PrismaPetRepository } from "@infrastructure/repository/pet/pet.repository";
-import { Pet } from "@domain/pet/aggregates/pet.aggregate";
+import { Pet } from "@domain/pet/aggregates/PetAggregate";
 import { AnimalType } from "@domain/shared/animal-type/animal-type";
 import { GenderType } from "@domain/pet/types/gender.type";
 import { SizeType } from "@domain/pet/types/size.type";

@@ -1,7 +1,7 @@
 import { InvalidFieldError, InvalidReportTypeError } from "@application/errors/errors"
 import { User } from "@domain/entities/User"
-import { Pet } from "@domain/pet/aggregates/pet.aggregate"
-import { Report } from "@domain/report/aggregates/report.aggregate"
+import { Pet } from "@domain/pet/aggregates/PetAggregate"
+import { Report } from "@domain/report/aggregates/ReportAggregate"
 import { ReportRepository } from "@domain/report/repositories/report.repository"
 import { ReportDetails } from "@domain/report/types/report-details.type"
 import { ReportType } from "@domain/report/types/report.type"
@@ -31,9 +31,9 @@ export class CreateReportUseCase {
     private userRepository: IUserRepository,
     private petRepository: PetRepository) { }
 
-  async execute(dto: CreateReportDTO, userEmail: string): Promise<void> {
+  async execute(dto: CreateReportDTO, userId: string): Promise<void> {
 
-    const user = await this.userRepository.findByEmail(userEmail);
+    const user = await this.userRepository.findByPublicId(userId);
     let id: number | null = null
 
     if (dto.type === ReportType.LOST && dto.petId) {

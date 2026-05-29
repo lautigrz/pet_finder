@@ -1,4 +1,4 @@
-import { Report } from "../aggregates/report.aggregate";
+import { Report } from "../aggregates/ReportAggregate";
 
 
 export interface ReportRepository {

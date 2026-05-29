@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { Report } from "@domain/report/aggregates/report.aggregate";
+import { Report } from "@domain/report/aggregates/ReportAggregate";
 import { ReportType } from "@domain/report/types/report.type";
 import { ReportStatus } from "@domain/report/types/report.status";
 import { Location } from "@domain/report/value-objects/location.vo";

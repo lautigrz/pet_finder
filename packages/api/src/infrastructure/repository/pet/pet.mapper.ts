@@ -1,4 +1,4 @@
-import { Pet } from "@domain/pet/aggregates/pet.aggregate";
+import { Pet } from "@domain/pet/aggregates/PetAggregate";
 import { GenderReverseTypeMap, GenderTypeMap } from "@domain/pet/types/gender-map";
 import { SizeReverseTypeMap, SizeTypeMap } from "@domain/pet/types/size-map";
 import { AnimalReverseTypeMap, AnimalTypeMap } from "@domain/shared/animal-type/animal-type-map";

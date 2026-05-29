@@ -1,5 +1,5 @@
 
-import { Pet } from "@domain/pet/aggregates/pet.aggregate";
+import { Pet } from "@domain/pet/aggregates/PetAggregate";
 
 export class PetPresenter {
   static toResponse(pet: Pet) {

@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { ReportOutputMapper } from "../report.mapper";
-import { Report } from "../../../../../domain/report/aggregates/report.aggregate";
-import { Pet } from "../../../../../domain/pet/aggregates/pet.aggregate";
+import { Report } from "../../../../../domain/report/aggregates/ReportAggregate";
+import { Pet } from "../../../../../domain/pet/aggregates/PetAggregate";
 import { ReportType } from "../../../../../domain/report/types/report.type";
 import { ReportStatus } from "../../../../../domain/report/types/report.status";
 import { Location } from "../../../../../domain/report/value-objects/location.vo";

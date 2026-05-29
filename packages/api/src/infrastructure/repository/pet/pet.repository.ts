@@ -1,4 +1,4 @@
-import { Pet } from "@domain/pet/aggregates/pet.aggregate";
+import { Pet } from "@domain/pet/aggregates/PetAggregate";
 import { PetRepository } from "@domain/pet/repositories/pet.repository";
 import { PrismaClient } from "@prisma/client";
 import { PetMapper } from "./pet.mapper";

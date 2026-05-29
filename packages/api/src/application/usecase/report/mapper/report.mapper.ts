@@ -1,6 +1,6 @@
-import { Report } from "@domain/report/aggregates/report.aggregate";
+import { Report } from "@domain/report/aggregates/ReportAggregate";
 import { LostReportOutputDto, ReportOutputDto, SightingReportOutputDto } from "../get.report.output";
-import { Pet } from "@domain/pet/aggregates/pet.aggregate";
+import { Pet } from "@domain/pet/aggregates/PetAggregate";
 import { ReportType } from "@domain/report/types/report.type";
 import { SightingReportDetails } from "@domain/report/value-objects/sighting-report-details.vo";
 import { MappingError } from "@application/errors/errors";

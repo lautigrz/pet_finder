@@ -32,6 +32,11 @@ const buildReq = (
   params: params ?? {},
   originalUrl: "/api/reports",
   method: "POST",
+  auth: {
+    sub: "user-public-id",
+    email: "test@mail.com",
+    isVerified: true
+  }
 });
 
 const validLostBody = {

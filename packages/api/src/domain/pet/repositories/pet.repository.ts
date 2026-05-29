@@ -1,4 +1,4 @@
-import { Pet } from "../aggregates/pet.aggregate"
+import { Pet } from "../aggregates/PetAggregate"
 
 export interface PetRepository {
     save(pet: Pet): Promise<void>

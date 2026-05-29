@@ -4,7 +4,7 @@ import { PetController } from "../pet.controller";
 import { CreatePetUseCase } from "@application/usecase/pet-usecase/create-pet.usecase";
 import { GetPetsUseCase } from "@application/usecase/pet-usecase/get-user-pets.usecase";
 import { InvalidPetNameError } from "@domain/errors/InvalidPetNameError";
-import { Pet } from "@domain/pet/aggregates/pet.aggregate";
+import { Pet } from "@domain/pet/aggregates/PetAggregate";
 import { AnimalType } from "@domain/shared/animal-type/animal-type";
 import { GenderType } from "@domain/pet/types/gender.type";
 import { SizeType } from "@domain/pet/types/size.type";

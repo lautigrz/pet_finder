@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { Pet } from "@domain/pet/aggregates/pet.aggregate";
+import { Pet } from "@domain/pet/aggregates/PetAggregate";
 import { AnimalType } from "@domain/shared/animal-type/animal-type";
 import { GenderType } from "@domain/pet/types/gender.type";
 import { SizeType } from "@domain/pet/types/size.type";

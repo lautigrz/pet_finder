@@ -2,10 +2,9 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { CreateReportUseCase } from "@application/usecase/report/create-report.usecase";
 import { ReportRepository } from "@domain/report/repositories/report.repository";
 import { PrismaPetRepository } from "@infrastructure/repository/pet/pet.repository";
-import { PrismaUserRepository } from "@infrastructure/repository/PrismaUserRepository";
 import { ReportType } from "@domain/report/types/report.type";
 import { AnimalType } from "@domain/shared/animal-type/animal-type";
-import { Pet } from "@domain/pet/aggregates/pet.aggregate";
+import { Pet } from "@domain/pet/aggregates/PetAggregate";
 import { User } from "@domain/entities/User";
 import { GenderType } from "@domain/pet/types/gender.type";
 import { SizeType } from "@domain/pet/types/size.type";
@@ -19,9 +18,13 @@ const fakeUser = User.reconstruct(
   5,
   "user-pub-id",
   TEST_EMAIL,
+  "testuser",
   "$2b$10$" + "x".repeat(53),
   true,
-  new Date()
+  new Date(),
+  "Lautaro",
+  "Gerez",
+  null
 );
 
 const fakePet = Pet.restore({
@@ -57,7 +60,7 @@ describe("CreateReportUseCase", () => {
     } as unknown as ReportRepository;
 
     userRepository = {
-      findByEmail: vi.fn().mockResolvedValue(fakeUser),
+      findByPublicId: vi.fn().mockResolvedValue(fakeUser),
     } as unknown as IUserRepository;
 
     petRepository = {
@@ -102,7 +105,7 @@ describe("CreateReportUseCase", () => {
     });
 
     it("lanza error si el usuario no existe", async () => {
-      vi.mocked(userRepository.findByEmail).mockResolvedValue(null);
+      vi.mocked(userRepository.findByPublicId).mockResolvedValue(null);
 
 
       await expect(useCase.execute(lostDto, TEST_EMAIL)).rejects.toThrow("User not found");
