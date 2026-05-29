@@ -1,7 +1,6 @@
-export class CreateUserInput {
+export class LoginUserInput {
   constructor(
     public readonly email: string,
-    public readonly username: string,
     public readonly plainPassword: string,
   ) {}
 }

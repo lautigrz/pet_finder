@@ -7,18 +7,29 @@ import { VerifyEmailUseCase } from "../../application/usecase/verify-email/verif
 import { VerifyEmailInput } from "../../application/usecase/verify-email/verify-email.input";
 import { EmailAlreadyExistsError } from "../../domain/errors/EmailAlreadyExistsError";
 import { InvalidEmailError } from "../../domain/errors/InvalidEmailError";
+import { InvalidUsernameError } from "../../domain/errors/InvalidUsernameError";
 import { InvalidVerificationTokenError } from "../../domain/errors/InvalidVerificationTokenError";
 import { CreateUserRequest } from "../dto/CreateUserRequest";
 import { VerifyEmailRequest } from "../dto/VerifyEmailRequest";
 import { ValidationError } from "../errors/ValidationError";
+import { UpdateProfileUseCase } from "../../application/usecase/update-profile/update-profile.usecase";
+import { UpdateProfileInput } from "../../application/usecase/update-profile/update-profile.input";
+import { UpdateProfileRequest } from "../dto/UpdateProfileRequest";
+import { UserNotFoundError } from "../../domain/errors/UserNotFoundError";
+import { GetProfileUseCase } from "../../application/usecase/get-profile/get-profile.usecase";
 
 const PASSWORD_MIN_LENGTH = 8;
+const PASSWORD_MAX_LENGTH = 100;
+const EMAIL_MAX_LENGTH = 255;
+const USERNAME_MAX_LENGTH = 30;
 
 export class UserController {
   constructor(
     private readonly createUserUseCase: CreateUserUseCase,
     private readonly sendEmailVerificationUseCase: SendEmailVerificationUseCase,
     private readonly verifyEmailUseCase: VerifyEmailUseCase,
+    private readonly updateProfileUseCase: UpdateProfileUseCase,
+    private readonly getProfileUseCase: GetProfileUseCase
   ) {}
 
   create = async (req: Request, res: Response): Promise<void> => {
@@ -44,16 +55,55 @@ export class UserController {
     }
   };
 
+  updateProfile = async (req: Request, res:Response): Promise<void> => {
+    try{
+      const body = this.validateUpdateProfileBody(req.body);
+      
+      const updated = await this.updateProfileUseCase.execute(
+        new UpdateProfileInput(
+          req.auth!.sub,
+          body.name,
+          body.lastname,
+          body.username,
+          body.photoUrl,
+          ),
+      );
+      res.status(200).json(updated);
+    } catch (error){
+      this.handleError(error, res);
+    }
+  }
+
+  getProfile = async (req:Request, res:Response): Promise<void> => {
+    try {
+      const profile = await this.getProfileUseCase.execute(req.auth!.sub);
+
+      res.status(200).json(profile);
+    } catch (error) {
+      this.handleError(error, res);
+    }
+
+  };
+
   private validateCreateBody(body: unknown): CreateUserRequest {
     const issues: string[] = [];
     const data = (body ?? {}) as Partial<CreateUserRequest>;
     if (typeof data.email !== "string" || data.email.trim().length === 0) {
       issues.push("email is required");
+    } else if (data.email.length > EMAIL_MAX_LENGTH) {
+      issues.push(`email must be at most ${EMAIL_MAX_LENGTH} characters`);
+    }
+    if (typeof data.username !== "string" || data.username.trim().length === 0) {
+      issues.push("username is required");
+    } else if (data.username.length > USERNAME_MAX_LENGTH) {
+      issues.push(`username must be at most ${USERNAME_MAX_LENGTH} characters`);
     }
     if (typeof data.password !== "string") {
       issues.push("password is required");
     } else if (data.password.length < PASSWORD_MIN_LENGTH) {
       issues.push(`password must be at least ${PASSWORD_MIN_LENGTH} characters`);
+    } else if (data.password.length > PASSWORD_MAX_LENGTH) {
+      issues.push(`password must be at most ${PASSWORD_MAX_LENGTH} characters`);
     }
     if (issues.length > 0) throw new ValidationError(issues);
     return data as CreateUserRequest;
@@ -68,11 +118,39 @@ export class UserController {
   }
 
   private toCreateInput(body: CreateUserRequest): CreateUserInput {
-    return new CreateUserInput(body.email, body.password);
+    return new CreateUserInput(body.email, body.username, body.password);
+  }
+
+  private validateUpdateProfileBody(body:unknown): UpdateProfileRequest{
+    const data = (body ?? {}) as Partial<UpdateProfileRequest>;
+    const issues: string[] = [];
+
+    if(data.name && typeof data.name !== "string"){
+      issues.push("name must be a string");
+    }
+    if (data.lastname && typeof data.lastname !== "string") {
+      issues.push("lastname must be a string");
+    }
+      if (data.username && typeof data.username !== "string") {
+      issues.push("username must be a string");
+    }
+    if (data.photoUrl && typeof data.photoUrl !== "string") {
+      issues.push("photoUrl must be a string");
+    }
+
+    if(issues.length > 0){
+      throw new ValidationError(issues);
+    }
+
+    return data as UpdateProfileRequest;
   }
 
   private handleError(error: unknown, res: Response): void {
-    if (error instanceof ValidationError || error instanceof InvalidEmailError) {
+    if (
+      error instanceof ValidationError ||
+      error instanceof InvalidEmailError ||
+      error instanceof InvalidUsernameError
+    ) {
       res.status(400).json({ error: error.message });
       return;
     }
@@ -82,6 +160,10 @@ export class UserController {
     }
     if (error instanceof InvalidVerificationTokenError) {
       res.status(400).json({ error: error.message, reason: error.reason });
+      return;
+    }
+    if(error instanceof UserNotFoundError){
+      res.status(404).json({ error: error.message });
       return;
     }
     res.status(500).json({ error: "Internal server error" });
