@@ -2,8 +2,7 @@
 
 export class LostReportDetails{
     constructor(
-        public readonly _petId: number,
-
+        private readonly _petId: number,
     ){}
 
     static create(params: { petId: number}): LostReportDetails {

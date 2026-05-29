@@ -1,5 +1,5 @@
 import { CreatePetParams, Pet } from "@domain/pet/aggregates/pet.aggregate";
-import { PrismaPetRepository } from "@infrastructure/repository/pet/pet.repository";
+import { PetRepository } from "@domain/pet/repositories/pet.repository";
 
 type CreatePetResponse = {
     publicId: string;
@@ -7,7 +7,7 @@ type CreatePetResponse = {
 
 
 export class CreatePetUseCase {
-  constructor(private petRepository: PrismaPetRepository) {}
+  constructor(private petRepository: PetRepository) {}
 
 
     async execute(dto: CreatePetParams): Promise<CreatePetResponse> {

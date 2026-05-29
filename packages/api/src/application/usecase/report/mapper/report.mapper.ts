@@ -5,7 +5,9 @@ import { ReportType } from "@domain/report/types/report.type";
 import { SightingReportDetails } from "@domain/report/value-objects/sighting-report-details.vo";
 import { MappingError } from "@application/errors/errors";
 
-export class ReportMapper {
+/** Maps a Report aggregate to the API output DTO. Not to be confused with
+ *  ReportMapper in infrastructure/repository/report (which handles persistence). */
+export class ReportOutputMapper {
 
     static toOutput(report: Report, pet?: Pet): ReportOutputDto {
         return {

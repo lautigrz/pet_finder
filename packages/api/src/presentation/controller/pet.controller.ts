@@ -45,7 +45,7 @@ export class PetController {
 
 
     getAllByUserId = async (req: Request, res: Response): Promise<void> => {
-        const userId = 1; // por ahora 
+        const userId = 1; // TODO: reemplazar con el userId del usuario autenticado (req.user.id)
 
         try {
             const pets = await this.getPetsUseCase.execute(userId);

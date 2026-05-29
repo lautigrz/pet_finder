@@ -39,9 +39,10 @@ export class CreateReportController {
 
         try {
 
-            let email = "test.user@example.com";
+            // TODO: reemplazar con el email del usuario autenticado (req.user.email)
+            const email = "test.user@example.com";
 
-            await this.useCase.execute(parsed.data as CreateReportDTO, email);
+            await this.useCase.execute(parsed.data, email);
             logger.info("Report created successfully", { type: parsed.data.type });
             res.status(201).json({ message: "Report created successfully" });
         } catch (error) {
@@ -68,7 +69,7 @@ export class CreateReportController {
                 return;
             }
 
-            console.log(error)
+
             logger.error("Error creating report", {
                 error: error instanceof Error ? error.message : String(error),
                 stack: error instanceof Error ? error.stack : undefined,

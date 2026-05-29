@@ -18,9 +18,8 @@ export const createReportSchema = z.discriminatedUnion('type', [
     }),
     z.object({
         type: z.literal(ReportType.SIGHTING),
-        userId: z.number(),
-        animalType: z.enum(AnimalType),
-        hasIdCollar: z.boolean().optional(),
+        animalType: z.nativeEnum(AnimalType),
+        hasIdCollar: z.boolean(),
         color: z.string(),
         occurredAt: z.coerce.date(),
         location: z.object({

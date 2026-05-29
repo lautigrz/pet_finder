@@ -10,8 +10,8 @@ import { Location } from "@domain/report/value-objects/location.vo"
 import { LostReportDetails } from "@domain/report/value-objects/lost-report-details.vo"
 import { SightingReportDetails } from "@domain/report/value-objects/sighting-report-details.vo"
 import { AnimalType } from "@domain/shared/animal-type/animal-type"
-import { PrismaPetRepository } from "@infrastructure/repository/pet/pet.repository"
-import { PrismaUserRepository } from "@infrastructure/repository/PrismaUserRepository"
+import { PetRepository } from "@domain/pet/repositories/pet.repository"
+import { IUserRepository } from "@domain/repositories/IUserRepository"
 
 interface LocationDTO {
 
@@ -28,8 +28,8 @@ export type CreateReportDTO =
 
 export class CreateReportUseCase {
   constructor(private reportRepository: ReportRepository,
-    private userRepository: PrismaUserRepository,
-    private petRepository: PrismaPetRepository) { }
+    private userRepository: IUserRepository,
+    private petRepository: PetRepository) { }
 
   async execute(dto: CreateReportDTO, userEmail: string): Promise<void> {
 
@@ -39,13 +39,11 @@ export class CreateReportUseCase {
     if (dto.type === ReportType.LOST && dto.petId) {
       const pet: Pet | null = await this.petRepository.findByPublicId(dto.petId);
 
-      console.log("pet>>>>", pet)
       if (!pet) {
         throw new Error("Pet not found");
       }
       id = pet.idPet
 
-      console.log("petID>>>>", id!)
     }
     if (!user) {
       throw new Error("User not found");
