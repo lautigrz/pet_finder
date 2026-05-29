@@ -33,7 +33,7 @@ export interface RestorePetParams {
 
 export class Pet {
 
-    constructor(
+    private constructor(
         private readonly _idPet: number | null,
         private readonly _publicId: string,
         private readonly _userId: number,

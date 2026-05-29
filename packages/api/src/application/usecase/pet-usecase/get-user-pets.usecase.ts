@@ -1,11 +1,11 @@
 import { Pet } from "@domain/pet/aggregates/pet.aggregate";
-import { PrismaPetRepository } from "@infrastructure/repository/pet/pet.repository";
+import { PetRepository } from "@domain/pet/repositories/pet.repository";
 
 export class GetPetsUseCase {
-  constructor(private petRepository: PrismaPetRepository) {}
+  constructor(private petRepository: PetRepository) {}
 
 
     async execute(userId: number): Promise<Pet[]> {
-        return this.petRepository.findAllByUserId(1);
+        return this.petRepository.findAllByUserId(userId);
     }
 }

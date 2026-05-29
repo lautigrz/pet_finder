@@ -40,7 +40,7 @@ export class Report {
     private constructor(
         private readonly _idReport: number | null,
         private readonly _publicId: string,
-        private readonly _userId: number,        // solo para persistencia, no se expone en la API
+        private readonly _userId: number,
         private readonly _userPublicId: string,
         private readonly type: ReportType,
         private currentStatus: ReportStatus,
@@ -93,6 +93,7 @@ export class Report {
         description: ReportDescription,
     ): void {
         this._description = description
+        this._updatedAt = new Date()
     }
 
     get idReport(): number | null {
@@ -110,6 +111,10 @@ export class Report {
         this.transitionTo(ReportStatus.CLOSED)
     }
 
+    /**
+     * Exposed for the persistence (infrastructure) mapper only.
+     * Must NOT be included in API responses — use `userPublicId` instead.
+     */
     get userId(): number {
         return this._userId
     }

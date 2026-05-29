@@ -2,8 +2,8 @@ import { AnimalType } from "../../shared/animal-type/animal-type";
 
 export class SightingReportDetails {
   constructor(
-    public readonly _animalType: AnimalType,
-    public readonly _hasIdCollar: boolean,
+    private readonly _animalType: AnimalType,
+    private readonly _hasIdCollar: boolean,
     private readonly _color: string,
   ) {}
 

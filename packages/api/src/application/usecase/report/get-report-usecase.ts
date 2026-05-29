@@ -1,7 +1,7 @@
 import { PetRepository } from "@domain/pet/repositories/pet.repository";
 import { Report } from "@domain/report/aggregates/report.aggregate";
 import { ReportRepository } from "@domain/report/repositories/report.repository";
-import { ReportMapper } from "./mapper/report.mapper";
+import { ReportOutputMapper } from "./mapper/report.mapper";
 import { LostReportDetails } from "@domain/report/value-objects/lost-report-details.vo";
 import { ReportNotFoundError } from "@domain/errors/ReportNotFoundError";
 import { PetNotFoundError } from "@domain/errors/PetNotFoundError";
@@ -25,10 +25,10 @@ export class GetReportUseCase {
             if (!pet) {
                 throw new PetNotFoundError(petDetails.petId)
             }
-            return ReportMapper.toOutput(report, pet)
+            return ReportOutputMapper.toOutput(report, pet)
         }
 
-        return ReportMapper.toOutput(report)
+        return ReportOutputMapper.toOutput(report)
     }
 
 

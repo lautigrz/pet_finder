@@ -2,8 +2,8 @@ import { InvalidCoordinatesError } from "../../errors/InvalidCoordinatesError";
 
 export class Coordinates {
     constructor(
-        public readonly _latitude: number,
-        public readonly _longitude: number
+        private readonly _latitude: number,
+        private readonly _longitude: number
     ){
         this.validate()
     }
