@@ -21,6 +21,7 @@ const sightingDetails = SightingReportDetails.create({
   animalType: AnimalType.DOG,
   hasIdCollar: true,
   color: "brown",
+  images: []
 });
 
 const baseLostParams = {

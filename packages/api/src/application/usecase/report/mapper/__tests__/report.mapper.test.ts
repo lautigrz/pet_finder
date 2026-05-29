@@ -60,6 +60,7 @@ const sightingReport = Report.restore({
     animalType: AnimalType.CAT,
     hasIdCollar: false,
     color: "orange",
+    images: [],
   }),
   location: validLocation,
   occurredAt: new Date("2024-05-01"),

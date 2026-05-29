@@ -27,6 +27,7 @@ export class PrismaReportRepository implements ReportRepository {
                     },
                     sighting_report_detail: true,
                     lost_report_detail: true,
+                    reportImages: true
                 }
             })
         if (!raw) {

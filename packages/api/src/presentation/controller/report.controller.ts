@@ -1,6 +1,6 @@
-import { CreateReportUseCase } from "@application/usecase/report/create-report.usecase";
+import { CreateReportDTO, CreateReportUseCase } from "@application/usecase/report/create-report.usecase";
 import { Request, Response } from "express";
-import { createReportSchema } from "../schemas/create-report.schema";
+import { CreateReportInput, createReportSchema } from "../schemas/create-report.schema";
 import logger from "@infrastructure/logger/";
 import { GetReportUseCase } from "@application/usecase/report/get-report-usecase";
 import { InvalidCoordinatesError } from "@domain/errors/InvalidCoordinatesError";
@@ -15,13 +15,15 @@ import {
     InvalidFieldError,
     InvalidReportTypeError
 } from "@application/errors/errors";
+import { ReportType } from "@domain/report/types/report.type";
 
 export class CreateReportController {
     constructor(private useCase: CreateReportUseCase, private getReportUseCase: GetReportUseCase) { }
 
 
     create = async (req: Request, res: Response): Promise<void> => {
-        const parsed = createReportSchema.safeParse(req.body);
+        const parsed = createReportSchema.safeParse(JSON.parse(req.body.data));
+        const files = req.files as Express.Multer.File[];
 
         if (!parsed.success) {
             logger.warn("Validation error on report creation", {
@@ -47,11 +49,13 @@ export class CreateReportController {
                 return;
             }
 
-            await this.useCase.execute(parsed.data, userId);
+            const dto = this.buildCreateDTO(parsed.data, files);
+
+            await this.useCase.execute(dto, userId);
             logger.info("Report created successfully", { type: parsed.data.type });
             res.status(201).json({ message: "Report created successfully" });
         } catch (error) {
-
+            console.log(error)
             if (
                 error instanceof InvalidCoordinatesError ||
                 error instanceof InvalidLocationError ||
@@ -111,6 +115,15 @@ export class CreateReportController {
             res.status(500).json({ error: 'Internal server error' });
         }
 
+    }
+
+
+    private buildCreateDTO(parsed: CreateReportInput, files: Express.Multer.File[]): CreateReportDTO {
+        if (parsed.type === ReportType.LOST) {
+            return parsed;
+        }
+
+        return { ...parsed, images: files.map(f => f.buffer) };
     }
 
 }
