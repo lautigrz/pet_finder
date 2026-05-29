@@ -16,6 +16,7 @@ import { UpdateProfileUseCase } from "../../application/usecase/update-profile/u
 import { UpdateProfileInput } from "../../application/usecase/update-profile/update-profile.input";
 import { UpdateProfileRequest } from "../dto/UpdateProfileRequest";
 import { UserNotFoundError } from "../../domain/errors/UserNotFoundError";
+import { GetProfileUseCase } from "../../application/usecase/get-profile/get-profile.usecase";
 
 const PASSWORD_MIN_LENGTH = 8;
 const PASSWORD_MAX_LENGTH = 100;
@@ -28,6 +29,7 @@ export class UserController {
     private readonly sendEmailVerificationUseCase: SendEmailVerificationUseCase,
     private readonly verifyEmailUseCase: VerifyEmailUseCase,
     private readonly updateProfileUseCase: UpdateProfileUseCase,
+    private readonly getProfileUseCase: GetProfileUseCase
   ) {}
 
   create = async (req: Request, res: Response): Promise<void> => {
@@ -71,6 +73,17 @@ export class UserController {
       this.handleError(error, res);
     }
   }
+
+  getProfile = async (req:Request, res:Response): Promise<void> => {
+    try {
+      const profile = await this.getProfileUseCase.execute(req.auth!.sub);
+
+      res.status(200).json(profile);
+    } catch (error) {
+      this.handleError(error, res);
+    }
+
+  };
 
   private validateCreateBody(body: unknown): CreateUserRequest {
     const issues: string[] = [];
