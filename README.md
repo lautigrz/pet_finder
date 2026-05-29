@@ -9,7 +9,7 @@ Este proyecto es un **monorepo** que aloja los servicios de Pet Alert, dividido 
 ```
 pet-alert/
 ├── packages/
-│   ├── api/                        # Servidor HTTP principal (Express)
+│   ├── api/                        # Servidor HTTP principal (Express + Arquitectura Hexagonal)
 │   │   ├── src/
 │   │   │   ├── domain/             # Entidades, modelos e interfaces de repositorios
 │   │   │   ├── application/

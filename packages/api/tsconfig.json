@@ -14,13 +14,7 @@
     "noUncheckedIndexedAccess": true,
     "strict": true,
     "isolatedModules": true,
-    "skipLibCheck": true,
-    "paths": {
-      "@domain/*": ["./src/domain/*"],
-      "@application/*": ["./src/application/*"],
-      "@infrastructure/*": ["./src/infrastructure/*"],
-      "src/*": ["./src/*"]
-    }
+    "skipLibCheck": true
   },
   "include": ["src/**/*"],
   "exclude": ["node_modules", "dist"]

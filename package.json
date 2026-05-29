@@ -7,9 +7,6 @@
   "workspaces": [
     "packages/*"
   ],
-  "prisma": {
-    "seed": "dotenv -e .env -- tsx packages/shared/prisma/seed.ts"
-  },
   "scripts": {
     "dev": "turbo run dev",
     "build": "turbo run build",
@@ -42,7 +39,6 @@
     "vitest": "^4.1.5"
   },
   "dependencies": {
-    "@prisma/client": "^6.19.3",
-    "zod": "^4.4.3"
+    "@prisma/client": "^6.19.3"
   }
 }
