@@ -11,7 +11,7 @@ import type { IPasswordHasher } from "../../../../domain/services/IPasswordHashe
 const VALID_BCRYPT_HASH = "$2b$12$abcdefghijklmnopqrstuv.wxyzabcdefghijklmnopqrstuvwxyz12";
 
 const persistedUser = (email: string, username: string): User =>
-  User.reconstruct(42, "uuid-fake", email, username, VALID_BCRYPT_HASH, false, new Date());
+  User.reconstruct(42, "uuid-fake", email, username, VALID_BCRYPT_HASH, false, new Date(), null, null, null);
 
 describe("CreateUserUseCase", () => {
   let userRepository: IUserRepository;
@@ -19,7 +19,10 @@ describe("CreateUserUseCase", () => {
   let useCase: CreateUserUseCase;
 
   beforeEach(() => {
-    userRepository = { save: vi.fn(), findByEmail: vi.fn(), markVerified: vi.fn() };
+    userRepository = {
+      save: vi.fn(), findByEmail: vi.fn(), markVerified: vi.fn(),
+      findByPublicId: vi.fn(), updateProfile: vi.fn(), findById: vi.fn(),
+    };
     passwordHasher = { hash: vi.fn(), verify: vi.fn() };
     useCase = new CreateUserUseCase(userRepository, passwordHasher);
   });
