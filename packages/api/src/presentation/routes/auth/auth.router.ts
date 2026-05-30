@@ -2,6 +2,8 @@ import { Router } from "express";
 import rateLimit from "express-rate-limit";
 import { AuthController } from "../../controller/AuthController";
 import { LoginUserUseCase } from "../../../application/usecase/login-user/login-user.usecase";
+import { LogoutUserUseCase } from "../../../application/usecase/logout-user/logout-user.usecase";
+import { RefreshAccessTokenUseCase } from "../../../application/usecase/refresh-access-token/refresh-access-token.usecase";
 import { PrismaUserRepository } from "../../../infrastructure/repository/PrismaUserRepository";
 import { PrismaRefreshTokenRepository } from "../../../infrastructure/repository/PrismaRefreshTokenRepository";
 import { BcryptPasswordHasher } from "../../../infrastructure/security/BcryptPasswordHasher";
@@ -28,7 +30,19 @@ const loginUserUseCase = new LoginUserUseCase(
   refreshTtlMs,
 );
 
-const authController = new AuthController(loginUserUseCase);
+const logoutUserUseCase = new LogoutUserUseCase(refreshTokenRepository);
+
+const refreshAccessTokenUseCase = new RefreshAccessTokenUseCase(
+  refreshTokenRepository,
+  userRepository,
+  tokenSigner,
+);
+
+const authController = new AuthController(
+  loginUserUseCase,
+  logoutUserUseCase,
+  refreshAccessTokenUseCase,
+);
 
 const loginLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
@@ -39,5 +53,7 @@ const loginLimiter = rateLimit({
 });
 
 router.post("/login", loginLimiter, authController.login);
+router.post("/logout", authController.logout);
+router.post("/refresh", authController.refresh);
 
 export default router;
