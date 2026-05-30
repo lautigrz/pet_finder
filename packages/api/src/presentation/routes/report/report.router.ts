@@ -4,6 +4,7 @@ import { CreateReportController } from "../../controller/report.controller";
 import { CreateReportUseCase } from "@application/usecase/report/create-report.usecase";
 import { PrismaReportRepository } from "@infrastructure/repository/report/report.repository";
 import { GetReportUseCase } from "@application/usecase/report/get-report-usecase";
+import { ListUserReportsUseCase } from "@application/usecase/report/list-user-reports.usecase";
 import { PrismaPetRepository } from "@infrastructure/repository/pet/pet.repository";
 import { PrismaUserRepository } from "@infrastructure/repository/PrismaUserRepository";
 import { requireAuth } from "src/presentation/middleware/requireAuth.middleware";
@@ -19,9 +20,11 @@ const petRepository = new PrismaPetRepository(prisma)
 const userRepository = new PrismaUserRepository();
 const createReportUseCase = new CreateReportUseCase(repository, userRepository, petRepository)
 const getReportUseCase = new GetReportUseCase(repository, petRepository);
-const createReportController = new CreateReportController(createReportUseCase, getReportUseCase);
+const listUserReportsUseCase = new ListUserReportsUseCase(repository, petRepository);
+const createReportController = new CreateReportController(createReportUseCase, getReportUseCase, listUserReportsUseCase);
 
 router.post('/', requireAuth(tokenSigner), createReportController.create)
+router.get('/', requireAuth(tokenSigner), createReportController.list)
 router.get('/:publicId', createReportController.getByPublicId)
 
 export const createReportRoute = router

@@ -3,6 +3,7 @@ import { Request, Response } from "express";
 import { CreateReportController } from "../report.controller";
 import { CreateReportUseCase } from "@application/usecase/report/create-report.usecase";
 import { GetReportUseCase } from "@application/usecase/report/get-report-usecase";
+import { ListUserReportsUseCase } from "@application/usecase/report/list-user-reports.usecase";
 import { ReportType } from "@domain/report/types/report.type";
 import { ReportStatus } from "@domain/report/types/report.status";
 import { AnimalType } from "@domain/shared/animal-type/animal-type";
@@ -78,9 +79,15 @@ const fakeReportOutput = {
   createdAt: new Date(),
 };
 
+const fakeListOutput = {
+  data: [fakeReportOutput],
+  pagination: { page: 1, limit: 10, total: 1, totalPages: 1 },
+};
+
 describe("CreateReportController", () => {
   let createReportUseCase: CreateReportUseCase;
   let getReportUseCase: GetReportUseCase;
+  let listUserReportsUseCase: ListUserReportsUseCase;
   let controller: CreateReportController;
 
   beforeEach(() => {
@@ -92,7 +99,11 @@ describe("CreateReportController", () => {
       execute: vi.fn().mockResolvedValue(fakeReportOutput),
     } as unknown as GetReportUseCase;
 
-    controller = new CreateReportController(createReportUseCase, getReportUseCase);
+    listUserReportsUseCase = {
+      execute: vi.fn().mockResolvedValue(fakeListOutput),
+    } as unknown as ListUserReportsUseCase;
+
+    controller = new CreateReportController(createReportUseCase, getReportUseCase, listUserReportsUseCase);
   });
 
   // ─── create ──────────────────────────────────────────────────────────────
@@ -253,6 +264,87 @@ describe("CreateReportController", () => {
       const req = buildReq({}, { publicId: "any-uuid" });
       const res = buildRes();
       await controller.getByPublicId(req as Request, res as Response);
+
+      expect(res.status).toHaveBeenCalledWith(500);
+      expect(res.json).toHaveBeenCalledWith({ error: "Internal server error" });
+    });
+  });
+
+  // ─── list ─────────────────────────────────────────────────────────────────
+
+  const buildListReq = (query: Record<string, string>): Partial<Request> => ({
+    query,
+    originalUrl: "/api/reports",
+    method: "GET",
+    auth: {
+      sub: "user-public-id",
+      email: "test@mail.com",
+      isVerified: true,
+    },
+  });
+
+  describe("list — query válida", () => {
+    it("retorna 200 con la lista paginada del usuario autenticado", async () => {
+      // Given query de paginación válida
+      const req = buildListReq({ page: "1", limit: "10" });
+      const res = buildRes();
+      await controller.list(req as Request, res as Response);
+
+      // Then devuelve 200 con el envelope paginado
+      expect(res.status).toHaveBeenCalledWith(200);
+      expect(res.json).toHaveBeenCalledWith(fakeListOutput);
+      expect(listUserReportsUseCase.execute).toHaveBeenCalledWith("user-public-id", {
+        page: 1,
+        limit: 10,
+      });
+    });
+
+    it("usa los valores por defecto de paginación si no vienen en la query", async () => {
+      const req = buildListReq({});
+      const res = buildRes();
+      await controller.list(req as Request, res as Response);
+
+      expect(listUserReportsUseCase.execute).toHaveBeenCalledWith("user-public-id", {
+        page: 1,
+        limit: 10,
+      });
+    });
+  });
+
+  describe("list — query inválida", () => {
+    it("retorna 400 si page es menor a 1", async () => {
+      const req = buildListReq({ page: "0" });
+      const res = buildRes();
+      await controller.list(req as Request, res as Response);
+
+      expect(res.status).toHaveBeenCalledWith(400);
+      expect(listUserReportsUseCase.execute).not.toHaveBeenCalled();
+    });
+  });
+
+  describe("list — PetNotFoundError (404)", () => {
+    it("retorna 404 si un reporte LOST referencia una mascota inexistente", async () => {
+      const petErr = new PetNotFoundError(99);
+      vi.mocked(listUserReportsUseCase.execute).mockRejectedValue(petErr);
+
+      const req = buildListReq({ page: "1", limit: "10" });
+      const res = buildRes();
+      await controller.list(req as Request, res as Response);
+
+      expect(res.status).toHaveBeenCalledWith(404);
+      expect(res.json).toHaveBeenCalledWith({ error: petErr.message });
+    });
+  });
+
+  describe("list — error inesperado (500)", () => {
+    it("retorna 500 si ocurre un error no controlado", async () => {
+      vi.mocked(listUserReportsUseCase.execute).mockRejectedValue(
+        new Error("DB failure")
+      );
+
+      const req = buildListReq({ page: "1", limit: "10" });
+      const res = buildRes();
+      await controller.list(req as Request, res as Response);
 
       expect(res.status).toHaveBeenCalledWith(500);
       expect(res.json).toHaveBeenCalledWith({ error: "Internal server error" });

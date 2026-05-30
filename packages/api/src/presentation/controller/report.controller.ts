@@ -1,8 +1,11 @@
 import { CreateReportUseCase } from "@application/usecase/report/create-report.usecase";
 import { Request, Response } from "express";
 import { createReportSchema } from "../schemas/create-report.schema";
+import { ValidationError } from "../errors/ValidationError";
+import { PaginationParams } from "@domain/shared/pagination/pagination";
 import logger from "@infrastructure/logger/";
 import { GetReportUseCase } from "@application/usecase/report/get-report-usecase";
+import { ListUserReportsUseCase } from "@application/usecase/report/list-user-reports.usecase";
 import { InvalidCoordinatesError } from "@domain/errors/InvalidCoordinatesError";
 import { InvalidLocationError } from "@domain/errors/InvalidLocationError";
 import { InvalidReportDescriptionError } from "@domain/errors/InvalidReportDescriptionError";
@@ -16,8 +19,16 @@ import {
     InvalidReportTypeError
 } from "@application/errors/errors";
 
+const DEFAULT_PAGE = 1;
+const DEFAULT_LIMIT = 10;
+const MAX_LIMIT = 100;
+
 export class CreateReportController {
-    constructor(private useCase: CreateReportUseCase, private getReportUseCase: GetReportUseCase) { }
+    constructor(
+        private useCase: CreateReportUseCase,
+        private getReportUseCase: GetReportUseCase,
+        private listUserReportsUseCase: ListUserReportsUseCase,
+    ) { }
 
 
     create = async (req: Request, res: Response): Promise<void> => {
@@ -84,6 +95,88 @@ export class CreateReportController {
             res.status(500).json({ error: 'Internal server error' });
         }
 
+    }
+
+
+    list = async (req: Request, res: Response): Promise<void> => {
+        try {
+            const pagination = this.validateListQuery(req.query);
+
+            const userId = req.auth!.sub;
+            if (!userId) {
+                res.status(401).json({ error: "Unauthorized" });
+                return;
+            }
+
+            const result = await this.listUserReportsUseCase.execute(userId, pagination);
+            logger.info("Listed user reports successfully", {
+                userId,
+                page: pagination.page,
+                limit: pagination.limit
+            });
+            res.status(200).json(result);
+        } catch (error) {
+
+            if (error instanceof ValidationError) {
+                logger.warn("Validation error on report listing", { message: error.message });
+                res.status(400).json({ error: error.message });
+                return;
+            }
+
+            if (error instanceof PetNotFoundError) {
+                logger.warn("Dependency error on report listing", { message: error.message });
+                res.status(404).json({ error: error.message });
+                return;
+            }
+
+            if (error instanceof MappingError) {
+                logger.warn("Mapping error on report listing", { message: error.message });
+                res.status(400).json({ error: error.message });
+                return;
+            }
+
+            logger.error("Error listing reports", {
+                error: error instanceof Error ? error.message : String(error),
+                stack: error instanceof Error ? error.stack : undefined,
+                route: req.originalUrl,
+                method: req.method,
+                query: req.query
+            });
+            res.status(500).json({ error: 'Internal server error' });
+        }
+
+    }
+
+
+    private validateListQuery(query: unknown): PaginationParams {
+        const issues: string[] = [];
+        const data = (query ?? {}) as { page?: unknown; limit?: unknown };
+
+        let page = DEFAULT_PAGE;
+        if (data.page !== undefined) {
+            const parsed = Number(data.page);
+            if (!Number.isInteger(parsed) || parsed < 1) {
+                issues.push("page must be an integer greater than or equal to 1");
+            } else {
+                page = parsed;
+            }
+        }
+
+        let limit = DEFAULT_LIMIT;
+        if (data.limit !== undefined) {
+            const parsed = Number(data.limit);
+            if (!Number.isInteger(parsed) || parsed < 1) {
+                issues.push("limit must be an integer greater than or equal to 1");
+            } else if (parsed > MAX_LIMIT) {
+                issues.push(`limit must be at most ${MAX_LIMIT}`);
+            } else {
+                limit = parsed;
+            }
+        }
+
+        if (issues.length > 0) throw new ValidationError(issues);
+
+        return { page, limit };
     }
 
 
