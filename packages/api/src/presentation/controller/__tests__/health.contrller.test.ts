@@ -1,9 +1,18 @@
 // packages/api/src/presentation/controller/__tests__/health.test.ts
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import request from "supertest";
-import app from "../../../app";
 
-// Mocks
+// Mock Cloudinary config BEFORE importing app to prevent env-var validation failure
+vi.mock("../../../infrastructure/storage/CloudinaryConfig", () => ({
+    cloudinary: {
+        uploader: {
+            upload_stream: vi.fn(),
+            destroy: vi.fn(),
+        },
+        config: vi.fn(),
+    },
+}));
+
 vi.mock("../../../infrastructure/prisma/prisma.client", () => ({
     default: {
         pet: {
@@ -19,6 +28,8 @@ vi.mock("../../../infrastructure/prisma/prisma.client", () => ({
 vi.mock("../../../infrastructure/queue/embedding.queue", () => ({
     enqueueMatchingJob: vi.fn().mockResolvedValue({}),
 }));
+
+import app from "../../../app";
 
 describe("GET /health", () => {
     it("debe retornar status 200 y ok", async () => {
