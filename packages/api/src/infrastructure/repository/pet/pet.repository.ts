@@ -12,6 +12,9 @@ export class PrismaPetRepository implements PetRepository {
     async findById(id: number): Promise<Pet | null> {
         const pet = await this.prisma.pet.findUnique({
             where: { pet_id: id },
+            include: {
+                petImages: true
+            }
         });
 
         return pet ? PetMapper.toDomain(pet) : null;
@@ -26,6 +29,9 @@ export class PrismaPetRepository implements PetRepository {
     async findByPublicId(publicId: string): Promise<Pet | null> {
         const pet = await this.prisma.pet.findUnique({
             where: { public_id: publicId },
+            include: {
+                petImages: true
+            }
         });
 
         return pet ? PetMapper.toDomain(pet) : null;
@@ -35,7 +41,10 @@ export class PrismaPetRepository implements PetRepository {
     async findAllByUserId(userId: number): Promise<Pet[]> {
 
         const pets = await this.prisma.pet.findMany({
-            where: { user_id: userId }
+            where: { user_id: userId },
+            include: {
+                petImages: true
+            }
         });
 
         return pets.map(PetMapper.toDomain);

@@ -2,6 +2,8 @@ import { AnimalType } from "@domain/shared/animal-type/animal-type";
 import { SizeType } from "../types/size.type";
 import { GenderType } from "../types/gender.type";
 import { InvalidPetNameError } from "../../errors/InvalidPetNameError";
+import { PetImage } from "../value-objects/image.vo";
+
 
 export interface CreatePetParams {
     userId: number;
@@ -12,11 +14,12 @@ export interface CreatePetParams {
     color: string;
     hasIdCollar: boolean;
     breed: string;
+    petImage: PetImage[];
     createdAt?: Date;
 }
 
 export interface RestorePetParams {
-    idPet: number | null
+    idPet: number | null;
     publicId: string;
     userId: number;
     name: string;
@@ -26,6 +29,7 @@ export interface RestorePetParams {
     color: string;
     hasIdCollar: boolean;
     breed: string;
+    petImage: PetImage[];
     createdAt: Date;
     updatedAt?: Date | null;
 }
@@ -44,6 +48,7 @@ export class Pet {
         private _color: string,
         private _hasIdCollar: boolean,
         private _breed: string,
+        private readonly _images: PetImage[],
         private readonly _createdAt: Date,
         private _updatedAt?: Date
     ) { this.validateName() }
@@ -61,6 +66,7 @@ export class Pet {
             params.color,
             params.hasIdCollar,
             params.breed,
+            params.petImage,
             new Date(),
         )
     }
@@ -78,6 +84,7 @@ export class Pet {
             params.color,
             params.hasIdCollar,
             params.breed,
+            params.petImage,
             params.createdAt,
             params.updatedAt ?? undefined
         );
@@ -87,6 +94,7 @@ export class Pet {
     get idPet(): number | null {
         return this._idPet
     }
+
     get publicId(): string {
         return this._publicId;
     }
@@ -129,6 +137,10 @@ export class Pet {
 
     get updatedAt(): Date | null {
         return this._updatedAt || null;
+    }
+
+    get images(): PetImage[] {
+        return this._images;
     }
 
 
