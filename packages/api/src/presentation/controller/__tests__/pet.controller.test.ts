@@ -8,6 +8,7 @@ import { Pet } from "@domain/pet/aggregates/PetAggregate";
 import { AnimalType } from "@domain/shared/animal-type/animal-type";
 import { GenderType } from "@domain/pet/types/gender.type";
 import { SizeType } from "@domain/pet/types/size.type";
+import { PetMapper } from "@application/usecase/pet-usecase/mapper/pet-mapper";
 
 const buildRes = (): Partial<Response> => ({
   status: vi.fn().mockReturnThis(),
@@ -151,7 +152,7 @@ describe("PetController", () => {
   describe("getAllByUserId — cuando hay mascotas", () => {
     it("retorna 200 con la lista de mascotas mapeadas", async () => {
 
-      const pets = [makePet("Firulais"), makePet("Max")];
+      const pets = [PetMapper.toOutput(makePet("Firulais")), PetMapper.toOutput(makePet("Max"))];
       vi.mocked(getPetsUseCase.execute).mockResolvedValue(pets);
 
       const req = buildReq({});
