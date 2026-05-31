@@ -4,12 +4,23 @@ import { LoginUserInput } from "../../application/usecase/login-user/login-user.
 import { InvalidCredentialsError } from "../../domain/errors/InvalidCredentialsError";
 import { LoginRequest } from "../dto/LoginRequest";
 import { ValidationError } from "../errors/ValidationError";
+import { LogoutUserUseCase } from "../../application/usecase/logout-user/logout-user.usecase";
+import { LogoutUserInput } from "../../application/usecase/logout-user/logout-user.input";
+import { LogoutRequest } from "../dto/LogoutRequest";
+import { RefreshAccessTokenUseCase } from "../../application/usecase/refresh-access-token/refresh-access-token.usecase";
+import { RefreshAccessTokenInput } from "../../application/usecase/refresh-access-token/refresh-access-token.input";
+import { RefreshRequest } from "../dto/RefreshRequest";
+import { InvalidRefreshTokenError } from "../../domain/errors/InvalidRefreshTokenError";
 
 const EMAIL_MAX_LENGTH = 255;
 const PASSWORD_MAX_LENGTH = 100;
 
 export class AuthController {
-  constructor(private readonly loginUserUseCase: LoginUserUseCase) {}
+  constructor(
+    private readonly loginUserUseCase: LoginUserUseCase,
+    private readonly logoutUserUseCase: LogoutUserUseCase,
+    private readonly refreshAccessTokenUseCase: RefreshAccessTokenUseCase,
+  ) {}
 
   login = async (req: Request, res: Response): Promise<void> => {
     try {
@@ -21,6 +32,28 @@ export class AuthController {
         accessToken: output.accessToken,
         refreshToken: output.refreshToken,
       });
+    } catch (error) {
+      this.handleError(error, res);
+    }
+  };
+
+  logout = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const body = this.validateLogoutBody(req.body);
+      await this.logoutUserUseCase.execute(new LogoutUserInput(body.refreshToken));
+      res.status(204).send();
+    } catch (error) {
+      this.handleError(error, res);
+    }
+  };
+
+  refresh = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const body = this.validateRefreshBody(req.body);
+      const output = await this.refreshAccessTokenUseCase.execute(
+        new RefreshAccessTokenInput(body.refreshToken),
+      );
+      res.status(200).json({ accessToken: output.accessToken });
     } catch (error) {
       this.handleError(error, res);
     }
@@ -43,12 +76,28 @@ export class AuthController {
     return data as LoginRequest;
   }
 
+  private validateLogoutBody(body: unknown): LogoutRequest {
+    const data = (body ?? {}) as Partial<LogoutRequest>;
+    if (typeof data.refreshToken !== "string" || data.refreshToken.length === 0) {
+      throw new ValidationError(["refreshToken is required"]);
+    }
+    return data as LogoutRequest;
+  }
+
+  private validateRefreshBody(body: unknown): RefreshRequest {
+    const data = (body ?? {}) as Partial<RefreshRequest>;
+    if (typeof data.refreshToken !== "string" || data.refreshToken.length === 0) {
+      throw new ValidationError(["refreshToken is required"]);
+    }
+    return data as RefreshRequest;
+  }
+
   private handleError(error: unknown, res: Response): void {
     if (error instanceof ValidationError) {
       res.status(400).json({ error: error.message });
       return;
     }
-    if (error instanceof InvalidCredentialsError) {
+    if (error instanceof InvalidCredentialsError || error instanceof InvalidRefreshTokenError) {
       res.status(401).json({ error: error.message });
       return;
     }

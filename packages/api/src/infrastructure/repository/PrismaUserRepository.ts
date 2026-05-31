@@ -21,6 +21,11 @@ export class PrismaUserRepository implements IUserRepository {
     });
   }
 
+  async findById(internalUserId: number): Promise<User | null> {
+    const record = await prisma.user.findUnique({ where: { user_id: internalUserId } });
+    return record ? UserMapper.toDomain(record) : null;
+  }
+
   async findByPublicId(publicId: string): Promise<User | null> {
       const record = await prisma.user.findUnique({
         where: { public_id: publicId },

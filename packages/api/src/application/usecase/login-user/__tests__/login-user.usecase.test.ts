@@ -23,6 +23,9 @@ const existingUser = (overrides: Partial<{ isVerified: boolean }> = {}): User =>
     VALID_BCRYPT_HASH,
     overrides.isVerified ?? true,
     new Date(),
+    null,
+    null,
+    null,
   );
 
 describe("LoginUserUseCase", () => {
@@ -34,7 +37,10 @@ describe("LoginUserUseCase", () => {
   let useCase: LoginUserUseCase;
 
   beforeEach(() => {
-    userRepository = { save: vi.fn(), findByEmail: vi.fn(), markVerified: vi.fn() };
+    userRepository = {
+      save: vi.fn(), findByEmail: vi.fn(), markVerified: vi.fn(),
+      findByPublicId: vi.fn(), updateProfile: vi.fn(), findById: vi.fn(),
+    };
     refreshTokenRepository = { save: vi.fn(), findByValue: vi.fn(), revoke: vi.fn() };
     passwordHasher = { hash: vi.fn(), verify: vi.fn() };
     tokenSigner = { sign: vi.fn(), verify: vi.fn() };

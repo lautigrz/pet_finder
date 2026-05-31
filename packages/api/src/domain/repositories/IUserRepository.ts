@@ -5,6 +5,7 @@ export interface IUserRepository {
   findByEmail(email: string): Promise<User | null>;
   markVerified(internalUserId: number): Promise<void>;
   findByPublicId(publicId: string): Promise<User | null>;
+  findById(internalUserId: number): Promise<User | null>;
   updateProfile(publicId: string, 
     data:{
       name?: string;
