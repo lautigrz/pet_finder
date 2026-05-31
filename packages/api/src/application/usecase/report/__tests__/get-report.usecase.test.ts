@@ -48,6 +48,7 @@ const fakeSightingReport = Report.restore({
     animalType: AnimalType.DOG,
     hasIdCollar: false,
     color: "black",
+    images: [],
   }),
   location: validLocation,
   occurredAt: new Date("2024-05-01"),
@@ -66,6 +67,7 @@ const fakePet = Pet.restore({
   color: "brown",
   hasIdCollar: true,
   breed: "Labrador",
+  petImage: [],
   createdAt: new Date(),
 });
 

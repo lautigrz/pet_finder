@@ -1,4 +1,4 @@
-import { ReportOutputDto } from "./get.report.output"
+import { ReportOutput } from "./dto/report.output"
 
 export interface PaginationOutputDto {
   page: number
@@ -8,6 +8,6 @@ export interface PaginationOutputDto {
 }
 
 export interface ListUserReportsOutputDto {
-  data: ReportOutputDto[]
+  data: ReportOutput[]
   pagination: PaginationOutputDto
 }

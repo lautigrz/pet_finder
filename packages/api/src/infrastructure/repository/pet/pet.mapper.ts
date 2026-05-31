@@ -1,9 +1,17 @@
 import { Pet } from "@domain/pet/aggregates/PetAggregate";
 import { GenderReverseTypeMap, GenderTypeMap } from "@domain/pet/types/gender-map";
 import { SizeReverseTypeMap, SizeTypeMap } from "@domain/pet/types/size-map";
+import { PetImage } from "@domain/pet/value-objects/image.vo";
 import { AnimalReverseTypeMap, AnimalTypeMap } from "@domain/shared/animal-type/animal-type-map";
 import { Prisma } from "@prisma/client";
-import { Pet as PrismaPet } from "@prisma/client";
+
+type PrismaPetWithImages = Prisma.PetGetPayload<{
+    include: {
+        petImages: true
+    }
+}>;
+
+
 export class PetMapper {
 
     static toPersistence(pet: Pet): Prisma.PetCreateInput {
@@ -17,11 +25,17 @@ export class PetMapper {
             has_id_collar: pet.hasIdCollar,
             breed: pet.breed,
             color: pet.color,
+            petImages: {
+                create: pet.images.map(img => ({
+                    cloudinaryId: img.cloudinaryId,
+                    photoUrl: img.photoUrl
+                }))
+            },
             created_at: pet.createdAt,
         }
     }
 
-    static toDomain(raw: PrismaPet): Pet {
+    static toDomain(raw: PrismaPetWithImages): Pet {
 
         return Pet.restore({
             idPet: raw.pet_id,
@@ -34,6 +48,10 @@ export class PetMapper {
             color: raw.color,
             hasIdCollar: raw.has_id_collar,
             breed: raw.breed!,
+            petImage: raw.petImages.map(img => PetImage.create({
+                cloudinaryId: img.cloudinaryId,
+                photoUrl: img.photoUrl
+            })),
             createdAt: raw.created_at,
             updatedAt: raw.updated_at
         });

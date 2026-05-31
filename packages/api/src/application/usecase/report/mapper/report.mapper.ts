@@ -1,15 +1,14 @@
 import { Report } from "@domain/report/aggregates/ReportAggregate";
-import { LostReportOutputDto, ReportOutputDto, SightingReportOutputDto } from "../get.report.output";
 import { Pet } from "@domain/pet/aggregates/PetAggregate";
 import { ReportType } from "@domain/report/types/report.type";
 import { SightingReportDetails } from "@domain/report/value-objects/sighting-report-details.vo";
 import { MappingError } from "@application/errors/errors";
+import { LostReportOutput, ReportOutput, SightingReportOutput } from "../dto/report.output";
 
-/** Maps a Report aggregate to the API output DTO. Not to be confused with
- *  ReportMapper in infrastructure/repository/report (which handles persistence). */
+
 export class ReportOutputMapper {
 
-    static toOutput(report: Report, pet?: Pet): ReportOutputDto {
+    static toOutput(report: Report, pet?: Pet): ReportOutput {
         return {
             publicId: report.publicId,
             user: {
@@ -29,13 +28,16 @@ export class ReportOutputMapper {
         }
     }
 
-    static buildDetails(reporty: Report, pet?: Pet): SightingReportOutputDto | LostReportOutputDto {
-        if (reporty.reportType === ReportType.SIGHTING) {
-            const details = reporty.details as SightingReportDetails;
+    static buildDetails(report: Report, pet?: Pet): SightingReportOutput | LostReportOutput {
+        if (report.reportType === ReportType.SIGHTING) {
+            const details = report.details as SightingReportDetails;
             return {
                 animalType: details.animalType,
                 hasIdCollar: details.hasIdCollar,
-                color: details.color
+                color: details.color,
+                images: (details.images || []).map(img => ({
+                    url: img.photoUrl
+                }))
             }
         } else {
             if (!pet) {
@@ -49,7 +51,10 @@ export class ReportOutputMapper {
                 sizeType: pet.sizeType,
                 color: pet.color,
                 hasIdCollar: pet.hasIdCollar,
-                breed: pet.breed
+                breed: pet.breed,
+                images: (pet.images || []).map(img => ({
+                    url: img.photoUrl
+                }))
             }
         }
     }

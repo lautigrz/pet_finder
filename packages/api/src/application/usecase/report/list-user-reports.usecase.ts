@@ -5,7 +5,7 @@ import { ReportType } from "@domain/report/types/report.type";
 import { LostReportDetails } from "@domain/report/value-objects/lost-report-details.vo";
 import { PaginationParams } from "@domain/shared/pagination/pagination";
 import { PetNotFoundError } from "@domain/errors/PetNotFoundError";
-import { ReportOutputDto } from "./get.report.output";
+import { ReportOutput } from "./dto/report.output";
 import { ReportOutputMapper } from "./mapper/report.mapper";
 import { ListUserReportsOutputDto } from "./list-user-reports.output";
 
@@ -31,7 +31,7 @@ export class ListUserReportsUseCase {
     };
   }
 
-  private async toOutput(report: Report): Promise<ReportOutputDto> {
+  private async toOutput(report: Report): Promise<ReportOutput> {
     if (report.reportType === ReportType.LOST) {
       const details = report.details as LostReportDetails;
       const pet = await this.petRepository.findById(details.petId);

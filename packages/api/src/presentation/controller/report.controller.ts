@@ -1,11 +1,13 @@
 import { CreateReportUseCase } from "@application/usecase/report/create-report.usecase";
+import { CreateReportDTO } from "@application/usecase/report/dto/create-report.dto";
+import { GetReportUseCase } from "@application/usecase/report/get-report-usecase";
 import { Request, Response } from "express";
-import { createReportSchema } from "../schemas/create-report.schema";
+import { CreateReportInput, createReportSchema } from "../schemas/create-report.schema";
+import logger from "@infrastructure/logger/";
 import { ValidationError } from "../errors/ValidationError";
 import { PaginationParams } from "@domain/shared/pagination/pagination";
-import logger from "@infrastructure/logger/";
-import { GetReportUseCase } from "@application/usecase/report/get-report-usecase";
 import { ListUserReportsUseCase } from "@application/usecase/report/list-user-reports.usecase";
+
 import { InvalidCoordinatesError } from "@domain/errors/InvalidCoordinatesError";
 import { InvalidLocationError } from "@domain/errors/InvalidLocationError";
 import { InvalidReportDescriptionError } from "@domain/errors/InvalidReportDescriptionError";
@@ -18,6 +20,7 @@ import {
     InvalidFieldError,
     InvalidReportTypeError
 } from "@application/errors/errors";
+import { ReportType } from "@domain/report/types/report.type";
 
 const DEFAULT_PAGE = 1;
 const DEFAULT_LIMIT = 10;
@@ -30,9 +33,17 @@ export class CreateReportController {
         private listUserReportsUseCase: ListUserReportsUseCase,
     ) { }
 
-
     create = async (req: Request, res: Response): Promise<void> => {
-        const parsed = createReportSchema.safeParse(req.body);
+        const isMultipart = req.is('multipart/form-data');
+
+        const rawData = isMultipart
+            ? JSON.parse(req.body.data)
+            : req.body;
+
+        const parsed = createReportSchema.safeParse(rawData);
+        const files = isMultipart
+            ? req.files as Express.Multer.File[]
+            : [];
 
         if (!parsed.success) {
             logger.warn("Validation error on report creation", {
@@ -46,23 +57,18 @@ export class CreateReportController {
             return;
         }
 
+        const userPublicId = req.auth?.sub;
+        if (!userPublicId) {
+            res.status(401).json({ error: "Unauthorized" });
+            return;
+        }
 
         try {
-            const userId = req.auth!.sub;
-            logger.info("User ID", { userId });
-            if (!userId) {
-                res.status(401).json({
-                    error: "Unauthorizedd"
-                });
-
-                return;
-            }
-
-            await this.useCase.execute(parsed.data, userId);
+            const dto = this.buildCreateDTO(parsed.data, files);
+            const result = await this.useCase.execute(dto, userPublicId);
             logger.info("Report created successfully", { type: parsed.data.type });
-            res.status(201).json({ message: "Report created successfully" });
+            res.status(201).json({ message: "Report created successfully", publicId: result.publicId });
         } catch (error) {
-
             if (
                 error instanceof InvalidCoordinatesError ||
                 error instanceof InvalidLocationError ||
@@ -84,7 +90,6 @@ export class CreateReportController {
                 return;
             }
 
-
             logger.error("Error creating report", {
                 error: error instanceof Error ? error.message : String(error),
                 stack: error instanceof Error ? error.stack : undefined,
@@ -94,7 +99,6 @@ export class CreateReportController {
             });
             res.status(500).json({ error: 'Internal server error' });
         }
-
     }
 
 
@@ -180,6 +184,7 @@ export class CreateReportController {
     }
 
 
+
     getByPublicId = async (req: Request, res: Response): Promise<void> => {
         const { publicId } = req.params;
 
@@ -203,7 +208,12 @@ export class CreateReportController {
             });
             res.status(500).json({ error: 'Internal server error' });
         }
-
     }
 
+    private buildCreateDTO(parsed: CreateReportInput, files: Express.Multer.File[]): CreateReportDTO {
+        if (parsed.type === ReportType.LOST) {
+            return parsed;
+        }
+        return { ...parsed, images: files.map(f => f.buffer) };
+    }
 }

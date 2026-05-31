@@ -11,6 +11,7 @@ const reportInclude = {
     },
     sighting_report_detail: true,
     lost_report_detail: true,
+    reportImages: true,
 } satisfies Prisma.ReportInclude
 
 export class PrismaReportRepository implements ReportRepository {
@@ -28,10 +29,19 @@ export class PrismaReportRepository implements ReportRepository {
 
     async findByPublicId(publicId: string): Promise<Report | null> {
 
-        const raw = await this.prisma.report.findUnique({
-            where: { public_id: publicId },
-            include: reportInclude,
-        })
+        const raw = await this.prisma.report.findUnique(
+            {
+                where: { public_id: publicId },
+                include: {
+                    user: {
+                        select: { user_id: true, public_id: true }
+                    },
+                    sighting_report_detail: true,
+                    lost_report_detail: true,
+                    reportImages: true
+                }
+            })
+
         if (!raw) {
             return null
         }

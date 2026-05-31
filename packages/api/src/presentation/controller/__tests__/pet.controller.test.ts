@@ -8,15 +8,26 @@ import { Pet } from "@domain/pet/aggregates/PetAggregate";
 import { AnimalType } from "@domain/shared/animal-type/animal-type";
 import { GenderType } from "@domain/pet/types/gender.type";
 import { SizeType } from "@domain/pet/types/size.type";
+import { PetMapper } from "@application/usecase/pet-usecase/mapper/pet-mapper";
 
 const buildRes = (): Partial<Response> => ({
   status: vi.fn().mockReturnThis(),
   json: vi.fn().mockReturnThis(),
 });
 
-const buildReq = (body: unknown, params?: unknown): Partial<Request> => ({
-  body,
-  params: (params ?? {}) as Record<string, string>,
+
+const buildReq = (
+  bodyData: unknown,
+  opts: { params?: unknown; withFiles?: boolean; withAuth?: boolean } = {}
+): Partial<Request> => ({
+  body: { data: JSON.stringify(bodyData) },
+  files: opts.withFiles !== false
+    ? [{ buffer: Buffer.from("fake-image"), mimetype: "image/jpeg", originalname: "pet.jpg" } as Express.Multer.File]
+    : [],
+  params: (opts.params ?? {}) as Record<string, string>,
+  auth: opts.withAuth !== false
+    ? { sub: "user-public-id", email: "test@mail.com", isVerified: true }
+    : undefined,
 });
 
 const validPetBody = {
@@ -42,6 +53,7 @@ const makePet = (name: string) =>
     color: "brown",
     hasIdCollar: false,
     breed: "Mix",
+    petImage: [],
     createdAt: new Date(),
   });
 
@@ -140,7 +152,7 @@ describe("PetController", () => {
   describe("getAllByUserId — cuando hay mascotas", () => {
     it("retorna 200 con la lista de mascotas mapeadas", async () => {
 
-      const pets = [makePet("Firulais"), makePet("Max")];
+      const pets = [PetMapper.toOutput(makePet("Firulais")), PetMapper.toOutput(makePet("Max"))];
       vi.mocked(getPetsUseCase.execute).mockResolvedValue(pets);
 
       const req = buildReq({});
