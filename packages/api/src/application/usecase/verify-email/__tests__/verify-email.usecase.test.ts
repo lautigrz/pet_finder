@@ -2,7 +2,6 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { VerifyEmailUseCase } from "../verify-email.usecase";
 import { VerifyEmailInput } from "../verify-email.input";
 import { EmailVerificationToken } from "../../../../domain/entities/EmailVerificationToken";
-import { InvalidVerificationTokenError } from "../../../../domain/errors/InvalidVerificationTokenError";
 import type { IUserRepository } from "../../../../domain/repositories/IUserRepository";
 import type { IEmailVerificationTokenRepository } from "../../../../domain/repositories/IEmailVerificationTokenRepository";
 
@@ -16,7 +15,10 @@ describe("VerifyEmailUseCase", () => {
   let useCase: VerifyEmailUseCase;
 
   beforeEach(() => {
-    userRepository = { save: vi.fn(), findByEmail: vi.fn(), markVerified: vi.fn() };
+    userRepository = {
+      save: vi.fn(), findByEmail: vi.fn(), markVerified: vi.fn(),
+      findByPublicId: vi.fn(), updateProfile: vi.fn(), findById: vi.fn(),
+    };
     tokenRepository = { save: vi.fn(), findByValue: vi.fn(), markAsUsed: vi.fn() };
     useCase = new VerifyEmailUseCase(userRepository, tokenRepository);
   });
