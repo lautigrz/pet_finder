@@ -1,17 +1,46 @@
-import { CreatePetParams, Pet } from "@domain/pet/aggregates/PetAggregate";
+import { Pet } from "@domain/pet/aggregates/PetAggregate";
 import { PetRepository } from "@domain/pet/repositories/pet.repository";
+import { PetImage } from "@domain/pet/value-objects/image.vo";
+import { StorageService } from "@application/ports/StorageService";
+import { IUserRepository } from "@domain/repositories/IUserRepository";
+import { CreatePetDTO, CreatePetResponse } from "./dto/create-pet.dto";
 
-type CreatePetResponse = {
-    publicId: string;
-};
-
+export type { CreatePetDTO, CreatePetResponse };
 
 export class CreatePetUseCase {
-    constructor(private petRepository: PetRepository) { }
+    constructor(
+        private petRepository: PetRepository,
+        private storageService: StorageService,
+        private userRepository: IUserRepository,
+    ) { }
 
+    async execute(dto: CreatePetDTO): Promise<CreatePetResponse> {
+        const user = await this.userRepository.findByPublicId(dto.userPublicId);
+        if (!user) {
+            throw new Error("User not found");
+        }
 
-    async execute(dto: CreatePetParams): Promise<CreatePetResponse> {
-        const pet = Pet.create(dto);
+        const uploadedImages = await Promise.all(
+            dto.images.map((buffer) =>
+                this.storageService.upload(buffer, "pets")
+            )
+        );
+
+        const petImages = uploadedImages.map((result) =>
+            PetImage.create({ cloudinaryId: result.publicId, photoUrl: result.url })
+        );
+
+        const pet = Pet.create({
+            userId: user.internalId!,
+            name: dto.name,
+            animalType: dto.animalType,
+            genderType: dto.genderType,
+            sizeType: dto.sizeType,
+            color: dto.color,
+            hasIdCollar: dto.hasIdCollar,
+            breed: dto.breed,
+            petImage: petImages,
+        });
 
         await this.petRepository.save(pet);
 

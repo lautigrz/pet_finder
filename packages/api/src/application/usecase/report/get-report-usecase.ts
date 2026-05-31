@@ -5,33 +5,29 @@ import { ReportOutputMapper } from "./mapper/report.mapper";
 import { LostReportDetails } from "@domain/report/value-objects/lost-report-details.vo";
 import { ReportNotFoundError } from "@domain/errors/ReportNotFoundError";
 import { PetNotFoundError } from "@domain/errors/PetNotFoundError";
+import { ReportOutput } from "./dto/report.output";
 
+export type { ReportOutput };
 
 export class GetReportUseCase {
     constructor(private reportRepository: ReportRepository, private petRepository: PetRepository) { }
 
-
-
-    async execute(publicId: string) {
-        const report: Report | null = await this.reportRepository.findByPublicId(publicId)
+    async execute(publicId: string): Promise<ReportOutput> {
+        const report: Report | null = await this.reportRepository.findByPublicId(publicId);
 
         if (!report) {
-            throw new ReportNotFoundError(publicId)
+            throw new ReportNotFoundError(publicId);
         }
 
         if (report.reportType === "lost") {
             const petDetails = report.details as LostReportDetails;
-            const pet = await this.petRepository.findById(petDetails.petId)
+            const pet = await this.petRepository.findById(petDetails.petId);
             if (!pet) {
-                throw new PetNotFoundError(petDetails.petId)
+                throw new PetNotFoundError(petDetails.petId);
             }
-            return ReportOutputMapper.toOutput(report, pet)
+            return ReportOutputMapper.toOutput(report, pet);
         }
 
-
-
-        return ReportOutputMapper.toOutput(report)
+        return ReportOutputMapper.toOutput(report);
     }
-
-
 }
