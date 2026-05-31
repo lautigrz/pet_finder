@@ -32,7 +32,7 @@ function buildSightingReport(i: number): Report {
     type: ReportType.SIGHTING,
     currentStatus: ReportStatus.ACTIVE,
     description: ReportDescription.create(`Avistamiento ${i}`),
-    details: new SightingReportDetails(AnimalType.DOG, true, "brown"),
+    details: new SightingReportDetails(AnimalType.DOG, true, "brown", []),
     location: Location.create(validLocation),
     occurredAt: new Date("2024-05-01"),
     createdAt: new Date("2024-05-01"),
@@ -68,6 +68,7 @@ const fakePet = Pet.restore({
   color: "brown",
   hasIdCollar: true,
   breed: "Labrador",
+  petImage: [],
   createdAt: new Date(),
 });
 

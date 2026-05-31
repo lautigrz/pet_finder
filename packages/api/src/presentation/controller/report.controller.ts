@@ -2,15 +2,10 @@ import { CreateReportUseCase } from "@application/usecase/report/create-report.u
 import { CreateReportDTO } from "@application/usecase/report/dto/create-report.dto";
 import { GetReportUseCase } from "@application/usecase/report/get-report-usecase";
 import { Request, Response } from "express";
-
 import { CreateReportInput, createReportSchema } from "../schemas/create-report.schema";
 import logger from "@infrastructure/logger/";
-
-import { createReportSchema } from "../schemas/create-report.schema";
 import { ValidationError } from "../errors/ValidationError";
 import { PaginationParams } from "@domain/shared/pagination/pagination";
-import logger from "@infrastructure/logger/";
-import { GetReportUseCase } from "@application/usecase/report/get-report-usecase";
 import { ListUserReportsUseCase } from "@application/usecase/report/list-user-reports.usecase";
 
 import { InvalidCoordinatesError } from "@domain/errors/InvalidCoordinatesError";

@@ -11,6 +11,7 @@ const reportInclude = {
     },
     sighting_report_detail: true,
     lost_report_detail: true,
+    reportImages: true,
 } satisfies Prisma.ReportInclude
 
 export class PrismaReportRepository implements ReportRepository {

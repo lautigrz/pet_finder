@@ -76,7 +76,7 @@ const fakeReportOutput = {
   status: ReportStatus.ACTIVE,
   description: "",
   location: { address: "Parque", latitude: 0, longitude: 0 },
-  details: { animalType: AnimalType.DOG, hasIdCollar: false, color: "brown", images: [{ publicId: "image1", photoUrl: "https://image1.com" }] },
+  details: { animalType: AnimalType.DOG, hasIdCollar: false, color: "brown", images: [{ url: "https://image1.com" }] },
   occurredAt: new Date(),
   createdAt: new Date(),
 };

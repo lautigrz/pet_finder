@@ -35,7 +35,7 @@ export class ReportOutputMapper {
                 animalType: details.animalType,
                 hasIdCollar: details.hasIdCollar,
                 color: details.color,
-                images: details.images.map(img => ({
+                images: (details.images || []).map(img => ({
                     url: img.photoUrl
                 }))
             }
@@ -52,7 +52,7 @@ export class ReportOutputMapper {
                 color: pet.color,
                 hasIdCollar: pet.hasIdCollar,
                 breed: pet.breed,
-                images: pet.images.map(img => ({
+                images: (pet.images || []).map(img => ({
                     url: img.photoUrl
                 }))
             }
