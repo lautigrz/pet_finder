@@ -11,6 +11,7 @@ import { InvalidVerificationTokenError } from "../../../domain/errors/InvalidVer
 import { UpdateProfileUseCase } from "../../../application/usecase/update-profile/update-profile.usecase";
 import { UserNotFoundError } from "../../../domain/errors/UserNotFoundError";
 import { GetProfileUseCase } from "../../../application/usecase/get-profile/get-profile.usecase";
+import {ClaudinaryService} from "../../../infrastructure/storage/CloudinaryService"
 
 describe("UserController", () => {
   let createUserUseCase: CreateUserUseCase;
@@ -18,6 +19,7 @@ describe("UserController", () => {
   let verifyEmailUseCase: VerifyEmailUseCase;
   let updateProfileUseCase: UpdateProfileUseCase;
   let getProfileUseCase: GetProfileUseCase;
+  let cloudinaryService: ClaudinaryService;
 
   let controller: UserController;
   let res: Partial<Response>;
@@ -28,8 +30,9 @@ describe("UserController", () => {
     verifyEmailUseCase = { execute: vi.fn() } as unknown as VerifyEmailUseCase;
     updateProfileUseCase = { execute: vi.fn() } as unknown as UpdateProfileUseCase;
     getProfileUseCase = { execute: vi.fn(), } as unknown as GetProfileUseCase;
+    cloudinaryService = { upload: vi.fn() } as unknown as ClaudinaryService
 
-    controller = new UserController(createUserUseCase, sendEmailVerificationUseCase, verifyEmailUseCase, updateProfileUseCase, getProfileUseCase);
+    controller = new UserController(createUserUseCase, sendEmailVerificationUseCase, verifyEmailUseCase, updateProfileUseCase, getProfileUseCase, cloudinaryService);
     res = {
       status: vi.fn().mockReturnThis(),
       json: vi.fn().mockReturnThis(),
@@ -386,6 +389,123 @@ describe("getProfile — when an unexpected error happens", () => {
 
     // When llamo al controller
     await controller.getProfile(req as Request, res as Response);
+
+    // Then devuelve 500
+    expect(res.status).toHaveBeenCalledWith(500);
+
+    expect(res.json).toHaveBeenCalledWith({
+      error: "Internal server error",
+    });
+  });
+});
+
+describe("uploadProfilePhoto — when the upload succeeds", () => {
+  it("uploads the file to Cloudinary, updates the user photoUrl and returns 200", async () => {
+    // Given una imagen recibida por multer
+    const fileBuffer = Buffer.from("fake-image");
+
+    vi.mocked(cloudinaryService.upload).mockResolvedValue({
+      url: "https://res.cloudinary.com/demo/profile.jpg",
+      publicId: "profiles/profile-image",
+    });
+
+    vi.mocked(updateProfileUseCase.execute).mockResolvedValue({
+      id: "user-123",
+      email: "facu@test.com",
+      username: "facundo",
+      name: "Facundo",
+      lastname: "Pereira",
+      photoUrl: "https://res.cloudinary.com/demo/profile.jpg",
+    });
+
+    const req = {
+      auth: {
+        sub: "user-123",
+      },
+      file: {
+        buffer: fileBuffer,
+      },
+    } as Partial<Request> & { file: Express.Multer.File };
+
+    // When llamo al controller
+    await controller.uploadProfilePhoto(req as Request, res as Response);
+
+    // Then sube la imagen a Cloudinary
+    expect(cloudinaryService.upload).toHaveBeenCalledWith(
+      fileBuffer,
+      "profiles",
+    );
+
+    // Then actualiza el perfil del usuario con la URL devuelta
+    expect(updateProfileUseCase.execute).toHaveBeenCalledOnce();
+
+    const firstCall = vi.mocked(updateProfileUseCase.execute).mock.calls[0];
+    expect(firstCall).toBeDefined();
+
+    const input = firstCall![0];
+    
+    expect(input).toEqual(
+      expect.objectContaining({
+        publicId: "user-123",
+        photoUrl: "https://res.cloudinary.com/demo/profile.jpg",
+      }),
+    );
+
+    expect(res.status).toHaveBeenCalledWith(200);
+
+    expect(res.json).toHaveBeenCalledWith({
+      id: "user-123",
+      email: "facu@test.com",
+      username: "facundo",
+      name: "Facundo",
+      lastname: "Pereira",
+      photoUrl: "https://res.cloudinary.com/demo/profile.jpg",
+    });
+  });
+});
+
+describe("uploadProfilePhoto — when no file is sent", () => {
+  it("returns 400 and does not call Cloudinary", async () => {
+    // Given request autenticado pero sin archivo
+    const req = {
+      auth: {
+        sub: "user-123",
+      },
+    } as Partial<Request>;
+
+    // When llamo al controller
+    await controller.uploadProfilePhoto(req as Request, res as Response);
+
+    // Then devuelve 400
+    expect(res.status).toHaveBeenCalledWith(400);
+
+    expect(res.json).toHaveBeenCalledWith({
+      error: "photo is required",
+    });
+
+    expect(cloudinaryService.upload).not.toHaveBeenCalled();
+    expect(updateProfileUseCase.execute).not.toHaveBeenCalled();
+  });
+});
+
+describe("uploadProfilePhoto — when Cloudinary fails", () => {
+  it("returns 500", async () => {
+    // Given Cloudinary falla
+    vi.mocked(cloudinaryService.upload).mockRejectedValue(
+      new Error("cloudinary down"),
+    );
+
+    const req = {
+      auth: {
+        sub: "user-123",
+      },
+      file: {
+        buffer: Buffer.from("fake-image"),
+      },
+    } as Partial<Request> & { file: Express.Multer.File };
+
+    // When llamo al controller
+    await controller.uploadProfilePhoto(req as Request, res as Response);
 
     // Then devuelve 500
     expect(res.status).toHaveBeenCalledWith(500);

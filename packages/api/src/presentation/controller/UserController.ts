@@ -17,6 +17,7 @@ import { UpdateProfileInput } from "../../application/usecase/update-profile/upd
 import { UpdateProfileRequest } from "../dto/UpdateProfileRequest";
 import { UserNotFoundError } from "../../domain/errors/UserNotFoundError";
 import { GetProfileUseCase } from "../../application/usecase/get-profile/get-profile.usecase";
+import { ClaudinaryService } from "../../infrastructure/storage/CloudinaryService";
 
 const PASSWORD_MIN_LENGTH = 8;
 const PASSWORD_MAX_LENGTH = 100;
@@ -29,7 +30,8 @@ export class UserController {
     private readonly sendEmailVerificationUseCase: SendEmailVerificationUseCase,
     private readonly verifyEmailUseCase: VerifyEmailUseCase,
     private readonly updateProfileUseCase: UpdateProfileUseCase,
-    private readonly getProfileUseCase: GetProfileUseCase
+    private readonly getProfileUseCase: GetProfileUseCase,
+    private readonly cloudinaryService: ClaudinaryService,
   ) {}
 
   create = async (req: Request, res: Response): Promise<void> => {
@@ -84,6 +86,31 @@ export class UserController {
     }
 
   };
+  
+  uploadProfilePhoto = async (req:Request, res:Response): Promise<void> => {
+    try{
+      if(!req.file){
+        res.status(400).json({error: "photo is required"});
+        return;
+      }
+
+      const uploadedImage = await this.cloudinaryService.upload(req.file.buffer, "profiles");
+      
+      const updated = await this.updateProfileUseCase.execute(
+        new UpdateProfileInput(
+          req.auth!.sub,
+          undefined,
+          undefined,
+          undefined,
+          uploadedImage.url  
+        ),
+      );
+
+      res.status(200).json(updated);
+    } catch(error){
+      this.handleError(error,res);
+    }
+  }
 
   private validateCreateBody(body: unknown): CreateUserRequest {
     const issues: string[] = [];
