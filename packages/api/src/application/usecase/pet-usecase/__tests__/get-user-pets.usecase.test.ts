@@ -1,70 +1,98 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { GetPetsUseCase } from "@application/usecase/pet-usecase/get-user-pets.usecase";
-import { PrismaPetRepository } from "@infrastructure/repository/pet/pet.repository";
+import { PetRepository } from "@domain/pet/repositories/pet.repository";
+import { IUserRepository } from "@domain/repositories/IUserRepository";
 import { Pet } from "@domain/pet/aggregates/PetAggregate";
+import { User } from "@domain/entities/User";
 import { AnimalType } from "@domain/shared/animal-type/animal-type";
 import { GenderType } from "@domain/pet/types/gender.type";
 import { SizeType } from "@domain/pet/types/size.type";
 
+const fakeUser = User.reconstruct(
+    1,
+    "user-public-uuid",
+    "test@test.com",
+    "testuser",
+    "$2b$10$aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    true,
+    new Date(),
+    null,
+    null,
+    null,
+);
+
 const makePet = (name: string) =>
-  Pet.restore({
-    idPet: 1,
-    publicId: "pet-uuid",
-    userId: 1,
-    name,
-    animalType: AnimalType.DOG,
-    genderType: GenderType.MALE,
-    sizeType: SizeType.MEDIUM,
-    color: "brown",
-    hasIdCollar: false,
-    breed: "Mix",
-    createdAt: new Date(),
-  });
+    Pet.restore({
+        idPet: 1,
+        publicId: "pet-uuid",
+        userId: 1,
+        name,
+        animalType: AnimalType.DOG,
+        genderType: GenderType.MALE,
+        sizeType: SizeType.MEDIUM,
+        color: "brown",
+        hasIdCollar: false,
+        breed: "Mix",
+        petImage: [],
+        createdAt: new Date(),
+    });
 
 describe("GetPetsUseCase", () => {
-  let petRepository: PrismaPetRepository;
-  let useCase: GetPetsUseCase;
+    let petRepository: PetRepository;
+    let userRepository: IUserRepository;
+    let useCase: GetPetsUseCase;
 
-  beforeEach(() => {
-    petRepository = {
-      save: vi.fn(),
-      findByPublicId: vi.fn(),
-      findById: vi.fn(),
-      findAllByUserId: vi.fn(),
-      delete: vi.fn(),
-    } as unknown as PrismaPetRepository;
+    beforeEach(() => {
+        petRepository = {
+            save: vi.fn(),
+            findByPublicId: vi.fn(),
+            findById: vi.fn(),
+            findAllByUserId: vi.fn(),
+            delete: vi.fn(),
+        } as unknown as PetRepository;
 
-    useCase = new GetPetsUseCase(petRepository);
-  });
+        userRepository = {
+            save: vi.fn(),
+            findByEmail: vi.fn(),
+            markVerified: vi.fn(),
+            findByPublicId: vi.fn().mockResolvedValue(fakeUser),
+            updateProfile: vi.fn(),
+        } as unknown as IUserRepository;
 
-  it("retorna la lista de mascotas del usuario", async () => {
+        useCase = new GetPetsUseCase(petRepository, userRepository);
+    });
 
-    const pets = [makePet("Firulais"), makePet("Max")];
-    vi.mocked(petRepository.findAllByUserId).mockResolvedValue(pets);
+    it("retorna la lista de mascotas mapeadas a PetOutput", async () => {
+        const pets = [makePet("Firulais"), makePet("Max")];
+        vi.mocked(petRepository.findAllByUserId).mockResolvedValue(pets);
 
+        const result = await useCase.execute("user-public-uuid");
 
-    const result = await useCase.execute(1);
+        expect(result).toHaveLength(2);
+        expect(result[0]?.name).toBe("Firulais");
+        expect(result[1]?.name).toBe("Max");
+        // Verificar que no expone cloudinaryId
+        expect(result[0]).not.toHaveProperty("cloudinaryId");
+        expect(result[0]).toHaveProperty("publicId");
+    });
 
-    expect(result).toHaveLength(2);
-    expect(result[0]?.name).toBe("Firulais");
-    expect(result[1]?.name).toBe("Max");
-  });
+    it("retorna un array vacío si el usuario no tiene mascotas", async () => {
+        vi.mocked(petRepository.findAllByUserId).mockResolvedValue([]);
 
-  it("retorna un array vacío si el usuario no tiene mascotas", async () => {
+        const result = await useCase.execute("user-public-uuid");
 
-    vi.mocked(petRepository.findAllByUserId).mockResolvedValue([]);
+        expect(result).toHaveLength(0);
+    });
 
-    const result = await useCase.execute(99);
+    it("lanza error si el usuario no existe", async () => {
+        vi.mocked(userRepository.findByPublicId).mockResolvedValue(null);
 
-    expect(result).toHaveLength(0);
-  });
+        await expect(useCase.execute("no-existe")).rejects.toThrow("User not found");
+    });
 
-  it("propaga el error si el repositorio falla", async () => {
+    it("propaga el error si el repositorio falla", async () => {
+        vi.mocked(petRepository.findAllByUserId).mockRejectedValue(new Error("Connection lost"));
 
-    vi.mocked(petRepository.findAllByUserId).mockRejectedValue(
-      new Error("Connection lost")
-    );
-
-    await expect(useCase.execute(1)).rejects.toThrow("Connection lost");
-  });
+        await expect(useCase.execute("user-public-uuid")).rejects.toThrow("Connection lost");
+    });
 });

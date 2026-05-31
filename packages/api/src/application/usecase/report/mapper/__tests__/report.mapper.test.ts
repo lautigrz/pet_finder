@@ -1,16 +1,16 @@
 import { describe, it, expect } from "vitest";
 import { ReportOutputMapper } from "../report.mapper";
-import { Report } from "../../../../../domain/report/aggregates/ReportAggregate";
-import { Pet } from "../../../../../domain/pet/aggregates/PetAggregate";
-import { ReportType } from "../../../../../domain/report/types/report.type";
-import { ReportStatus } from "../../../../../domain/report/types/report.status";
-import { Location } from "../../../../../domain/report/value-objects/location.vo";
-import { ReportDescription } from "../../../../../domain/report/value-objects/description.vo";
-import { LostReportDetails } from "../../../../../domain/report/value-objects/lost-report-details.vo";
+import { Report } from "@domain/report/aggregates/ReportAggregate";
+import { Pet } from "@domain/pet/aggregates/PetAggregate";
+import { ReportType } from "@domain/report/types/report.type";
+import { ReportStatus } from "@domain/report/types/report.status";
+import { Location } from "@domain/report/value-objects/location.vo";
+import { ReportDescription } from "@domain/report/value-objects/description.vo";
+import { LostReportDetails } from "@domain/report/value-objects/lost-report-details.vo";
 import { SightingReportDetails } from "../../../../../domain/report/value-objects/sighting-report-details.vo";
-import { AnimalType } from "../../../../../domain/shared/animal-type/animal-type";
-import { GenderType } from "../../../../../domain/pet/types/gender.type";
-import { SizeType } from "../../../../../domain/pet/types/size.type";
+import { AnimalType } from "@domain/shared/animal-type/animal-type";
+import { GenderType } from "@domain/pet/types/gender.type";
+import { SizeType } from "@domain/pet/types/size.type";
 import { MappingError } from "../../../../errors/errors";
 
 const validLocation = Location.create({
@@ -30,6 +30,7 @@ const fakePet = Pet.restore({
   color: "brown",
   hasIdCollar: true,
   breed: "Labrador",
+  petImage: [],
   createdAt: new Date("2024-01-01"),
 });
 
@@ -60,6 +61,7 @@ const sightingReport = Report.restore({
     animalType: AnimalType.CAT,
     hasIdCollar: false,
     color: "orange",
+    images: [],
   }),
   location: validLocation,
   occurredAt: new Date("2024-05-01"),

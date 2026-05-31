@@ -4,6 +4,7 @@ import { AnimalType } from "@domain/shared/animal-type/animal-type";
 import { GenderType } from "@domain/pet/types/gender.type";
 import { SizeType } from "@domain/pet/types/size.type";
 import { InvalidPetNameError } from "@domain/errors/InvalidPetNameError";
+import { PetImage } from "@domain/pet/value-objects/image.vo";
 
 const validParams = {
   userId: 1,
@@ -14,6 +15,7 @@ const validParams = {
   color: "brown",
   hasIdCollar: true,
   breed: "Labrador",
+  petImage: [],
 };
 
 describe("Pet.create", () => {
@@ -73,6 +75,7 @@ describe("Pet.restore", () => {
       color: "white",
       hasIdCollar: false,
       breed: "Siamese",
+      petImage: [],
       createdAt,
       updatedAt,
     });
@@ -103,6 +106,7 @@ describe("Pet.restore", () => {
       color: "black",
       hasIdCollar: false,
       breed: "Poodle",
+      petImage: [],
       createdAt: new Date(),
       updatedAt: null,
     });
@@ -151,3 +155,34 @@ describe("Pet.updateColor", () => {
     expect(pet.updatedAt).toBeInstanceOf(Date);
   });
 });
+
+describe("Pet — imágenes", () => {
+  it("create sin petImage resulta en imágenes vacías por defecto del DTO", () => {
+    const pet = Pet.create({ ...validParams, petImage: [] });
+    expect(pet.images).toHaveLength(0);
+  });
+
+  it("restore preserva las imágenes del pet", () => {
+    const img1 = PetImage.create({ cloudinaryId: "pets/abc", photoUrl: "https://url.com/img.jpg" });
+
+    const pet = Pet.restore({
+      idPet: 1,
+      publicId: "uuid-abc",
+      userId: 1,
+      name: "Milo",
+      animalType: AnimalType.DOG,
+      genderType: GenderType.MALE,
+      sizeType: SizeType.SMALL,
+      color: "white",
+      hasIdCollar: false,
+      breed: "Poodle",
+      petImage: [img1],
+      createdAt: new Date(),
+    });
+
+    expect(pet.images).toHaveLength(1);
+    expect(pet.images[0]?.cloudinaryId).toBe("pets/abc");
+    expect(pet.images[0]?.photoUrl).toBe("https://url.com/img.jpg");
+  });
+});
+

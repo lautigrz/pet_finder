@@ -10,6 +10,8 @@ import { PrismaUserRepository } from "@infrastructure/repository/PrismaUserRepos
 import { requireAuth } from "src/presentation/middleware/requireAuth.middleware";
 import { readAuthConfig } from "src/presentation/config/authConfig";
 import { JwtTokenSigner } from "src/infrastructure/security/JwtTokenSigner";
+import upload from "@infrastructure/storage/CloudinaryMulterUpload";
+import { ClaudinaryService } from "@infrastructure/storage/CloudinaryService";
 
 
 const router = Router();
@@ -18,12 +20,14 @@ const tokenSigner = new JwtTokenSigner(jwtSecret, accessTtl);
 const repository = new PrismaReportRepository(prisma)
 const petRepository = new PrismaPetRepository(prisma)
 const userRepository = new PrismaUserRepository();
-const createReportUseCase = new CreateReportUseCase(repository, userRepository, petRepository)
+const storageService = new ClaudinaryService();
+const createReportUseCase = new CreateReportUseCase(repository, userRepository, petRepository, storageService)
 const getReportUseCase = new GetReportUseCase(repository, petRepository);
 const listUserReportsUseCase = new ListUserReportsUseCase(repository, petRepository);
 const createReportController = new CreateReportController(createReportUseCase, getReportUseCase, listUserReportsUseCase);
 
-router.post('/', requireAuth(tokenSigner), createReportController.create)
+
+router.post('/', requireAuth(tokenSigner), upload.array('photos', 5), createReportController.create)
 router.get('/', requireAuth(tokenSigner), createReportController.list)
 router.get('/:publicId', createReportController.getByPublicId)
 
