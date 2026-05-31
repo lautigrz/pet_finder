@@ -30,6 +30,7 @@ const fakePet = Pet.restore({
   color: "brown",
   hasIdCollar: true,
   breed: "Labrador",
+  petImage: [],
   createdAt: new Date("2024-01-01"),
 });
 

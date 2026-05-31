@@ -39,6 +39,7 @@ const fakePet = Pet.restore({
   color: "brown",
   hasIdCollar: true,
   breed: "Labrador",
+  petImage: [],
   createdAt: new Date(),
 });
 
@@ -169,5 +170,52 @@ describe("CreateReportUseCase", () => {
         InvalidFieldError
       );
     });
+
+    it("sube imágenes al storage cuando el SIGHTING incluye imágenes", async () => {
+      const dtoWithImages = {
+        ...sightingDto,
+        images: [Buffer.from("img1"), Buffer.from("img2")],
+      };
+
+      await useCase.execute(dtoWithImages, TEST_EMAIL);
+
+      expect(storageService.upload).toHaveBeenCalledTimes(2);
+      expect(storageService.upload).toHaveBeenCalledWith(expect.any(Buffer), "reports");
+    });
+
+    it("no llama al storage si el SIGHTING no tiene imágenes", async () => {
+      await useCase.execute({ ...sightingDto, images: [] }, TEST_EMAIL);
+
+      expect(storageService.upload).not.toHaveBeenCalled();
+    });
+
+    it("propaga el error si el storageService falla al subir imágenes", async () => {
+      vi.mocked(storageService.upload).mockRejectedValue(new Error("Cloudinary down"));
+
+      const dtoWithImages = {
+        ...sightingDto,
+        images: [Buffer.from("img")],
+      };
+
+      await expect(useCase.execute(dtoWithImages, TEST_EMAIL)).rejects.toThrow("Cloudinary down");
+    });
+  });
+
+  describe("reporte LOST — casos adicionales", () => {
+    it("lanza error si el tipo es LOST pero no se provee petId", async () => {
+      const lostDtoWithoutPetId = {
+        type: ReportType.LOST as typeof ReportType.LOST,
+        occurredAt: new Date("2024-05-01"),
+        location: validLocation,
+        description: "Se perdió mi perro",
+        // Sin petId
+      };
+
+      // La mascota no se busca (petId es undefined), pero buildDetails lanzará error
+      await expect(
+        useCase.execute(lostDtoWithoutPetId as Parameters<typeof useCase.execute>[0], TEST_EMAIL)
+      ).rejects.toThrow("Pet id is required for lost report");
+    });
   });
 });
+

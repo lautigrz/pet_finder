@@ -36,7 +36,9 @@ const buildReq = (
     sub: "user-public-id",
     email: "test@mail.com",
     isVerified: true
-  }
+  },
+  // Express method needed by the controller to detect multipart/form-data
+  is: vi.fn().mockReturnValue(false),
 });
 
 const validLostBody = {
@@ -85,7 +87,7 @@ describe("CreateReportController", () => {
 
   beforeEach(() => {
     createReportUseCase = {
-      execute: vi.fn().mockResolvedValue(undefined),
+      execute: vi.fn().mockResolvedValue({ publicId: "test-report-uuid" }),
     } as unknown as CreateReportUseCase;
 
     getReportUseCase = {
@@ -110,6 +112,7 @@ describe("CreateReportController", () => {
       expect(res.status).toHaveBeenCalledWith(201);
       expect(res.json).toHaveBeenCalledWith({
         message: "Report created successfully",
+        publicId: "test-report-uuid",
       });
       expect(createReportUseCase.execute).toHaveBeenCalledOnce();
     });

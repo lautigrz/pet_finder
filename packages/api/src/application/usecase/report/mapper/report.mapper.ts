@@ -36,7 +36,7 @@ export class ReportOutputMapper {
                 hasIdCollar: details.hasIdCollar,
                 color: details.color,
                 images: details.images.map(img => ({
-                    photoUrl: img.photoUrl
+                    url: img.photoUrl
                 }))
             }
         } else {
@@ -53,7 +53,7 @@ export class ReportOutputMapper {
                 hasIdCollar: pet.hasIdCollar,
                 breed: pet.breed,
                 images: pet.images.map(img => ({
-                    photoUrl: img.photoUrl
+                    url: img.photoUrl
                 }))
             }
         }

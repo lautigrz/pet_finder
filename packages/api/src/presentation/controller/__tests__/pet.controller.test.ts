@@ -14,9 +14,19 @@ const buildRes = (): Partial<Response> => ({
   json: vi.fn().mockReturnThis(),
 });
 
-const buildReq = (body: unknown, params?: unknown): Partial<Request> => ({
-  body,
-  params: (params ?? {}) as Record<string, string>,
+
+const buildReq = (
+  bodyData: unknown,
+  opts: { params?: unknown; withFiles?: boolean; withAuth?: boolean } = {}
+): Partial<Request> => ({
+  body: { data: JSON.stringify(bodyData) },
+  files: opts.withFiles !== false
+    ? [{ buffer: Buffer.from("fake-image"), mimetype: "image/jpeg", originalname: "pet.jpg" } as Express.Multer.File]
+    : [],
+  params: (opts.params ?? {}) as Record<string, string>,
+  auth: opts.withAuth !== false
+    ? { sub: "user-public-id", email: "test@mail.com", isVerified: true }
+    : undefined,
 });
 
 const validPetBody = {
@@ -42,6 +52,7 @@ const makePet = (name: string) =>
     color: "brown",
     hasIdCollar: false,
     breed: "Mix",
+    petImage: [],
     createdAt: new Date(),
   });
 

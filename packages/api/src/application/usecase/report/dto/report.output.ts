@@ -3,7 +3,7 @@ export interface SightingReportOutput {
     animalType: string;
     hasIdCollar: boolean;
     color: string;
-    images: { photoUrl: string }[];
+    images: { url: string }[];
 }
 
 
