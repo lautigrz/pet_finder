@@ -1,14 +1,14 @@
 import { describe, it, expect } from "vitest";
 import { ReportDescription } from "../description.vo";
-import { InvalidReportDescriptionError } from "../../../errors/InvalidReportDescriptionError";
+import { InvalidReportDescriptionError } from "@domain/errors/InvalidReportDescriptionError";
 
 describe("ReportDescription", () => {
   describe("create — valores válidos", () => {
     it("crea una descripción con texto válido", () => {
-      // Given texto válido
+
       const desc = ReportDescription.create("Mi perro se perdió cerca del parque central");
 
-      // Then expone el valor
+
       expect(desc.value).toBe("Mi perro se perdió cerca del parque central");
     });
 
@@ -21,8 +21,7 @@ describe("ReportDescription", () => {
 
   describe("create — valores inválidos", () => {
     it("lanza InvalidReportDescriptionError si la descripción está vacía", () => {
-      // Given descripción vacía
-      // When/Then
+
       expect(() => ReportDescription.create("")).toThrow(
         InvalidReportDescriptionError
       );
