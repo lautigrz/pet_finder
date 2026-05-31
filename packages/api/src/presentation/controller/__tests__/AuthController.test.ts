@@ -4,18 +4,26 @@ import { AuthController } from "../AuthController";
 import { LoginUserUseCase } from "../../../application/usecase/login-user/login-user.usecase";
 import { LoginUserOutput } from "../../../application/usecase/login-user/login-user.output";
 import { InvalidCredentialsError } from "../../../domain/errors/InvalidCredentialsError";
+import { LogoutUserUseCase } from "../../../application/usecase/logout-user/logout-user.usecase";
+import { RefreshAccessTokenUseCase } from "../../../application/usecase/refresh-access-token/refresh-access-token.usecase";
+import { RefreshAccessTokenOutput } from "../../../application/usecase/refresh-access-token/refresh-access-token.output";
 
-describe("AuthController.login", () => {
+describe("AuthController", () => {
   let useCase: LoginUserUseCase;
+  let logoutUseCase: LogoutUserUseCase;
+  let refreshUseCase: RefreshAccessTokenUseCase;
   let controller: AuthController;
   let res: Partial<Response>;
 
   beforeEach(() => {
     useCase = { execute: vi.fn() } as unknown as LoginUserUseCase;
-    controller = new AuthController(useCase);
+    logoutUseCase = { execute: vi.fn() } as unknown as LogoutUserUseCase;
+    refreshUseCase = { execute: vi.fn() } as unknown as RefreshAccessTokenUseCase;
+    controller = new AuthController(useCase, logoutUseCase, refreshUseCase);
     res = {
       status: vi.fn().mockReturnThis(),
       json: vi.fn().mockReturnThis(),
+      send: vi.fn().mockReturnThis(),
     };
   });
 
@@ -118,6 +126,59 @@ describe("AuthController.login", () => {
       // Then devuelve 500 sin filtrar detalles internos
       expect(res.status).toHaveBeenCalledWith(500);
       expect(res.json).toHaveBeenCalledWith({ error: "Internal server error" });
+    });
+  });
+
+  describe("logout", () => {
+    it("returns 204 and runs the use case when the body has a refreshToken", async () => {
+      // Given un body con refreshToken
+      const req = buildReq({ refreshToken: "a-refresh-token" });
+
+      // When llamo al logout
+      await controller.logout(req as Request, res as Response);
+
+      // Then ejecuta el use case y responde 204
+      expect(logoutUseCase.execute).toHaveBeenCalled();
+      expect(res.status).toHaveBeenCalledWith(204);
+    });
+
+    it("returns 400 and does NOT run the use case when refreshToken is missing", async () => {
+      // Given un body sin refreshToken
+      const req = buildReq({});
+
+      // When llamo al logout
+      await controller.logout(req as Request, res as Response);
+
+      // Then devuelve 400 y no ejecuta el use case
+      expect(res.status).toHaveBeenCalledWith(400);
+      expect(logoutUseCase.execute).not.toHaveBeenCalled();
+    });
+  });
+
+  describe("refresh", () => {
+    it("returns 200 with a new access token when the body is valid", async () => {
+      // Given un use case que devuelve un access nuevo
+      vi.mocked(refreshUseCase.execute).mockResolvedValue(new RefreshAccessTokenOutput("new-access"));
+
+      // When llamo al refresh con un refreshToken
+      const req = buildReq({ refreshToken: "a-refresh-token" });
+      await controller.refresh(req as Request, res as Response);
+
+      // Then devuelve 200 con el access nuevo
+      expect(res.status).toHaveBeenCalledWith(200);
+      expect(res.json).toHaveBeenCalledWith({ accessToken: "new-access" });
+    });
+
+    it("returns 400 and does NOT run the use case when refreshToken is missing", async () => {
+      // Given un body sin refreshToken
+      const req = buildReq({});
+
+      // When llamo al refresh
+      await controller.refresh(req as Request, res as Response);
+
+      // Then devuelve 400 y no ejecuta el use case
+      expect(res.status).toHaveBeenCalledWith(400);
+      expect(refreshUseCase.execute).not.toHaveBeenCalled();
     });
   });
 });
