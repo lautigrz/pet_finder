@@ -1,14 +1,14 @@
 import { describe, it, expect } from "vitest";
 import { Coordinates } from "../coordinates.vo";
-import { InvalidCoordinatesError } from "../../../errors/InvalidCoordinatesError";
+import { InvalidCoordinatesError } from "@domain/errors/InvalidCoordinatesError";
 
 describe("Coordinates", () => {
   describe("constructor — valores válidos", () => {
     it("crea coordenadas válidas en el ecuador meridiano principal", () => {
-      // Given lat=0, lng=0
+
       const coords = new Coordinates(0, 0);
 
-      // Then los getters devuelven los valores
+
       expect(coords.latitude).toBe(0);
       expect(coords.longitude).toBe(0);
     });
@@ -34,8 +34,7 @@ describe("Coordinates", () => {
 
   describe("constructor — valores inválidos", () => {
     it("lanza InvalidCoordinatesError si la latitud supera 90", () => {
-      // Given latitud > 90
-      // When/Then
+
       expect(() => new Coordinates(91, 0)).toThrow(InvalidCoordinatesError);
     });
 

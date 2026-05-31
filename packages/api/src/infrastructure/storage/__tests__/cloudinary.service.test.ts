@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
+import type { UploadApiErrorResponse, UploadApiResponse } from "cloudinary";
 
-// Mock CloudinaryConfig BEFORE importing ClaudinaryService to prevent env-var check
 vi.mock("@infrastructure/storage/CloudinaryConfig", () => ({
   cloudinary: {
     uploader: {
@@ -28,14 +28,12 @@ describe("ClaudinaryService", () => {
       const fakeResult = {
         secure_url: "https://res.cloudinary.com/demo/image/upload/pets/abc.jpg",
         public_id: "pets/abc",
-      };
+      } as UploadApiResponse;
 
-      // Simula que upload_stream llama al callback con el resultado
-      vi.mocked(cloudinary.uploader.upload_stream).mockImplementation(
-        (_options: unknown, callback: (err: unknown, result: unknown) => void) => {
+      (cloudinary.uploader.upload_stream as any).mockImplementation(
+        (_options: any, callback: any) => {
           callback(undefined, fakeResult);
-          // Devuelve un stream fake con end()
-          return { end: vi.fn() } as unknown as ReturnType<typeof cloudinary.uploader.upload_stream>;
+          return { end: vi.fn() };
         }
       );
 
@@ -47,12 +45,12 @@ describe("ClaudinaryService", () => {
     });
 
     it("rechaza si Cloudinary devuelve un error", async () => {
-      const fakeError = new Error("Cloudinary upload failed");
+      const fakeError = new Error("Cloudinary upload failed") as unknown as UploadApiErrorResponse;
 
-      vi.mocked(cloudinary.uploader.upload_stream).mockImplementation(
-        (_options: unknown, callback: (err: unknown, result: unknown) => void) => {
+      (cloudinary.uploader.upload_stream as any).mockImplementation(
+        (_options: any, callback: any) => {
           callback(fakeError, undefined);
-          return { end: vi.fn() } as unknown as ReturnType<typeof cloudinary.uploader.upload_stream>;
+          return { end: vi.fn() };
         }
       );
 
@@ -62,10 +60,10 @@ describe("ClaudinaryService", () => {
     });
 
     it("rechaza si Cloudinary no devuelve resultado (result es undefined)", async () => {
-      vi.mocked(cloudinary.uploader.upload_stream).mockImplementation(
-        (_options: unknown, callback: (err: unknown, result: unknown) => void) => {
+      (cloudinary.uploader.upload_stream as any).mockImplementation(
+        (_options: any, callback: any) => {
           callback(undefined, undefined);
-          return { end: vi.fn() } as unknown as ReturnType<typeof cloudinary.uploader.upload_stream>;
+          return { end: vi.fn() };
         }
       );
 
@@ -78,12 +76,12 @@ describe("ClaudinaryService", () => {
       const fakeResult = {
         secure_url: "https://url.com/img.jpg",
         public_id: "reports/xyz",
-      };
+      } as UploadApiResponse;
 
-      vi.mocked(cloudinary.uploader.upload_stream).mockImplementation(
-        (_options: unknown, callback: (err: unknown, result: unknown) => void) => {
+      (cloudinary.uploader.upload_stream as any).mockImplementation(
+        (_options: any, callback: any) => {
           callback(undefined, fakeResult);
-          return { end: vi.fn() } as unknown as ReturnType<typeof cloudinary.uploader.upload_stream>;
+          return { end: vi.fn() };
         }
       );
 
@@ -100,10 +98,10 @@ describe("ClaudinaryService", () => {
 
   describe("delete", () => {
     it("resuelve sin error si Cloudinary elimina exitosamente", async () => {
-      vi.mocked(cloudinary.uploader.destroy).mockImplementation(
-        (_publicId: string, callback: (err: unknown, result: unknown) => void) => {
-          callback(undefined, { result: "ok" });
-          return undefined as unknown as ReturnType<typeof cloudinary.uploader.destroy>;
+      (cloudinary.uploader.destroy as any).mockImplementation(
+        (_publicId: string, callback?: any) => {
+          callback?.(undefined, { result: "ok" });
+          return undefined;
         }
       );
 
@@ -113,10 +111,10 @@ describe("ClaudinaryService", () => {
     it("rechaza si Cloudinary devuelve un error al eliminar", async () => {
       const fakeError = new Error("Cloudinary delete failed");
 
-      vi.mocked(cloudinary.uploader.destroy).mockImplementation(
-        (_publicId: string, callback: (err: unknown, result: unknown) => void) => {
-          callback(fakeError, undefined);
-          return undefined as unknown as ReturnType<typeof cloudinary.uploader.destroy>;
+      (cloudinary.uploader.destroy as any).mockImplementation(
+        (_publicId: string, callback?: any) => {
+          callback?.(fakeError, undefined);
+          return undefined;
         }
       );
 
@@ -124,10 +122,10 @@ describe("ClaudinaryService", () => {
     });
 
     it("rechaza si destroy no devuelve resultado", async () => {
-      vi.mocked(cloudinary.uploader.destroy).mockImplementation(
-        (_publicId: string, callback: (err: unknown, result: unknown) => void) => {
-          callback(undefined, undefined);
-          return undefined as unknown as ReturnType<typeof cloudinary.uploader.destroy>;
+      (cloudinary.uploader.destroy as any).mockImplementation(
+        (_publicId: string, callback?: any) => {
+          callback?.(undefined, undefined);
+          return undefined;
         }
       );
 

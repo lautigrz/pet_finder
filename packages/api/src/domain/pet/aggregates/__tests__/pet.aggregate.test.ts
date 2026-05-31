@@ -15,6 +15,7 @@ const validParams = {
   color: "brown",
   hasIdCollar: true,
   breed: "Labrador",
+  petImage: [],
 };
 
 describe("Pet.create", () => {
@@ -74,6 +75,7 @@ describe("Pet.restore", () => {
       color: "white",
       hasIdCollar: false,
       breed: "Siamese",
+      petImage: [],
       createdAt,
       updatedAt,
     });
@@ -104,6 +106,7 @@ describe("Pet.restore", () => {
       color: "black",
       hasIdCollar: false,
       breed: "Poodle",
+      petImage: [],
       createdAt: new Date(),
       updatedAt: null,
     });
