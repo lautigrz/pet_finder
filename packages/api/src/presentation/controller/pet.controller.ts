@@ -1,7 +1,7 @@
 import { CreatePetUseCase } from "@application/usecase/pet-usecase/create-pet.usecase";
 import { CreatePetDTO } from "@application/usecase/pet-usecase/dto/create-pet.dto";
 import { GetPetsUseCase } from "@application/usecase/pet-usecase/get-user-pets.usecase";
-import { CreatePetInput, petSchema } from "../schemas/pet.schema";
+import { CreatePetInput, petSchema } from "../schemas/pet/pet.schema";
 import { Request, Response } from "express";
 import logger from "@infrastructure/logger/";
 import { InvalidPetNameError } from "@domain/errors/InvalidPetNameError";

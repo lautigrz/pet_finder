@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { getFilteredReportsSchema } from "../report-filter.schema";
+import { getFilteredReportsSchema } from "../report/report-filter.schema";
 
 describe("getFilteredReportsSchema", () => {
   it("debería validar con éxito un objeto query vacío", () => {
