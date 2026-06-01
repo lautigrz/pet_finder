@@ -103,7 +103,7 @@ export class ReportMapper {
 
     if (reportType === ReportType.SIGHTING) {
       if (!raw.sighting_report_detail) throw new PersistenceMappingError("Missing sighting report details")
-      const details = raw.sighting_report_detail as { animal_type_id: number, has_id_collar: boolean, color: string };
+      const details = raw.sighting_report_detail as { animal_type_id: number, has_id_collar: boolean, color: string, is_in_transit: boolean };
       const images: SightingImage[] = raw.reportImages.map((img: any) =>
         SightingImage.create({
           cloudinaryId: img.cloudinaryId,
@@ -114,6 +114,7 @@ export class ReportMapper {
         AnimalReverseTypeMap[details.animal_type_id]!,
         details.has_id_collar,
         details.color,
+        details.is_in_transit,
         images
       );
     }
@@ -142,6 +143,7 @@ export class ReportMapper {
             animal_type: { connect: { animal_type_id: AnimalTypeMap[d.animalType] } },
             has_id_collar: d.hasIdCollar,
             color: d.color,
+            is_in_transit: d.isInTransit,
           }
         },
         reportImages: {
