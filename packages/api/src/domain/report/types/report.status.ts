@@ -1,8 +1,10 @@
 export const ReportStatus = {
-  ACTIVE: 'active',
-  RESOLVED: 'resolved',
-  CLOSED: 'closed'
+  ACTIVE: 'ACTIVE',
+  RESOLVED: 'RESOLVED',
+  CLOSED: 'CLOSED'
 } as const
 
 export type ReportStatus = typeof ReportStatus[keyof typeof ReportStatus]
-// equivale a: type ReportStatus = 'pending' | 'resolved' | 'closed'
+
+export const isValidReportStatus = (value: string): value is ReportStatus =>
+  Object.values(ReportStatus).includes(value as ReportStatus)
