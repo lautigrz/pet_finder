@@ -141,6 +141,7 @@ describe("CreateReportUseCase", () => {
       animalType: AnimalType.DOG,
       hasIdCollar: true,
       color: "brown",
+      isInTransit: false,
       occurredAt: new Date("2024-05-01"),
       location: validLocation,
       description: "Vi un perro suelto en el parque",

@@ -32,7 +32,7 @@ function buildSightingReport(i: number): Report {
     type: ReportType.SIGHTING,
     currentStatus: ReportStatus.ACTIVE,
     description: ReportDescription.create(`Avistamiento ${i}`),
-    details: new SightingReportDetails(AnimalType.DOG, true, "brown", []),
+    details: new SightingReportDetails(AnimalType.DOG, true, "brown", false, []),
     location: Location.create(validLocation),
     occurredAt: new Date("2024-05-01"),
     createdAt: new Date("2024-05-01"),

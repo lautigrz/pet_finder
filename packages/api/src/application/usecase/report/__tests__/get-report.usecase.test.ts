@@ -47,6 +47,7 @@ const fakeSightingReport = Report.restore({
     animalType: AnimalType.DOG,
     hasIdCollar: false,
     color: "black",
+    isInTransit: false,
     images: [],
   }),
   location: validLocation,
