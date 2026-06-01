@@ -6,15 +6,17 @@ export class SightingReportDetails {
     private readonly _animalType: AnimalType,
     private readonly _hasIdCollar: boolean,
     private readonly _color: string,
+    private readonly _isInTransit: boolean,
     private readonly _images: SightingImage[],
 
   ) { }
 
-  static create(params: { animalType: AnimalType, hasIdCollar: boolean, color: string, images: SightingImage[] }): SightingReportDetails {
+  static create(params: { animalType: AnimalType, hasIdCollar: boolean, color: string, isInTransit: boolean, images: SightingImage[] }): SightingReportDetails {
     return new SightingReportDetails(
       params.animalType,
       params.hasIdCollar,
       params.color,
+      params.isInTransit,
       params.images
     )
   }
@@ -30,5 +32,8 @@ export class SightingReportDetails {
   }
   get images(): SightingImage[] {
     return this._images
+  }
+  get isInTransit(): boolean {
+    return this._isInTransit
   }
 } 

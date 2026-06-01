@@ -151,6 +151,7 @@ model SightingReportDetail {
   animal_type_id Int
   color          String  @db.VarChar(150)
   has_id_collar  Boolean @default(false)
+  is_in_transit  Boolean @default(false)
 
   report      Report     @relation(fields: [report_id], references: [report_id])
   animal_type AnimalType @relation(fields: [animal_type_id], references: [animal_type_id])

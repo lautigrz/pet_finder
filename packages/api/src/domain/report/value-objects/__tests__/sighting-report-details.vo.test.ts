@@ -8,6 +8,7 @@ describe("SightingReportDetails", () => {
     animalType: AnimalType.DOG,
     hasIdCollar: true,
     color: "brown",
+    isInTransit: false,
     images: [] as SightingImage[],
   };
 
@@ -18,20 +19,23 @@ describe("SightingReportDetails", () => {
       expect(details.animalType).toBe(AnimalType.DOG);
       expect(details.hasIdCollar).toBe(true);
       expect(details.color).toBe("brown");
+      expect(details.isInTransit).toBe(false);
       expect(details.images).toHaveLength(0);
     });
 
-    it("crea SightingReportDetails de tipo CAT sin collar", () => {
+    it("crea SightingReportDetails de tipo CAT sin collar y en tránsito", () => {
       const details = SightingReportDetails.create({
         animalType: AnimalType.CAT,
         hasIdCollar: false,
         color: "orange",
+        isInTransit: true,
         images: [],
       });
 
       expect(details.animalType).toBe(AnimalType.CAT);
       expect(details.hasIdCollar).toBe(false);
       expect(details.color).toBe("orange");
+      expect(details.isInTransit).toBe(true);
     });
   });
 

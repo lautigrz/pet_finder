@@ -2,6 +2,7 @@
 export interface SightingReportOutput {
     animalType: string;
     hasIdCollar: boolean;
+    isInTransit: boolean;
     color: string;
     images: { url: string }[];
 }
@@ -16,7 +17,7 @@ export interface LostReportOutput {
     color: string;
     hasIdCollar: boolean;
     breed: string;
-    images: string[];
+    images: { url: string }[];
 
 }
 
