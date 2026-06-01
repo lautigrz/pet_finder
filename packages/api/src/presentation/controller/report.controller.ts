@@ -2,7 +2,7 @@ import { CreateReportUseCase } from "@application/usecase/report/create-report.u
 import { CreateReportDTO } from "@application/usecase/report/dto/create-report.dto";
 import { GetReportUseCase } from "@application/usecase/report/get-report-usecase";
 import { Request, Response } from "express";
-import { CreateReportInput, createReportSchema } from "../schemas/create-report.schema";
+import { CreateReportInput, createReportSchema } from "../schemas/report/create-report.schema";
 import logger from "@infrastructure/logger/";
 import { ValidationError } from "../errors/ValidationError";
 import { PaginationParams } from "@domain/shared/pagination/pagination";
@@ -21,8 +21,10 @@ import {
     InvalidReportTypeError
 } from "@application/errors/errors";
 import { ReportType } from "@domain/report/types/report.type";
-import { GetFilteredReportsDTO } from "../schemas/report-filter.schema";
+import { GetFilteredReportsDTO } from "../schemas/report/report-filter.schema";
 import { GetFilteredReportsUseCase } from "@application/usecase/report/get-filter-reports.usecase";
+import { UpdateStatus } from "@application/usecase/report/update-status-report";
+import { UpdateStatusDTO } from "@application/usecase/report/dto/update-status.dto";
 
 const DEFAULT_PAGE = 1;
 const DEFAULT_LIMIT = 10;
@@ -33,7 +35,8 @@ export class CreateReportController {
         private useCase: CreateReportUseCase,
         private getReportUseCase: GetReportUseCase,
         private listUserReportsUseCase: ListUserReportsUseCase,
-        private filteresUseCase: GetFilteredReportsUseCase
+        private filteresUseCase: GetFilteredReportsUseCase,
+        private updateStatusUseCase: UpdateStatus
     ) { }
 
     create = async (req: Request, res: Response): Promise<void> => {
@@ -254,5 +257,38 @@ export class CreateReportController {
             return parsed;
         }
         return { ...parsed, images: files.map(f => f.buffer) };
+    }
+
+    updateStatus = async (req: Request, res: Response): Promise<void> => {
+        try {
+            const dto = req.validated?.body as UpdateStatusDTO;
+            const publicId = req.validated?.params.publicId;
+
+            if (!publicId) {
+                res.status(401).json({ error: "Unauthorized" });
+                return;
+            }
+
+            dto.publicId = publicId;
+
+            await this.updateStatusUseCase.execute(dto);
+
+            logger.info("Updated report status successfully", {
+                publicId,
+                status: dto.status
+            });
+
+            res.sendStatus(204);
+        } catch (error) {
+            logger.error("Error updating report status", {
+                error: error instanceof Error ? error.message : String(error),
+                stack: error instanceof Error ? error.stack : undefined,
+                route: req.originalUrl,
+                method: req.method,
+                params: req.params,
+                body: req.body
+            });
+            res.status(500).json({ error: 'Internal server error' });
+        }
     }
 }

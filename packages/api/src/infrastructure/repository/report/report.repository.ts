@@ -6,6 +6,8 @@ import { ReportMapper } from "./report.mapper";
 import { Prisma, PrismaClient } from "@prisma/client";
 import { ReportQuery } from "@application/usecase/report/ReportQuery";
 import { PetMapper } from "../pet/pet.mapper";
+import { ReportStatus, reportStatusMap } from "@domain/report/types/report.status";
+
 
 const reportInclude = {
     user: {
@@ -19,6 +21,20 @@ const reportInclude = {
 export class PrismaReportRepository implements ReportRepository {
     constructor(private readonly prisma: PrismaClient) { }
 
+    async findByPublicId(publicId: string): Promise<Report | null> {
+        const raw = await this.prisma.report.findUnique(
+            {
+                where: { public_id: publicId },
+                include: reportInclude,
+            }
+        )
+
+        if (!raw) {
+            return null
+        }
+        return ReportMapper.toDomain(raw)
+    }
+
 
     async save(report: Report): Promise<void> {
 
@@ -28,9 +44,26 @@ export class PrismaReportRepository implements ReportRepository {
 
     }
 
+    async update(report: Report): Promise<void> {
+        if (!report.idReport) {
+            throw new Error("Report ID is required");
+        }
+
+        await this.prisma.report.update({
+            where: {
+                report_id: report.idReport
+            },
+            data: {
+                report_status_id: reportStatusMap[report.status],
+                updated_at: report.updatedAt
+            }
+        });
+
+    }
 
 
-    async findByPublicId(publicId: string): Promise<ReportWithPet | null> {
+
+    async findDetailByPublicId(publicId: string): Promise<ReportWithPet | null> {
 
         const raw = await this.prisma.report.findUnique(
             {

@@ -10,7 +10,7 @@ export class GetReportUseCase {
     constructor(private reportRepository: ReportRepository) { }
 
     async execute(publicId: string): Promise<ReportOutput> {
-        const result: ReportWithPet | null = await this.reportRepository.findByPublicId(publicId);
+        const result: ReportWithPet | null = await this.reportRepository.findDetailByPublicId(publicId);
 
         if (!result) {
             throw new ReportNotFoundError(publicId);
