@@ -4,6 +4,8 @@ import { CreateReportController } from "../report.controller";
 import { CreateReportUseCase } from "@application/usecase/report/create-report.usecase";
 import { GetReportUseCase } from "@application/usecase/report/get-report-usecase";
 import { ListUserReportsUseCase } from "@application/usecase/report/list-user-reports.usecase";
+import { GetFilteredReportsUseCase } from "@application/usecase/report/get-filter-reports.usecase";
+import { ValidationError } from "../../errors/ValidationError";
 import { ReportType } from "@domain/report/types/report.type";
 import { ReportStatus } from "@domain/report/types/report.status";
 import { AnimalType } from "@domain/shared/animal-type/animal-type";
@@ -38,7 +40,7 @@ const buildReq = (
     email: "test@mail.com",
     isVerified: true
   },
-  // Express method needed by the controller to detect multipart/form-data
+
   is: vi.fn().mockReturnValue(false),
 });
 
@@ -90,6 +92,7 @@ describe("CreateReportController", () => {
   let createReportUseCase: CreateReportUseCase;
   let getReportUseCase: GetReportUseCase;
   let listUserReportsUseCase: ListUserReportsUseCase;
+  let filteresUseCase: GetFilteredReportsUseCase;
   let controller: CreateReportController;
 
   beforeEach(() => {
@@ -105,21 +108,30 @@ describe("CreateReportController", () => {
       execute: vi.fn().mockResolvedValue(fakeListOutput),
     } as unknown as ListUserReportsUseCase;
 
-    controller = new CreateReportController(createReportUseCase, getReportUseCase, listUserReportsUseCase);
+    filteresUseCase = {
+      execute: vi.fn().mockResolvedValue([fakeReportOutput]),
+    } as unknown as GetFilteredReportsUseCase;
+
+    controller = new CreateReportController(
+      createReportUseCase,
+      getReportUseCase,
+      listUserReportsUseCase,
+      filteresUseCase
+    );
   });
 
   // ─── create ──────────────────────────────────────────────────────────────
 
   describe("create — reporte LOST válido", () => {
     it("retorna 201 cuando el reporte LOST se crea correctamente", async () => {
-      // Given body válido de reporte lost
+
       const req = buildReq(validLostBody);
       const res = buildRes();
 
-      // When
+
       await controller.create(req as Request, res as Response);
 
-      // Then devuelve 201
+
       expect(res.status).toHaveBeenCalledWith(201);
       expect(res.json).toHaveBeenCalledWith({
         message: "Report created successfully",
@@ -131,7 +143,7 @@ describe("CreateReportController", () => {
 
   describe("create — reporte SIGHTING válido", () => {
     it("retorna 201 cuando el reporte SIGHTING se crea correctamente", async () => {
-      // Given body válido de avistamiento
+
       const req = buildReq(validSightingBody);
       const res = buildRes();
 
@@ -144,7 +156,7 @@ describe("CreateReportController", () => {
 
   describe("create — body inválido", () => {
     it("retorna 400 si el type es desconocido", async () => {
-      // Given type inválido que no pasa el schema
+
       const req = buildReq({ type: "unknown", location: {} });
       const res = buildRes();
 
@@ -179,14 +191,14 @@ describe("CreateReportController", () => {
 
     for (const { name, error } of domainErrors) {
       it(`retorna 400 si el use case lanza ${name}`, async () => {
-        // Given use case que lanza error de dominio
+
         vi.mocked(createReportUseCase.execute).mockRejectedValue(error);
 
         const req = buildReq(validLostBody);
         const res = buildRes();
         await controller.create(req as Request, res as Response);
 
-        // Then devuelve 400 con el mensaje
+
         expect(res.status).toHaveBeenCalledWith(400);
         expect(res.json).toHaveBeenCalledWith({ error: error.message });
       });
@@ -195,7 +207,7 @@ describe("CreateReportController", () => {
 
   describe("create — PetNotFoundError (404)", () => {
     it("retorna 404 si la mascota del reporte no existe", async () => {
-      // Given mascota no encontrada
+
       const petErr = new PetNotFoundError(10);
       vi.mocked(createReportUseCase.execute).mockRejectedValue(petErr);
 
@@ -210,7 +222,7 @@ describe("CreateReportController", () => {
 
   describe("create — error inesperado (500)", () => {
     it("retorna 500 si ocurre un error no controlado", async () => {
-      // Given error inesperado
+
       vi.mocked(createReportUseCase.execute).mockRejectedValue(
         new Error("Unknown DB error")
       );
@@ -228,14 +240,14 @@ describe("CreateReportController", () => {
 
   describe("getByPublicId — reporte encontrado", () => {
     it("retorna 200 con los datos del reporte", async () => {
-      // Given reporte existente
+
       vi.mocked(getReportUseCase.execute).mockResolvedValue(fakeReportOutput);
 
       const req = buildReq({}, { publicId: "report-uuid" });
       const res = buildRes();
       await controller.getByPublicId(req as Request, res as Response);
 
-      // Then devuelve 200 con el output del reporte
+
       expect(res.status).toHaveBeenCalledWith(200);
       expect(res.json).toHaveBeenCalledWith(fakeReportOutput);
     });
@@ -243,7 +255,7 @@ describe("CreateReportController", () => {
 
   describe("getByPublicId — reporte no encontrado", () => {
     it("retorna 404 si el reporte no existe", async () => {
-      // Given reporte inexistente
+
       const notFoundErr = new ReportNotFoundError("non-existent-uuid");
       vi.mocked(getReportUseCase.execute).mockRejectedValue(notFoundErr);
 
@@ -251,7 +263,7 @@ describe("CreateReportController", () => {
       const res = buildRes();
       await controller.getByPublicId(req as Request, res as Response);
 
-      // Then devuelve 404
+
       expect(res.status).toHaveBeenCalledWith(404);
       expect(res.json).toHaveBeenCalledWith({ error: notFoundErr.message });
     });
@@ -259,7 +271,7 @@ describe("CreateReportController", () => {
 
   describe("getByPublicId — error inesperado", () => {
     it("retorna 500 si ocurre un error no controlado", async () => {
-      // Given error inesperado
+
       vi.mocked(getReportUseCase.execute).mockRejectedValue(
         new Error("DB failure")
       );
@@ -288,12 +300,10 @@ describe("CreateReportController", () => {
 
   describe("list — query válida", () => {
     it("retorna 200 con la lista paginada del usuario autenticado", async () => {
-      // Given query de paginación válida
+
       const req = buildListReq({ page: "1", limit: "10" });
       const res = buildRes();
       await controller.list(req as Request, res as Response);
-
-      // Then devuelve 200 con el envelope paginado
       expect(res.status).toHaveBeenCalledWith(200);
       expect(res.json).toHaveBeenCalledWith(fakeListOutput);
       expect(listUserReportsUseCase.execute).toHaveBeenCalledWith("user-public-id", {
@@ -348,6 +358,79 @@ describe("CreateReportController", () => {
       const req = buildListReq({ page: "1", limit: "10" });
       const res = buildRes();
       await controller.list(req as Request, res as Response);
+
+      expect(res.status).toHaveBeenCalledWith(500);
+      expect(res.json).toHaveBeenCalledWith({ error: "Internal server error" });
+    });
+  });
+
+  // ─── getFilteres ──────────────────────────────────────────────────────────
+
+  describe("getFilteres", () => {
+    const buildFilterReq = (query: Record<string, string>): Partial<Request> => ({
+      validated: { query },
+      originalUrl: "/api/reports/filter",
+      method: "GET",
+    });
+
+    it("retorna 200 con la lista de reportes filtrados", async () => {
+
+      vi.mocked(filteresUseCase.execute).mockResolvedValue([fakeReportOutput]);
+
+      const req = buildFilterReq({ reportType: "LOST" });
+      const res = buildRes();
+
+
+      await controller.getFilteres(req as Request, res as Response);
+
+
+      expect(res.status).toHaveBeenCalledWith(200);
+      expect(res.json).toHaveBeenCalledWith([fakeReportOutput]);
+      expect(filteresUseCase.execute).toHaveBeenCalledWith({ reportType: "LOST" });
+    });
+
+    it("retorna 400 si el caso de uso lanza ValidationError", async () => {
+
+      const validationErr = new ValidationError(["ReportType inválido"]);
+      vi.mocked(filteresUseCase.execute).mockRejectedValue(validationErr);
+
+      const req = buildFilterReq({ reportType: "INVALID" });
+      const res = buildRes();
+
+
+      await controller.getFilteres(req as Request, res as Response);
+
+
+      expect(res.status).toHaveBeenCalledWith(400);
+      expect(res.json).toHaveBeenCalledWith({ error: validationErr.message });
+    });
+
+    it("retorna 400 si el caso de uso lanza MappingError", async () => {
+
+      const mappingErr = new MappingError("Error de mapeo");
+      vi.mocked(filteresUseCase.execute).mockRejectedValue(mappingErr);
+
+      const req = buildFilterReq({ reportType: "LOST" });
+      const res = buildRes();
+
+
+      await controller.getFilteres(req as Request, res as Response);
+
+
+      expect(res.status).toHaveBeenCalledWith(400);
+      expect(res.json).toHaveBeenCalledWith({ error: mappingErr.message });
+    });
+
+    it("retorna 500 si ocurre un error no controlado", async () => {
+
+      vi.mocked(filteresUseCase.execute).mockRejectedValue(new Error("Unexpected DB fail"));
+
+      const req = buildFilterReq({ reportType: "LOST" });
+      const res = buildRes();
+
+
+      await controller.getFilteres(req as Request, res as Response);
+
 
       expect(res.status).toHaveBeenCalledWith(500);
       expect(res.json).toHaveBeenCalledWith({ error: "Internal server error" });
