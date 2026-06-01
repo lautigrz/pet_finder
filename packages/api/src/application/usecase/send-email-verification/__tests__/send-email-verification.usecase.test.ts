@@ -16,7 +16,7 @@ describe("SendEmailVerificationUseCase", () => {
   beforeEach(() => {
     tokenRepository = { save: vi.fn(), findByValue: vi.fn(), markAsUsed: vi.fn() };
     tokenGenerator = { generate: vi.fn() };
-    emailService = { sendVerificationLink: vi.fn() };
+    emailService = { sendVerificationLink: vi.fn(), sendPasswordResetLink: vi.fn() };
     useCase = new SendEmailVerificationUseCase(tokenRepository, tokenGenerator, emailService);
   });
 
