@@ -1,9 +1,11 @@
 import { Report } from "@domain/report/aggregates/ReportAggregate";
-import { ReportRepository } from "@domain/report/repositories/report.repository";
+import { ReportRepository, ReportWithPet } from "@domain/report/repositories/report.repository";
 import { Page, PaginationParams } from "@domain/shared/pagination/pagination";
 
 import { ReportMapper } from "./report.mapper";
 import { Prisma, PrismaClient } from "@prisma/client";
+import { ReportQuery } from "@application/usecase/report/ReportQuery";
+import { PetMapper } from "../pet/pet.mapper";
 
 const reportInclude = {
     user: {
@@ -17,6 +19,7 @@ const reportInclude = {
 export class PrismaReportRepository implements ReportRepository {
     constructor(private readonly prisma: PrismaClient) { }
 
+
     async save(report: Report): Promise<void> {
 
         const data = ReportMapper.toPersistence(report)
@@ -27,7 +30,7 @@ export class PrismaReportRepository implements ReportRepository {
 
 
 
-    async findByPublicId(publicId: string): Promise<Report | null> {
+    async findByPublicId(publicId: string): Promise<ReportWithPet | null> {
 
         const raw = await this.prisma.report.findUnique(
             {
@@ -37,7 +40,13 @@ export class PrismaReportRepository implements ReportRepository {
                         select: { user_id: true, public_id: true }
                     },
                     sighting_report_detail: true,
-                    lost_report_detail: true,
+                    lost_report_detail: {
+                        include: {
+                            pet: {
+                                include: { animal_type: true, gender: true, size: true, petImages: true }
+                            }
+                        }
+                    },
                     reportImages: true
                 }
             })
@@ -45,7 +54,12 @@ export class PrismaReportRepository implements ReportRepository {
         if (!raw) {
             return null
         }
-        return ReportMapper.toDomain(raw)
+        return {
+            report: ReportMapper.toDomain(raw),
+            pet: raw.lost_report_detail?.pet
+                ? PetMapper.toDomain(raw.lost_report_detail.pet)
+                : undefined
+        };
 
     }
 
@@ -66,6 +80,88 @@ export class PrismaReportRepository implements ReportRepository {
         ])
 
         return { items: rows.map(ReportMapper.toDomain), total }
+
+    }
+
+    async findIdsByQuery(query: ReportQuery): Promise<string[]> {
+
+        const where: Prisma.ReportWhereInput = {}
+
+        if (query.status) {
+            where.reportStatus = { name: query.status }
+        }
+
+        if (query.reportType) {
+            where.reportType = { name: query.reportType }
+        }
+
+        if (query.createdFrom || query.createdTo) {
+            where.created_at = {
+                ...(query.createdFrom && { gte: query.createdFrom }),
+                ...(query.createdTo && { lte: query.createdTo })
+            }
+        }
+
+        if (query.animalType) {
+            where.OR = [
+                {
+                    sighting_report_detail: {
+                        animal_type: {
+                            name: query.animalType
+                        }
+                    }
+                },
+                {
+                    lost_report_detail: {
+                        pet: {
+                            animal_type: {
+                                name: query.animalType
+                            }
+                        }
+                    }
+                }
+            ]
+        }
+
+        const reports = await this.prisma.report.findMany({
+            where,
+            select: { public_id: true }
+        })
+
+        return reports.map(r => r.public_id)
+
+    }
+    async findByIds(ids: string[]): Promise<ReportWithPet[]> {
+        if (ids.length === 0) return [];
+
+        const rows = await this.prisma.report.findMany({
+            where: { public_id: { in: ids } },
+            include: {
+                user: {
+                    select: { user_id: true, public_id: true }
+                },
+                reportType: true,
+                reportStatus: true,
+                reportImages: true,
+                sighting_report_detail: {
+                    include: { animal_type: true }
+                },
+                lost_report_detail: {
+                    include: {
+                        pet: {
+                            include: { animal_type: true, gender: true, size: true, petImages: true }
+                        }
+                    }
+                }
+            }
+        })
+
+        return rows.map((row) => ({
+            report: ReportMapper.toDomain(row),
+            pet: row.lost_report_detail?.pet
+                ? PetMapper.toDomain(row.lost_report_detail.pet)
+                : undefined
+        }));
 
     }
 

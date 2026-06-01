@@ -1,33 +1,23 @@
-import { PetRepository } from "@domain/pet/repositories/pet.repository";
-import { Report } from "@domain/report/aggregates/ReportAggregate";
-import { ReportRepository } from "@domain/report/repositories/report.repository";
+import { ReportRepository, ReportWithPet } from "@domain/report/repositories/report.repository";
 import { ReportOutputMapper } from "./mapper/report.mapper";
-import { LostReportDetails } from "@domain/report/value-objects/lost-report-details.vo";
 import { ReportNotFoundError } from "@domain/errors/ReportNotFoundError";
-import { PetNotFoundError } from "@domain/errors/PetNotFoundError";
 import { ReportOutput } from "./dto/report.output";
+
 
 export type { ReportOutput };
 
 export class GetReportUseCase {
-    constructor(private reportRepository: ReportRepository, private petRepository: PetRepository) { }
+    constructor(private reportRepository: ReportRepository) { }
 
     async execute(publicId: string): Promise<ReportOutput> {
-        const report: Report | null = await this.reportRepository.findByPublicId(publicId);
+        const result: ReportWithPet | null = await this.reportRepository.findByPublicId(publicId);
 
-        if (!report) {
+        if (!result) {
             throw new ReportNotFoundError(publicId);
         }
 
-        if (report.reportType === "lost") {
-            const petDetails = report.details as LostReportDetails;
-            const pet = await this.petRepository.findById(petDetails.petId);
-            if (!pet) {
-                throw new PetNotFoundError(petDetails.petId);
-            }
-            return ReportOutputMapper.toOutput(report, pet);
-        }
+        const { report, pet } = result;
+        return ReportOutputMapper.toOutput(report, pet);
 
-        return ReportOutputMapper.toOutput(report);
     }
 }

@@ -5,9 +5,9 @@ import z from "zod";
 
 export const petSchema = z.object({
     name: z.string().min(2).max(100),
-    animalType: z.nativeEnum(AnimalType),
-    genderType: z.nativeEnum(GenderType),
-    sizeType: z.nativeEnum(SizeType),
+    animalType: z.string().toUpperCase().pipe(z.nativeEnum(AnimalType)),
+    genderType: z.string().toUpperCase().pipe(z.nativeEnum(GenderType)),
+    sizeType: z.string().toUpperCase().pipe(z.nativeEnum(SizeType)),
     color: z.string().max(50),
     hasIdCollar: z.boolean(),
     breed: z.string().max(100),

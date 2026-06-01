@@ -1,6 +1,6 @@
 export const GenderType = {
-  MALE: 'male',
-  FEMALE: 'female'
+  MALE: 'MALE',
+  FEMALE: 'FEMALE'
 } as const
 
 export type GenderType = typeof GenderType[keyof typeof GenderType]
