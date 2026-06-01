@@ -21,6 +21,8 @@ import {
     InvalidReportTypeError
 } from "@application/errors/errors";
 import { ReportType } from "@domain/report/types/report.type";
+import { GetFilteredReportsDTO } from "../schemas/report-filter.schema";
+import { GetFilteredReportsUseCase } from "@application/usecase/report/get-filter-reports.usecase";
 
 const DEFAULT_PAGE = 1;
 const DEFAULT_LIMIT = 10;
@@ -31,6 +33,7 @@ export class CreateReportController {
         private useCase: CreateReportUseCase,
         private getReportUseCase: GetReportUseCase,
         private listUserReportsUseCase: ListUserReportsUseCase,
+        private filteresUseCase: GetFilteredReportsUseCase
     ) { }
 
     create = async (req: Request, res: Response): Promise<void> => {
@@ -183,6 +186,42 @@ export class CreateReportController {
         return { page, limit };
     }
 
+
+
+    getFilteres = async (req: Request, res: Response): Promise<void> => {
+        try {
+
+            const dto = req.validated?.query as GetFilteredReportsDTO;
+            const reports = await this.filteresUseCase.execute(dto);
+
+            logger.info("Filtered reports successfully", {
+                query: dto,
+                count: reports.length
+            });
+            res.status(200).json(reports);
+
+        } catch (error) {
+            if (error instanceof ValidationError) {
+                logger.warn("Validation error on report filtering", { message: error.message });
+                res.status(400).json({ error: error.message });
+                return;
+            }
+
+            if (error instanceof MappingError) {
+                logger.warn("Mapping error on report filtering", { message: error.message });
+                res.status(400).json({ error: error.message });
+                return;
+            }
+            logger.error("Error filtering reports", {
+                error: error instanceof Error ? error.message : String(error),
+                stack: error instanceof Error ? error.stack : undefined,
+                route: req.originalUrl,
+                method: req.method,
+                query: req.query
+            });
+            res.status(500).json({ error: 'Internal server error' });
+        }
+    }
 
 
     getByPublicId = async (req: Request, res: Response): Promise<void> => {

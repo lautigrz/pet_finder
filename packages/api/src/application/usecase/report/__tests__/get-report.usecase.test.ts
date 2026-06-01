@@ -1,7 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { GetReportUseCase } from "../get-report-usecase";
 import { ReportRepository } from "@domain/report/repositories/report.repository";
-import { PetRepository } from "@domain/pet/repositories/pet.repository";
 import { Report } from "@domain/report/aggregates/ReportAggregate";
 import { Pet } from "@domain/pet/aggregates/PetAggregate";
 import { ReportType } from "@domain/report/types/report.type";
@@ -13,7 +12,7 @@ import { AnimalType } from "@domain/shared/animal-type/animal-type";
 import { GenderType } from "@domain/pet/types/gender.type";
 import { SizeType } from "@domain/pet/types/size.type";
 import { ReportNotFoundError } from "@domain/errors/ReportNotFoundError";
-import { PetNotFoundError } from "@domain/errors/PetNotFoundError";
+import { MappingError } from "@application/errors/errors";
 
 const validLocation = Location.create({
   address: "Av. Corrientes 1234",
@@ -73,52 +72,50 @@ const fakePet = Pet.restore({
 
 describe("GetReportUseCase", () => {
   let reportRepository: ReportRepository;
-  let petRepository: PetRepository;
   let useCase: GetReportUseCase;
 
   beforeEach(() => {
     reportRepository = {
       save: vi.fn(),
       findByPublicId: vi.fn(),
+      findByUserPublicId: vi.fn(),
+      findIdsByQuery: vi.fn(),
+      findByIds: vi.fn(),
     } as unknown as ReportRepository;
 
-    petRepository = {
-      save: vi.fn(),
-      findByPublicId: vi.fn(),
-      findById: vi.fn(),
-      findAllByUserId: vi.fn(),
-      delete: vi.fn(),
-    } as unknown as PetRepository;
-
-    useCase = new GetReportUseCase(reportRepository, petRepository);
+    useCase = new GetReportUseCase(reportRepository);
   });
 
   describe("reporte LOST", () => {
     it("retorna el output del reporte con datos de la mascota", async () => {
       // Given reporte lost y mascota existentes
-      vi.mocked(reportRepository.findByPublicId).mockResolvedValue(fakeLostReport);
-      vi.mocked(petRepository.findById).mockResolvedValue(fakePet);
+      vi.mocked(reportRepository.findByPublicId).mockResolvedValue({
+        report: fakeLostReport,
+        pet: fakePet,
+      });
 
       // When se obtiene el reporte
       const result = await useCase.execute("report-lost-uuid");
 
       // Then incluye datos de la mascota
       expect(result.type).toBe(ReportType.LOST);
-      expect(petRepository.findById).toHaveBeenCalledWith(10);
+      expect(reportRepository.findByPublicId).toHaveBeenCalledWith("report-lost-uuid");
       expect(result.details).toMatchObject({
         name: "Firulais",
         breed: "Labrador",
       });
     });
 
-    it("lanza PetNotFoundError si la mascota del reporte no existe", async () => {
-      // Given reporte lost pero mascota eliminada
-      vi.mocked(reportRepository.findByPublicId).mockResolvedValue(fakeLostReport);
-      vi.mocked(petRepository.findById).mockResolvedValue(null);
+    it("lanza MappingError si la mascota del reporte no existe", async () => {
+      // Given reporte lost pero mascota no devuelta por repositorio
+      vi.mocked(reportRepository.findByPublicId).mockResolvedValue({
+        report: fakeLostReport,
+        pet: undefined,
+      });
 
       // When/Then
       await expect(useCase.execute("report-lost-uuid")).rejects.toThrow(
-        PetNotFoundError
+        MappingError
       );
     });
   });
@@ -126,16 +123,15 @@ describe("GetReportUseCase", () => {
   describe("reporte SIGHTING", () => {
     it("retorna el output del reporte sin buscar mascota", async () => {
       // Given reporte de avistamiento
-      vi.mocked(reportRepository.findByPublicId).mockResolvedValue(
-        fakeSightingReport
-      );
+      vi.mocked(reportRepository.findByPublicId).mockResolvedValue({
+        report: fakeSightingReport,
+      });
 
       // When
       const result = await useCase.execute("report-sighting-uuid");
 
-      // Then no busca mascota y devuelve datos del avistamiento
+      // Then devuelve datos del avistamiento
       expect(result.type).toBe(ReportType.SIGHTING);
-      expect(petRepository.findById).not.toHaveBeenCalled();
       expect(result.details).toMatchObject({
         animalType: AnimalType.DOG,
         color: "black",

@@ -12,7 +12,10 @@ import { readAuthConfig } from "src/presentation/config/authConfig";
 import { JwtTokenSigner } from "src/infrastructure/security/JwtTokenSigner";
 import upload from "@infrastructure/storage/CloudinaryMulterUpload";
 import { ClaudinaryService } from "@infrastructure/storage/CloudinaryService";
-
+import { GetFilteredReportsUseCase } from "@application/usecase/report/get-filter-reports.usecase";
+import { validateRequest } from "src/presentation/middleware/validate.request";
+import { GetFilteredReportsDTO } from "@application/usecase/report/dto/get-filtered-reports.dto"
+import { getFilteredReportsSchema } from "src/presentation/schemas/report-filter.schema";
 
 const router = Router();
 const { jwtSecret, accessTtl } = readAuthConfig();
@@ -22,13 +25,15 @@ const petRepository = new PrismaPetRepository(prisma)
 const userRepository = new PrismaUserRepository();
 const storageService = new ClaudinaryService();
 const createReportUseCase = new CreateReportUseCase(repository, userRepository, petRepository, storageService)
-const getReportUseCase = new GetReportUseCase(repository, petRepository);
+const getReportUseCase = new GetReportUseCase(repository);
+const filteresReportsUseCase = new GetFilteredReportsUseCase(repository);
 const listUserReportsUseCase = new ListUserReportsUseCase(repository, petRepository);
-const createReportController = new CreateReportController(createReportUseCase, getReportUseCase, listUserReportsUseCase);
+const createReportController = new CreateReportController(createReportUseCase, getReportUseCase, listUserReportsUseCase, filteresReportsUseCase);
 
 
 router.post('/', requireAuth(tokenSigner), upload.array('photos', 5), createReportController.create)
 router.get('/', requireAuth(tokenSigner), createReportController.list)
+router.get('/filter', requireAuth(tokenSigner), validateRequest(getFilteredReportsSchema), createReportController.getFilteres)
 router.get('/:publicId', createReportController.getByPublicId)
 
 export const createReportRoute = router
