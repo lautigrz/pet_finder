@@ -85,6 +85,7 @@ export class CreateReportUseCase {
             return SightingReportDetails.create({
                 animalType: dto.animalType,
                 hasIdCollar: dto.hasIdCollar,
+                isInTransit: dto.isInTransit,
                 color: dto.color,
                 images
             });

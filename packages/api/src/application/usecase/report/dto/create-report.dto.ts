@@ -20,6 +20,7 @@ export type CreateReportDTO =
         animalType: AnimalType;
         hasIdCollar: boolean;
         color: string;
+        isInTransit: boolean;
         occurredAt: Date;
         location: LocationDTO;
         description: string;
