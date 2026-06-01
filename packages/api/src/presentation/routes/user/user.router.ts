@@ -7,7 +7,7 @@ import { PrismaUserRepository } from "../../../infrastructure/repository/PrismaU
 import { PrismaEmailVerificationTokenRepository } from "../../../infrastructure/repository/PrismaEmailVerificationTokenRepository";
 import { BcryptPasswordHasher } from "../../../infrastructure/security/BcryptPasswordHasher";
 import { CryptoTokenGenerator } from "../../../infrastructure/security/CryptoTokenGenerator";
-import { LogEmailService } from "../../../infrastructure/email/LogEmailService";
+import { createEmailService } from "../../../infrastructure/email/email-service.factory";
 import { UpdateProfileUseCase } from "../../../application/usecase/update-profile/update-profile.usecase";
 import { JwtTokenSigner } from "../../../infrastructure/security/JwtTokenSigner";
 import { readAuthConfig } from "../../config/authConfig";
@@ -25,7 +25,7 @@ const userRepository = new PrismaUserRepository();
 const tokenRepository = new PrismaEmailVerificationTokenRepository();
 const passwordHasher = new BcryptPasswordHasher();
 const tokenGenerator = new CryptoTokenGenerator();
-const emailService = new LogEmailService();
+const emailService = createEmailService();
 const { jwtSecret, accessTtl } = readAuthConfig();
 const tokenSigner = new JwtTokenSigner(jwtSecret, accessTtl);
 const updateProfileUseCase = new UpdateProfileUseCase(userRepository);

@@ -25,7 +25,12 @@
         "REDIS_URL",
         "CLOUDINARY_NAME",
         "CLOUDINARY_API_KEY",
-        "CLOUDINARY_API_SECRET"
+        "CLOUDINARY_API_SECRET",
+        "EMAIL_PROVIDER",
+        "GMAIL_USER",
+        "GMAIL_APP_PASSWORD",
+        "EMAIL_FROM",
+        "APP_BASE_URL"
       ]
     },
     "test": {
@@ -56,7 +61,12 @@
         "REDIS_URL",
         "CLOUDINARY_NAME",
         "CLOUDINARY_API_KEY",
-        "CLOUDINARY_API_SECRET"
+        "CLOUDINARY_API_SECRET",
+        "EMAIL_PROVIDER",
+        "GMAIL_USER",
+        "GMAIL_APP_PASSWORD",
+        "EMAIL_FROM",
+        "APP_BASE_URL"
       ]
     }
   }
