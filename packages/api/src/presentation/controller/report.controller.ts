@@ -43,7 +43,6 @@ export class CreateReportController {
         const parsed = req.validated?.body as CreateReportInput;
         const files = (req.files as Express.Multer.File[] | undefined) ?? [];
 
-        console.log(parsed);
         const userPublicId = req.auth?.sub;
         if (!userPublicId) {
             res.status(401).json({ error: "Unauthorized" });
@@ -57,7 +56,6 @@ export class CreateReportController {
             res.status(201).json({ message: "Report created successfully", publicId: result.publicId });
         } catch (error) {
 
-            console.log(error);
             if (
                 error instanceof InvalidCoordinatesError ||
                 error instanceof InvalidLocationError ||

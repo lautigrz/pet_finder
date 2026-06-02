@@ -14,4 +14,11 @@ export const petSchema = z.object({
     breed: z.string().max(100),
 });
 
+export const createPetRequestSchema = z.object({
+    body: petSchema,
+    query: z.object({}).optional(),
+    params: z.object({}).optional(),
+});
+
+
 export type CreatePetInput = z.infer<typeof petSchema>;
