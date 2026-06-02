@@ -9,6 +9,8 @@ import { AnimalType } from "@domain/shared/animal-type/animal-type";
 import { GenderType } from "@domain/shared/gender-type/gender.type";
 import { SizeType } from "@domain/shared/size-type/size.type";
 import { PetMapper } from "@application/usecase/pet-usecase/mapper/pet-mapper";
+import { validateRequest } from "../../middleware/validate.request";
+import { createPetRequestSchema } from "../../schemas/pet/pet.schema";
 
 const buildRes = (): Partial<Response> => ({
   status: vi.fn().mockReturnThis(),
@@ -21,6 +23,7 @@ const buildReq = (
   opts: { params?: unknown; withFiles?: boolean; withAuth?: boolean } = {}
 ): Partial<Request> => ({
   body: { data: JSON.stringify(bodyData) },
+  validated: { body: bodyData },
   files: opts.withFiles !== false
     ? [{ buffer: Buffer.from("fake-image"), mimetype: "image/jpeg", originalname: "pet.jpg" } as Express.Multer.File]
     : [],
@@ -99,19 +102,23 @@ describe("PetController", () => {
     it("retorna 400 si falta el campo name", async () => {
       const req = buildReq({ ...validPetBody, name: undefined });
       const res = buildRes();
-      await controller.create(req as Request, res as Response);
+      const next = vi.fn();
+
+      validateRequest(createPetRequestSchema)(req as Request, res as Response, next);
+
       expect(res.status).toHaveBeenCalledWith(400);
-      expect(createPetUseCase.execute).not.toHaveBeenCalled();
+      expect(next).not.toHaveBeenCalled();
     });
 
     it("retorna 400 si el animalType es inválido", async () => {
-
       const req = buildReq({ ...validPetBody, animalType: "dragon" });
       const res = buildRes();
-      await controller.create(req as Request, res as Response);
+      const next = vi.fn();
+
+      validateRequest(createPetRequestSchema)(req as Request, res as Response, next);
 
       expect(res.status).toHaveBeenCalledWith(400);
-      expect(createPetUseCase.execute).not.toHaveBeenCalled();
+      expect(next).not.toHaveBeenCalled();
     });
   });
 
