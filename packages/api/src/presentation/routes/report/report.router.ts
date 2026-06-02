@@ -14,10 +14,13 @@ import upload from "@infrastructure/storage/CloudinaryMulterUpload";
 import { ClaudinaryService } from "@infrastructure/storage/CloudinaryService";
 import { GetFilteredReportsUseCase } from "@application/usecase/report/get-filter-reports.usecase";
 import { validateRequest } from "src/presentation/middleware/validate.request";
-import { GetFilteredReportsDTO } from "@application/usecase/report/dto/get-filtered-reports.dto"
+
 import { getFilteredReportsSchema } from "src/presentation/schemas/report/report-filter.schema";
 import { updateStatusReportSchema } from "src/presentation/schemas/report/update-status-report.schema";
 import { UpdateStatus } from "@application/usecase/report/update-status-report";
+
+
+
 
 const router = Router();
 const { jwtSecret, accessTtl } = readAuthConfig();

@@ -156,6 +156,10 @@ export class PrismaReportRepository implements ReportRepository {
             ]
         }
 
+        if (query.userPublicId) {
+        where.user = { public_id: query.userPublicId }
+        }
+
         const reports = await this.prisma.report.findMany({
             where,
             select: { public_id: true }

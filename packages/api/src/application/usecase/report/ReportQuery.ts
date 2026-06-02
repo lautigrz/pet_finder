@@ -11,6 +11,7 @@ export class ReportQuery {
     readonly status?: ReportStatus;
     readonly createdFrom?: Date;
     readonly createdTo?: Date;
+    readonly userPublicId?: string;
 
     constructor(dto: GetFilteredReportsDTO) {
 
@@ -29,6 +30,7 @@ export class ReportQuery {
         this.status = dto.status as ReportStatus | undefined;
         this.createdFrom = dto.createdFrom ? new Date(`${dto.createdFrom}T00:00:00.000Z`) : undefined;
         this.createdTo = dto.createdTo ? new Date(`${dto.createdTo}T23:59:59.999Z`) : undefined;
+        this.userPublicId = dto.userPublicId;
     }
 
     get requiresPetJoin(): boolean {

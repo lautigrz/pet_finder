@@ -19,6 +19,7 @@ export const getFilteredReportsSchema = z.object({
             .optional(),
         createdFrom: z.string().date().optional(),
         createdTo: z.string().date().optional(),
+        userPublicId: z.string().optional(),
     })
 });
 
