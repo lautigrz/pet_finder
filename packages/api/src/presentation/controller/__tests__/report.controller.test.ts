@@ -5,6 +5,7 @@ import { CreateReportUseCase } from "@application/usecase/report/create-report.u
 import { GetReportUseCase } from "@application/usecase/report/get-report-usecase";
 import { ListUserReportsUseCase } from "@application/usecase/report/list-user-reports.usecase";
 import { GetFilteredReportsUseCase } from "@application/usecase/report/get-filter-reports.usecase";
+import { UpdateStatus } from "@application/usecase/report/update-status-report";
 import { ValidationError } from "../../errors/ValidationError";
 import { ReportType } from "@domain/report/types/report.type";
 import { ReportStatus } from "@domain/report/types/report.status";
@@ -25,6 +26,7 @@ import {
 const buildRes = (): Partial<Response> => ({
   status: vi.fn().mockReturnThis(),
   json: vi.fn().mockReturnThis(),
+  sendStatus: vi.fn().mockReturnThis(),
 });
 
 const buildReq = (
@@ -93,6 +95,7 @@ describe("CreateReportController", () => {
   let getReportUseCase: GetReportUseCase;
   let listUserReportsUseCase: ListUserReportsUseCase;
   let filteresUseCase: GetFilteredReportsUseCase;
+  let updateStatusUseCase: UpdateStatus;
   let controller: CreateReportController;
 
   beforeEach(() => {
@@ -112,11 +115,16 @@ describe("CreateReportController", () => {
       execute: vi.fn().mockResolvedValue([fakeReportOutput]),
     } as unknown as GetFilteredReportsUseCase;
 
+    updateStatusUseCase = {
+      execute: vi.fn().mockResolvedValue(undefined),
+    } as unknown as UpdateStatus;
+
     controller = new CreateReportController(
       createReportUseCase,
       getReportUseCase,
       listUserReportsUseCase,
-      filteresUseCase
+      filteresUseCase,
+      updateStatusUseCase
     );
   });
 
@@ -430,6 +438,64 @@ describe("CreateReportController", () => {
 
 
       await controller.getFilteres(req as Request, res as Response);
+
+
+      expect(res.status).toHaveBeenCalledWith(500);
+      expect(res.json).toHaveBeenCalledWith({ error: "Internal server error" });
+    });
+  });
+
+  // ─── updateStatus ─────────────────────────────────────────────────────────
+
+  describe("updateStatus", () => {
+    const buildUpdateStatusReq = (publicId: string | undefined, status: string): Partial<Request> => ({
+      validated: {
+        params: { publicId },
+        body: { status },
+      },
+      originalUrl: `/api/reports/status/${publicId}`,
+      method: "PATCH",
+    });
+
+    it("retorna 204 cuando el estado se actualiza con éxito", async () => {
+
+      const req = buildUpdateStatusReq("report-uuid", "RESOLVED");
+      const res = buildRes();
+      vi.mocked(updateStatusUseCase.execute).mockResolvedValue(undefined);
+
+
+      await controller.updateStatus(req as Request, res as Response);
+
+
+      expect(res.sendStatus).toHaveBeenCalledWith(204);
+      expect(updateStatusUseCase.execute).toHaveBeenCalledWith({
+        publicId: "report-uuid",
+        status: "RESOLVED",
+      });
+    });
+
+    it("retorna 401 si falta publicId en los parámetros", async () => {
+
+      const req = buildUpdateStatusReq(undefined, "RESOLVED");
+      const res = buildRes();
+
+
+      await controller.updateStatus(req as Request, res as Response);
+
+
+      expect(res.status).toHaveBeenCalledWith(401);
+      expect(res.json).toHaveBeenCalledWith({ error: "Unauthorized" });
+      expect(updateStatusUseCase.execute).not.toHaveBeenCalled();
+    });
+
+    it("propaga errores del caso de uso", async () => {
+
+      const req = buildUpdateStatusReq("report-uuid", "RESOLVED");
+      const res = buildRes();
+      vi.mocked(updateStatusUseCase.execute).mockRejectedValue(new Error("Report not found"));
+
+
+      await controller.updateStatus(req as Request, res as Response);
 
 
       expect(res.status).toHaveBeenCalledWith(500);
