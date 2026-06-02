@@ -10,8 +10,8 @@ export class PetController {
     constructor(private useCase: CreatePetUseCase, private getPetsUseCase: GetPetsUseCase) { }
 
     create = async (req: Request, res: Response): Promise<void> => {
-        const parsed = petSchema.safeParse(JSON.parse(req.body.data));
         const files = (req.files as Express.Multer.File[] | undefined) ?? [];
+        const parsed = req.validated?.body as CreatePetInput;
 
         if (!files.length) {
             logger.warn("Validation error on pet creation", {
@@ -25,17 +25,6 @@ export class PetController {
             return;
         }
 
-        if (!parsed.success) {
-            logger.warn("Validation error on pet creation", {
-                details: parsed.error.flatten(),
-                body: req.body
-            });
-            res.status(400).json({
-                error: "Validation error",
-                details: parsed.error.flatten()
-            });
-            return;
-        }
 
         const userPublicId = req.auth?.sub;
         if (!userPublicId) {
@@ -44,7 +33,7 @@ export class PetController {
         }
 
         try {
-            const dto = this.buildCreateDTO(parsed.data, files, userPublicId);
+            const dto = this.buildCreateDTO(parsed, files, userPublicId);
             const result = await this.useCase.execute(dto);
             logger.info("Pet created successfully", { publicId: result.publicId });
             res.status(201).json({ message: "Pet created successfully", publicId: result.publicId });
@@ -72,7 +61,7 @@ export class PetController {
         }
 
         try {
-            // GetPetsUseCase ya retorna PetOutput[] mapeado — no se necesita PetPresenter
+
             const pets = await this.getPetsUseCase.execute(userPublicId);
             logger.info("Fetched pets successfully", { userPublicId, count: pets.length });
             res.status(200).json(pets);

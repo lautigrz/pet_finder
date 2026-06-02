@@ -10,6 +10,8 @@ import { JwtTokenSigner } from "@infrastructure/security/JwtTokenSigner";
 import { requireAuth } from "src/presentation/middleware/requireAuth.middleware";
 import upload from "@infrastructure/storage/CloudinaryMulterUpload";
 import { ClaudinaryService } from "@infrastructure/storage/CloudinaryService";
+import { validateRequest } from "src/presentation/middleware/validate.request";
+import { createPetRequestSchema, petSchema } from "src/presentation/schemas/pet/pet.schema";
 
 const router = Router();
 const { jwtSecret, accessTtl } = readAuthConfig();
@@ -21,7 +23,7 @@ const createPetUseCase = new CreatePetUseCase(petRepository, storageService, use
 const getPetsUseCase = new GetPetsUseCase(petRepository, userRepository);
 const createPetController = new PetController(createPetUseCase, getPetsUseCase);
 
-router.post('/', requireAuth(tokenSigner), upload.array('photos', 5), createPetController.create)
+router.post('/', requireAuth(tokenSigner), upload.array('photos', 5), validateRequest(createPetRequestSchema), createPetController.create)
 router.get('/', requireAuth(tokenSigner), createPetController.getAllByUserId)
 
 export const createPetRoute = router

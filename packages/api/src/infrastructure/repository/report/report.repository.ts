@@ -88,7 +88,6 @@ export class PrismaReportRepository implements ReportRepository {
             return null
         }
 
-        console.log(raw);
         return {
             report: ReportMapper.toDomain(raw),
             pet: raw.lost_report_detail?.pet
