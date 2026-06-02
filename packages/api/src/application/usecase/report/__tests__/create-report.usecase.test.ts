@@ -6,9 +6,10 @@ import { ReportType } from "@domain/report/types/report.type";
 import { AnimalType } from "@domain/shared/animal-type/animal-type";
 import { Pet } from "@domain/pet/aggregates/PetAggregate";
 import { User } from "@domain/entities/User";
-import { GenderType } from "@domain/pet/types/gender.type";
-import { SizeType } from "@domain/pet/types/size.type";
+import { GenderType } from "@domain/shared/gender-type/gender.type";
+import { SizeType } from "@domain/shared/size-type/size.type";
 import { InvalidFieldError } from "@application/errors/errors";
+import { SightingReportDetails } from "@domain/report/value-objects/sighting-report-details.vo";
 import { IUserRepository } from "@domain/repositories/IUserRepository";
 import { PetRepository } from "@domain/pet/repositories/pet.repository";
 import { StorageService } from "@application/ports/StorageService";
@@ -38,6 +39,7 @@ const fakePet = Pet.restore({
   sizeType: SizeType.MEDIUM,
   color: "brown",
   hasIdCollar: true,
+  isVaccinated: true,
   breed: "Labrador",
   petImage: [],
   createdAt: new Date(),
@@ -155,6 +157,24 @@ describe("CreateReportUseCase", () => {
       expect(reportRepository.save).toHaveBeenCalledOnce();
     });
 
+    it("crea y guarda un reporte SIGHTING con campos opcionales (petName, genderType, sizeType)", async () => {
+      const dtoWithOptionals = {
+        ...sightingDto,
+        petName: "Rex",
+        genderType: GenderType.MALE,
+        sizeType: SizeType.LARGE,
+      };
+
+      await useCase.execute(dtoWithOptionals, TEST_EMAIL);
+
+      expect(reportRepository.save).toHaveBeenCalledOnce();
+      const savedReport = vi.mocked(reportRepository.save).mock.calls[0]![0];
+      const details = savedReport.details as SightingReportDetails;
+      expect(details.petName).toBe("Rex");
+      expect(details.genderType).toBe(GenderType.MALE);
+      expect(details.sizeType).toBe(SizeType.LARGE);
+    });
+
     it("no busca mascota en repositorio para reporte SIGHTING", async () => {
       await useCase.execute(sightingDto, TEST_EMAIL);
 
@@ -209,10 +229,10 @@ describe("CreateReportUseCase", () => {
         occurredAt: new Date("2024-05-01"),
         location: validLocation,
         description: "Se perdió mi perro",
-        // Sin petId
+
       };
 
-      // La mascota no se busca (petId es undefined), pero buildDetails lanzará error
+
       await expect(
         useCase.execute(lostDtoWithoutPetId as Parameters<typeof useCase.execute>[0], TEST_EMAIL)
       ).rejects.toThrow("Pet id is required for lost report");

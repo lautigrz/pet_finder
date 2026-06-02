@@ -1,6 +1,6 @@
 import { Report } from "../aggregates/ReportAggregate";
 import { Page, PaginationParams } from "../../shared/pagination/pagination";
-import { ReportQuery } from "@application/usecase/report/ReportQuery";
+import { ReportQuery } from "@application/usecase/report/report-query";
 import { Pet } from "@domain/pet/aggregates/PetAggregate";
 import { ReportStatus } from "../types/report.status";
 

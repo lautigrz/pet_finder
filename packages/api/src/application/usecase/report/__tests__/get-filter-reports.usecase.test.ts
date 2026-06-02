@@ -9,8 +9,8 @@ import { Location } from "@domain/report/value-objects/location.vo";
 import { LostReportDetails } from "@domain/report/value-objects/lost-report-details.vo";
 import { SightingReportDetails } from "@domain/report/value-objects/sighting-report-details.vo";
 import { AnimalType } from "@domain/shared/animal-type/animal-type";
-import { GenderType } from "@domain/pet/types/gender.type";
-import { SizeType } from "@domain/pet/types/size.type";
+import { GenderType } from "@domain/shared/gender-type/gender.type";
+import { SizeType } from "@domain/shared/size-type/size.type";
 
 const validLocation = Location.create({
   address: "Av. Corrientes 1234",
@@ -165,66 +165,66 @@ describe("GetFilteredReportsUseCase", () => {
     const ids = ["report-lost-uuid"];
     vi.mocked(reportRepository.findIdsByQuery).mockResolvedValue(ids);
     vi.mocked(reportRepository.findByIds).mockResolvedValue([
-        { report: fakeLostReport, pet: fakePet },
+      { report: fakeLostReport, pet: fakePet },
     ]);
 
     // When
     const result = await useCase.execute({
-        userPublicId: "user-pub-id",
+      userPublicId: "user-pub-id",
     });
 
     // Then
     expect(result).toHaveLength(1);
     expect(reportRepository.findIdsByQuery).toHaveBeenCalledWith(
-        expect.objectContaining({ userPublicId: "user-pub-id" })
+      expect.objectContaining({ userPublicId: "user-pub-id" })
     );
     expect(result[0]).toMatchObject({
-        publicId: "report-lost-uuid",
-        user: { publicId: "user-pub-id" },
+      publicId: "report-lost-uuid",
+      user: { publicId: "user-pub-id" },
     });
   });
 
   it("deberia filtrar reportes cerrados por userId", async () => {
-      // Given
-      const closedReport = Report.restore({
-          ...fakeLostReport,
-          idReport: 3,
-          publicId: "report-closed-uuid",
-          userId: 5,
-          userPublicId: "user-pub-id",
-          type: ReportType.LOST,
-          currentStatus: ReportStatus.CLOSED,
-          description: null,
-          details: LostReportDetails.create({ petId: 10 }),
-          location: validLocation,
-          occurredAt: new Date("2024-05-01"),
-          createdAt: new Date("2024-05-01"),
-          updatedAt: null,
-      });
+    // Given
+    const closedReport = Report.restore({
+      ...fakeLostReport,
+      idReport: 3,
+      publicId: "report-closed-uuid",
+      userId: 5,
+      userPublicId: "user-pub-id",
+      type: ReportType.LOST,
+      currentStatus: ReportStatus.CLOSED,
+      description: null,
+      details: LostReportDetails.create({ petId: 10 }),
+      location: validLocation,
+      occurredAt: new Date("2024-05-01"),
+      createdAt: new Date("2024-05-01"),
+      updatedAt: null,
+    });
 
-      vi.mocked(reportRepository.findIdsByQuery).mockResolvedValue(["report-closed-uuid"]);
-      vi.mocked(reportRepository.findByIds).mockResolvedValue([
-          { report: closedReport, pet: fakePet },
-      ]);
+    vi.mocked(reportRepository.findIdsByQuery).mockResolvedValue(["report-closed-uuid"]);
+    vi.mocked(reportRepository.findByIds).mockResolvedValue([
+      { report: closedReport, pet: fakePet },
+    ]);
 
-      // When
-      const result = await useCase.execute({
-          status: ReportStatus.CLOSED,
-          userPublicId: "user-pub-id",
-      });
+    // When
+    const result = await useCase.execute({
+      status: ReportStatus.CLOSED,
+      userPublicId: "user-pub-id",
+    });
 
-      // Then
-      expect(result).toHaveLength(1);
-      expect(reportRepository.findIdsByQuery).toHaveBeenCalledWith(
-          expect.objectContaining({
-              status: ReportStatus.CLOSED,
-              userPublicId: "user-pub-id",
-          })
-      );
-      expect(result[0]).toMatchObject({
-          publicId: "report-closed-uuid",
-          status: ReportStatus.CLOSED,
-          user: { publicId: "user-pub-id" },
-      });
+    // Then
+    expect(result).toHaveLength(1);
+    expect(reportRepository.findIdsByQuery).toHaveBeenCalledWith(
+      expect.objectContaining({
+        status: ReportStatus.CLOSED,
+        userPublicId: "user-pub-id",
+      })
+    );
+    expect(result[0]).toMatchObject({
+      publicId: "report-closed-uuid",
+      status: ReportStatus.CLOSED,
+      user: { publicId: "user-pub-id" },
+    });
   });
 });

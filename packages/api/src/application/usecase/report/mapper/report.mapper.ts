@@ -32,7 +32,11 @@ export class ReportOutputMapper {
         if (report.reportType === ReportType.SIGHTING) {
             const details = report.details as SightingReportDetails;
             return {
+                petName: details.petName || "",
                 animalType: details.animalType,
+                genderType: details.genderType || "",
+                sizeType: details.sizeType || "",
+                breed: details.breed || "",
                 hasIdCollar: details.hasIdCollar,
                 isInTransit: details.isInTransit,
                 color: details.color,

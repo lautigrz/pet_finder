@@ -1,6 +1,6 @@
 import { AnimalType } from "@domain/shared/animal-type/animal-type";
-import { SizeType } from "../types/size.type";
-import { GenderType } from "../types/gender.type";
+import { SizeType } from "../../shared/size-type/size.type";
+import { GenderType } from "../../shared/gender-type/gender.type";
 import { InvalidPetNameError } from "../../errors/InvalidPetNameError";
 import { PetImage } from "../value-objects/image.vo";
 
@@ -13,6 +13,7 @@ export interface CreatePetParams {
     sizeType: SizeType;
     color: string;
     hasIdCollar: boolean;
+    isVaccinated: boolean;
     breed: string;
     petImage: PetImage[];
     createdAt?: Date;
@@ -28,6 +29,7 @@ export interface RestorePetParams {
     sizeType: SizeType;
     color: string;
     hasIdCollar: boolean;
+    isVaccinated: boolean;
     breed: string;
     petImage: PetImage[];
     createdAt: Date;
@@ -47,6 +49,7 @@ export class Pet {
         private _sizeType: SizeType,
         private _color: string,
         private _hasIdCollar: boolean,
+        private _isVaccinated: boolean,
         private _breed: string,
         private readonly _images: PetImage[],
         private readonly _createdAt: Date,
@@ -65,6 +68,7 @@ export class Pet {
             params.sizeType,
             params.color,
             params.hasIdCollar,
+            params.isVaccinated,
             params.breed,
             params.petImage,
             new Date(),
@@ -83,6 +87,7 @@ export class Pet {
             params.sizeType,
             params.color,
             params.hasIdCollar,
+            params.isVaccinated,
             params.breed,
             params.petImage,
             params.createdAt,
@@ -143,6 +148,10 @@ export class Pet {
         return this._images;
     }
 
+    get isVaccinated(): boolean {
+        return this._isVaccinated;
+    }
+
 
     rename(name: string): void {
         this._name = name;
@@ -157,6 +166,11 @@ export class Pet {
 
     updateColor(color: string): void {
         this._color = color;
+        this.touch();
+    }
+
+    updateVaccinationStatus(isVaccinated: boolean): void {
+        this._isVaccinated = isVaccinated;
         this.touch();
     }
 

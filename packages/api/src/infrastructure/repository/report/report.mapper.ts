@@ -10,6 +10,8 @@ import { ReportDescription } from '@domain/report/value-objects/description.vo'
 import { ReportDetails } from '@domain/report/types/report-details.type'
 import { PersistenceMappingError } from '@infrastructure/errors/PersistenceMappingError'
 import { SightingImage } from '@domain/report/value-objects/sighting.images'
+import { GenderReverseTypeMap, GenderTypeMap } from '@domain/shared/gender-type/gender-map'
+import { SizeReverseTypeMap, SizeTypeMap } from '@domain/shared/size-type/size-map'
 
 
 const reportTypeMap: Record<ReportType, number> = {
@@ -103,15 +105,28 @@ export class ReportMapper {
 
     if (reportType === ReportType.SIGHTING) {
       if (!raw.sighting_report_detail) throw new PersistenceMappingError("Missing sighting report details")
-      const details = raw.sighting_report_detail as { animal_type_id: number, has_id_collar: boolean, color: string, is_in_transit: boolean };
-      const images: SightingImage[] = raw.reportImages.map((img: any) =>
-        SightingImage.create({
-          cloudinaryId: img.cloudinaryId,
-          photoUrl: img.photoUrl,
+      const details = raw.sighting_report_detail as {
+        pet_name?: string | null;
+        animal_type_id: number;
+        gender_id?: number | null;
+        size_id?: number | null;
+        breed?: string | null;
+        has_id_collar: boolean;
+        color: string;
+        is_in_transit: boolean;
+      };
+      const images = raw.reportImages.map(img => {
+        return SightingImage.create({
+          cloudinaryId: img.cloudinaryId!,
+          photoUrl: img.photoUrl!,
         })
-      );
+      });
       return new SightingReportDetails(
+        details.pet_name ?? null,
         AnimalReverseTypeMap[details.animal_type_id]!,
+        GenderReverseTypeMap[details.gender_id!] ?? null,
+        SizeReverseTypeMap[details.size_id!] ?? null,
+        details.breed ?? null,
         details.has_id_collar,
         details.color,
         details.is_in_transit,
@@ -121,7 +136,6 @@ export class ReportMapper {
 
     throw new PersistenceMappingError(`Unknown report type: ${reportType}`);
   }
-
 
   private static buildDetailsInput(report: Report) {
     if (report.reportType === ReportType.LOST) {
@@ -140,7 +154,24 @@ export class ReportMapper {
       return {
         sighting_report_detail: {
           create: {
+            pet_name: d.petName ?? null,
             animal_type: { connect: { animal_type_id: AnimalTypeMap[d.animalType] } },
+            gender: d.genderType
+              ? {
+                connect: {
+                  gender_id: GenderTypeMap[d.genderType]
+                }
+              }
+              : undefined,
+
+            size: d.sizeType
+              ? {
+                connect: {
+                  size_id: SizeTypeMap[d.sizeType]
+                }
+              }
+              : undefined,
+            breed: d.breed ?? null,
             has_id_collar: d.hasIdCollar,
             color: d.color,
             is_in_transit: d.isInTransit,

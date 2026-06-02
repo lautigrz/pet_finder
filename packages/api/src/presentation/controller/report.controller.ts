@@ -40,29 +40,10 @@ export class CreateReportController {
     ) { }
 
     create = async (req: Request, res: Response): Promise<void> => {
-        const isMultipart = req.is('multipart/form-data');
+        const parsed = req.validated?.body as CreateReportInput;
+        const files = (req.files as Express.Multer.File[] | undefined) ?? [];
 
-        const rawData = isMultipart
-            ? JSON.parse(req.body.data)
-            : req.body;
-
-        const parsed = createReportSchema.safeParse(rawData);
-        const files = isMultipart
-            ? req.files as Express.Multer.File[]
-            : [];
-
-        if (!parsed.success) {
-            logger.warn("Validation error on report creation", {
-                details: parsed.error.flatten(),
-                body: req.body
-            });
-            res.status(400).json({
-                error: "Validation error",
-                details: parsed.error.flatten()
-            });
-            return;
-        }
-
+        console.log(parsed);
         const userPublicId = req.auth?.sub;
         if (!userPublicId) {
             res.status(401).json({ error: "Unauthorized" });
@@ -70,11 +51,13 @@ export class CreateReportController {
         }
 
         try {
-            const dto = this.buildCreateDTO(parsed.data, files);
+            const dto = this.buildCreateDTO(parsed, files);
             const result = await this.useCase.execute(dto, userPublicId);
-            logger.info("Report created successfully", { type: parsed.data.type });
+            logger.info("Report created successfully", { type: parsed.type });
             res.status(201).json({ message: "Report created successfully", publicId: result.publicId });
         } catch (error) {
+
+            console.log(error);
             if (
                 error instanceof InvalidCoordinatesError ||
                 error instanceof InvalidLocationError ||
@@ -254,9 +237,9 @@ export class CreateReportController {
 
     private buildCreateDTO(parsed: CreateReportInput, files: Express.Multer.File[]): CreateReportDTO {
         if (parsed.type === ReportType.LOST) {
-            return parsed;
+            return parsed as CreateReportDTO;
         }
-        return { ...parsed, images: files.map(f => f.buffer) };
+        return { ...parsed, images: files.map(f => f.buffer) } as CreateReportDTO;
     }
 
     updateStatus = async (req: Request, res: Response): Promise<void> => {

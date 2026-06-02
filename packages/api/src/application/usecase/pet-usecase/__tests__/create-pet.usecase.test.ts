@@ -4,8 +4,8 @@ import { PetRepository } from "@domain/pet/repositories/pet.repository";
 import { IUserRepository } from "@domain/repositories/IUserRepository";
 import { StorageService } from "@application/ports/StorageService";
 import { AnimalType } from "@domain/shared/animal-type/animal-type";
-import { GenderType } from "@domain/pet/types/gender.type";
-import { SizeType } from "@domain/pet/types/size.type";
+import { GenderType } from "@domain/shared/gender-type/gender.type";
+import { SizeType } from "@domain/shared/size-type/size.type";
 import { User } from "@domain/entities/User";
 
 const fakeUser = User.reconstruct(
@@ -29,6 +29,7 @@ const validDto = {
     sizeType: SizeType.MEDIUM,
     color: "brown",
     hasIdCollar: true,
+    isVaccinated: true,
     breed: "Labrador",
     images: [Buffer.from("fake-image")],
 };
@@ -99,5 +100,6 @@ describe("CreatePetUseCase", () => {
         expect(savedPet?.userId).toBe(42);
         expect(savedPet?.name).toBe("Firulais");
         expect(savedPet?.animalType).toBe(AnimalType.DOG);
+        expect(savedPet?.isVaccinated).toBe(true);
     });
 });

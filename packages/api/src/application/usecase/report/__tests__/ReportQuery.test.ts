@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { ReportQuery } from "../ReportQuery";
+import { ReportQuery } from "../report-query";
 import { ReportType } from "@domain/report/types/report.type";
 import { ReportStatus } from "@domain/report/types/report.status";
 import { AnimalType } from "@domain/shared/animal-type/animal-type";

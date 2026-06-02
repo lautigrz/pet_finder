@@ -1,5 +1,7 @@
 import { AnimalType } from "@domain/shared/animal-type/animal-type";
 import { ReportType } from "@domain/report/types/report.type";
+import { GenderType } from "@domain/shared/gender-type/gender.type";
+import { SizeType } from "@domain/shared/size-type/size.type";
 
 export interface LocationDTO {
     address: string;
@@ -17,7 +19,11 @@ export type CreateReportDTO =
     }
     | {
         type: typeof ReportType.SIGHTING;
+        petName?: string;
         animalType: AnimalType;
+        genderType?: GenderType;
+        sizeType?: SizeType;
+        breed?: string;
         hasIdCollar: boolean;
         color: string;
         isInTransit: boolean;

@@ -1,6 +1,6 @@
 import { Pet } from "@domain/pet/aggregates/PetAggregate";
-import { GenderReverseTypeMap, GenderTypeMap } from "@domain/pet/types/gender-map";
-import { SizeReverseTypeMap, SizeTypeMap } from "@domain/pet/types/size-map";
+import { GenderReverseTypeMap, GenderTypeMap } from "@domain/shared/gender-type/gender-map";
+import { SizeReverseTypeMap, SizeTypeMap } from "@domain/shared/size-type/size-map";
 import { PetImage } from "@domain/pet/value-objects/image.vo";
 import { AnimalReverseTypeMap, AnimalTypeMap } from "@domain/shared/animal-type/animal-type-map";
 import { Prisma } from "@prisma/client";
@@ -23,6 +23,7 @@ export class PetMapper {
             animal_type: { connect: { animal_type_id: AnimalTypeMap[pet.animalType] } },
             size: { connect: { size_id: SizeTypeMap[pet.sizeType] } },
             has_id_collar: pet.hasIdCollar,
+            is_vaccinated: pet.isVaccinated,
             breed: pet.breed,
             color: pet.color,
             petImages: {
@@ -47,6 +48,7 @@ export class PetMapper {
             sizeType: SizeReverseTypeMap[raw.size_id]!,
             color: raw.color,
             hasIdCollar: raw.has_id_collar,
+            isVaccinated: raw.is_vaccinated,
             breed: raw.breed!,
             petImage: raw.petImages.map(img => PetImage.create({
                 cloudinaryId: img.cloudinaryId,

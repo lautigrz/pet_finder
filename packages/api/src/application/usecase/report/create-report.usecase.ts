@@ -83,10 +83,14 @@ export class CreateReportUseCase {
         if (dto.type === ReportType.SIGHTING) {
             const images = await this.buildImages(dto.images);
             return SightingReportDetails.create({
+                petName: dto.petName,
                 animalType: dto.animalType,
+                genderType: dto.genderType,
+                sizeType: dto.sizeType,
+                breed: dto.breed,
                 hasIdCollar: dto.hasIdCollar,
-                isInTransit: dto.isInTransit,
                 color: dto.color,
+                isInTransit: dto.isInTransit,
                 images
             });
         }
