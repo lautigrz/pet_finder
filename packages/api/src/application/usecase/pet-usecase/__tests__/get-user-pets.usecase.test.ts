@@ -5,8 +5,8 @@ import { IUserRepository } from "@domain/repositories/IUserRepository";
 import { Pet } from "@domain/pet/aggregates/PetAggregate";
 import { User } from "@domain/entities/User";
 import { AnimalType } from "@domain/shared/animal-type/animal-type";
-import { GenderType } from "@domain/pet/types/gender.type";
-import { SizeType } from "@domain/pet/types/size.type";
+import { GenderType } from "@domain/shared/gender-type/gender.type";
+import { SizeType } from "@domain/shared/size-type/size.type";
 
 const fakeUser = User.reconstruct(
     1,

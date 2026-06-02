@@ -14,6 +14,7 @@ export type PetOutput = {
     sizeType: string;
     color: string;
     hasIdCollar: boolean;
+    isVaccinated: boolean;
     breed: string;
     images: PetImageOutput[];
     createdAt: string;
@@ -30,6 +31,7 @@ export class PetMapper {
             sizeType: pet.sizeType,
             color: pet.color,
             hasIdCollar: pet.hasIdCollar,
+            isVaccinated: pet.isVaccinated,
             breed: pet.breed,
             images: pet.images.map((img) => ({ url: img.photoUrl })),
             createdAt: pet.createdAt.toISOString(),

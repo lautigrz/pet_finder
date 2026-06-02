@@ -1,5 +1,5 @@
 import { ReportRepository } from "@domain/report/repositories/report.repository";
-import { ReportQuery } from "./ReportQuery";
+import { ReportQuery } from "./report-query";
 import { GetFilteredReportsDTO } from "./dto/get-filtered-reports.dto";
 import { ReportOutputMapper } from "./mapper/report.mapper";
 import { ReportOutput } from "./get-report-usecase";

@@ -9,8 +9,8 @@ import { ReportDescription } from "@domain/report/value-objects/description.vo";
 import { LostReportDetails } from "@domain/report/value-objects/lost-report-details.vo";
 import { SightingReportDetails } from "../../../../../domain/report/value-objects/sighting-report-details.vo";
 import { AnimalType } from "@domain/shared/animal-type/animal-type";
-import { GenderType } from "@domain/pet/types/gender.type";
-import { SizeType } from "@domain/pet/types/size.type";
+import { GenderType } from "@domain/shared/gender-type/gender.type";
+import { SizeType } from "@domain/shared/size-type/size.type";
 import { MappingError } from "../../../../errors/errors";
 
 const validLocation = Location.create({
