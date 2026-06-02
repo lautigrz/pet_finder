@@ -24,7 +24,7 @@ describe("RefreshAccessTokenUseCase", () => {
   let useCase: RefreshAccessTokenUseCase;
 
   beforeEach(() => {
-    refreshTokenRepository = { save: vi.fn(), findByValue: vi.fn(), revoke: vi.fn() };
+    refreshTokenRepository = { save: vi.fn(), findByValue: vi.fn(), revoke: vi.fn(), revokeAllByUser: vi.fn() };
     userRepository = {
       save: vi.fn(),
       findByEmail: vi.fn(),
@@ -32,6 +32,7 @@ describe("RefreshAccessTokenUseCase", () => {
       findByPublicId: vi.fn(),
       updateProfile: vi.fn(),
       findById: vi.fn(),
+      updatePassword: vi.fn(),
     };
     tokenSigner = { sign: vi.fn(), verify: vi.fn() };
     useCase = new RefreshAccessTokenUseCase(refreshTokenRepository, userRepository, tokenSigner);
