@@ -5,4 +5,5 @@ export interface GetFilteredReportsDTO {
     status?: string;
     createdFrom?: string;
     createdTo?: string;
+    userPublicId?: string;
 }
