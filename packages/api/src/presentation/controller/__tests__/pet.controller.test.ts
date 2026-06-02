@@ -6,8 +6,8 @@ import { GetPetsUseCase } from "@application/usecase/pet-usecase/get-user-pets.u
 import { InvalidPetNameError } from "@domain/errors/InvalidPetNameError";
 import { Pet } from "@domain/pet/aggregates/PetAggregate";
 import { AnimalType } from "@domain/shared/animal-type/animal-type";
-import { GenderType } from "@domain/pet/types/gender.type";
-import { SizeType } from "@domain/pet/types/size.type";
+import { GenderType } from "@domain/shared/gender-type/gender.type";
+import { SizeType } from "@domain/shared/size-type/size.type";
 import { PetMapper } from "@application/usecase/pet-usecase/mapper/pet-mapper";
 
 const buildRes = (): Partial<Response> => ({
@@ -38,6 +38,7 @@ const validPetBody = {
   sizeType: "medium",
   color: "brown",
   hasIdCollar: true,
+  isVaccinated: true,
   breed: "Labrador",
 };
 
@@ -52,6 +53,7 @@ const makePet = (name: string) =>
     sizeType: SizeType.MEDIUM,
     color: "brown",
     hasIdCollar: false,
+    isVaccinated: true,
     breed: "Mix",
     petImage: [],
     createdAt: new Date(),

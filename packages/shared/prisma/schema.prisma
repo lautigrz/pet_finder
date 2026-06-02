@@ -147,14 +147,19 @@ model LostReportDetail {
 }
 
 model SightingReportDetail {
-  report_id      Int     @id
+  report_id      Int        @id
   animal_type_id Int
-  color          String  @db.VarChar(150)
-  has_id_collar  Boolean @default(false)
-  is_in_transit  Boolean @default(false)
-
-  report      Report     @relation(fields: [report_id], references: [report_id])
-  animal_type AnimalType @relation(fields: [animal_type_id], references: [animal_type_id])
+  color          String     @db.VarChar(150)
+  pet_name       String?    @db.VarChar(30)
+  gender_id      Int?       @db.SmallInt
+  size_id        Int?       @db.SmallInt
+  has_id_collar  Boolean    @default(false)
+  is_in_transit  Boolean    @default(false)
+  breed          String?    @db.VarChar(100)
+  report         Report     @relation(fields: [report_id], references: [report_id])
+  animal_type    AnimalType @relation(fields: [animal_type_id], references: [animal_type_id])
+  gender         Gender?    @relation(fields: [gender_id], references: [gender_id])
+  size           PetSize?   @relation(fields: [size_id], references: [size_id])
 
   @@map("sighting_report_details")
 }
@@ -219,17 +224,19 @@ model AnimalType {
 }
 
 model Gender {
-  gender_id Int    @id @db.SmallInt
-  name      String @db.VarChar(30)
-  pets      Pet[]
+  gender_id               Int                    @id @db.SmallInt
+  name                    String                 @db.VarChar(30)
+  pets                    Pet[]
+  sighting_report_details SightingReportDetail[]
 
   @@map("genders")
 }
 
 model PetSize {
-  size_id Int    @id @db.SmallInt
-  name    String @db.VarChar(50)
-  pets    Pet[]
+  size_id                 Int                    @id @db.SmallInt
+  name                    String                 @db.VarChar(50)
+  pets                    Pet[]
+  sighting_report_details SightingReportDetail[]
 
   @@map("pet_sizes")
 }

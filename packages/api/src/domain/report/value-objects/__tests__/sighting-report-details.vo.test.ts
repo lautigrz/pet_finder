@@ -2,6 +2,8 @@ import { describe, it, expect } from "vitest";
 import { SightingReportDetails } from "../sighting-report-details.vo";
 import { SightingImage } from "../sighting.images";
 import { AnimalType } from "@domain/shared/animal-type/animal-type";
+import { GenderType } from "@domain/shared/gender-type/gender.type";
+import { SizeType } from "@domain/shared/size-type/size.type";
 
 describe("SightingReportDetails", () => {
   const baseParams = {
@@ -13,7 +15,7 @@ describe("SightingReportDetails", () => {
   };
 
   describe("create — sin imágenes", () => {
-    it("crea SightingReportDetails con los valores correctos", () => {
+    it("crea SightingReportDetails con los valores correctos y campos opcionales nulos", () => {
       const details = SightingReportDetails.create(baseParams);
 
       expect(details.animalType).toBe(AnimalType.DOG);
@@ -21,6 +23,9 @@ describe("SightingReportDetails", () => {
       expect(details.color).toBe("brown");
       expect(details.isInTransit).toBe(false);
       expect(details.images).toHaveLength(0);
+      expect(details.petName).toBeNull();
+      expect(details.genderType).toBeNull();
+      expect(details.sizeType).toBeNull();
     });
 
     it("crea SightingReportDetails de tipo CAT sin collar y en tránsito", () => {
@@ -36,6 +41,19 @@ describe("SightingReportDetails", () => {
       expect(details.hasIdCollar).toBe(false);
       expect(details.color).toBe("orange");
       expect(details.isInTransit).toBe(true);
+    });
+
+    it("crea SightingReportDetails con campos opcionales especificados (petName, genderType, sizeType)", () => {
+      const details = SightingReportDetails.create({
+        ...baseParams,
+        petName: "Rex",
+        genderType: GenderType.MALE,
+        sizeType: SizeType.LARGE,
+      });
+
+      expect(details.petName).toBe("Rex");
+      expect(details.genderType).toBe(GenderType.MALE);
+      expect(details.sizeType).toBe(SizeType.LARGE);
     });
   });
 

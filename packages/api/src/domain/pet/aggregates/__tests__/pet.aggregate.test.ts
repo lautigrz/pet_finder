@@ -1,8 +1,8 @@
 import { describe, it, expect } from "vitest";
 import { Pet } from "@domain/pet/aggregates/PetAggregate";
 import { AnimalType } from "@domain/shared/animal-type/animal-type";
-import { GenderType } from "@domain/pet/types/gender.type";
-import { SizeType } from "@domain/pet/types/size.type";
+import { GenderType } from "@domain/shared/gender-type/gender.type";
+import { SizeType } from "@domain/shared/size-type/size.type";
 import { InvalidPetNameError } from "@domain/errors/InvalidPetNameError";
 import { PetImage } from "@domain/pet/value-objects/image.vo";
 

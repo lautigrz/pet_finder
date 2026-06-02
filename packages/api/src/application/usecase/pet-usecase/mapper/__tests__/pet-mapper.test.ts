@@ -3,8 +3,8 @@ import { PetMapper } from "../pet-mapper";
 import { Pet } from "@domain/pet/aggregates/PetAggregate";
 import { PetImage } from "@domain/pet/value-objects/image.vo";
 import { AnimalType } from "@domain/shared/animal-type/animal-type";
-import { GenderType } from "@domain/pet/types/gender.type";
-import { SizeType } from "@domain/pet/types/size.type";
+import { GenderType } from "@domain/shared/gender-type/gender.type";
+import { SizeType } from "@domain/shared/size-type/size.type";
 
 const makeRestoredPet = (overrides?: Partial<Parameters<typeof Pet.restore>[0]>) =>
   Pet.restore({
