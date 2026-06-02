@@ -7,11 +7,16 @@ import { InvalidCredentialsError } from "../../../domain/errors/InvalidCredentia
 import { LogoutUserUseCase } from "../../../application/usecase/logout-user/logout-user.usecase";
 import { RefreshAccessTokenUseCase } from "../../../application/usecase/refresh-access-token/refresh-access-token.usecase";
 import { RefreshAccessTokenOutput } from "../../../application/usecase/refresh-access-token/refresh-access-token.output";
+import { RequestPasswordResetUseCase } from "../../../application/usecase/request-password-reset/request-password-reset.usecase";
+import { ResetPasswordUseCase } from "../../../application/usecase/reset-password/reset-password.usecase";
+import { InvalidPasswordResetTokenError } from "../../../domain/errors/InvalidPasswordResetTokenError";
 
 describe("AuthController", () => {
   let useCase: LoginUserUseCase;
   let logoutUseCase: LogoutUserUseCase;
   let refreshUseCase: RefreshAccessTokenUseCase;
+  let requestResetUseCase: RequestPasswordResetUseCase;
+  let resetPasswordUseCase: ResetPasswordUseCase;
   let controller: AuthController;
   let res: Partial<Response>;
 
@@ -19,7 +24,15 @@ describe("AuthController", () => {
     useCase = { execute: vi.fn() } as unknown as LoginUserUseCase;
     logoutUseCase = { execute: vi.fn() } as unknown as LogoutUserUseCase;
     refreshUseCase = { execute: vi.fn() } as unknown as RefreshAccessTokenUseCase;
-    controller = new AuthController(useCase, logoutUseCase, refreshUseCase);
+    requestResetUseCase = { execute: vi.fn() } as unknown as RequestPasswordResetUseCase;
+    resetPasswordUseCase = { execute: vi.fn() } as unknown as ResetPasswordUseCase;
+    controller = new AuthController(
+      useCase,
+      logoutUseCase,
+      refreshUseCase,
+      requestResetUseCase,
+      resetPasswordUseCase,
+    );
     res = {
       status: vi.fn().mockReturnThis(),
       json: vi.fn().mockReturnThis(),
@@ -179,6 +192,72 @@ describe("AuthController", () => {
       // Then devuelve 400 y no ejecuta el use case
       expect(res.status).toHaveBeenCalledWith(400);
       expect(refreshUseCase.execute).not.toHaveBeenCalled();
+    });
+  });
+
+  describe("forgotPassword", () => {
+    it("returns 200 and runs the use case with a valid email", async () => {
+      // Given un body con email
+      const req = buildReq({ email: "juan@example.com" });
+
+      // When pido el reset
+      await controller.forgotPassword(req as Request, res as Response);
+
+      // Then ejecuta el use case y responde 200 (anti-enumeracion)
+      expect(requestResetUseCase.execute).toHaveBeenCalled();
+      expect(res.status).toHaveBeenCalledWith(200);
+    });
+
+    it("returns 400 and does NOT run the use case when email is missing", async () => {
+      // Given body sin email
+      const req = buildReq({});
+
+      // When pido el reset
+      await controller.forgotPassword(req as Request, res as Response);
+
+      // Then 400 y no ejecuta
+      expect(res.status).toHaveBeenCalledWith(400);
+      expect(requestResetUseCase.execute).not.toHaveBeenCalled();
+    });
+  });
+
+  describe("resetPassword", () => {
+    it("returns 200 and runs the use case with token + newPassword", async () => {
+      // Given body valido
+      const req = buildReq({ token: "tok-123", newPassword: "nuevaPass123" });
+
+      // When reseteo
+      await controller.resetPassword(req as Request, res as Response);
+
+      // Then ejecuta el use case y responde 200
+      expect(resetPasswordUseCase.execute).toHaveBeenCalled();
+      expect(res.status).toHaveBeenCalledWith(200);
+    });
+
+    it("returns 400 when newPassword is too short", async () => {
+      // Given newPassword corto
+      const req = buildReq({ token: "tok-123", newPassword: "123" });
+
+      // When reseteo
+      await controller.resetPassword(req as Request, res as Response);
+
+      // Then 400 y no ejecuta
+      expect(res.status).toHaveBeenCalledWith(400);
+      expect(resetPasswordUseCase.execute).not.toHaveBeenCalled();
+    });
+
+    it("returns 400 when the token is invalid/expired", async () => {
+      // Given un use case que rechaza por token invalido
+      vi.mocked(resetPasswordUseCase.execute).mockRejectedValue(
+        new InvalidPasswordResetTokenError("expired"),
+      );
+      const req = buildReq({ token: "tok-123", newPassword: "nuevaPass123" });
+
+      // When reseteo
+      await controller.resetPassword(req as Request, res as Response);
+
+      // Then devuelve 400
+      expect(res.status).toHaveBeenCalledWith(400);
     });
   });
 });

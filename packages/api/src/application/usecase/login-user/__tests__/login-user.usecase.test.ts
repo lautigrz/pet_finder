@@ -39,9 +39,9 @@ describe("LoginUserUseCase", () => {
   beforeEach(() => {
     userRepository = {
       save: vi.fn(), findByEmail: vi.fn(), markVerified: vi.fn(),
-      findByPublicId: vi.fn(), updateProfile: vi.fn(), findById: vi.fn(),
+      findByPublicId: vi.fn(), updateProfile: vi.fn(), findById: vi.fn(), updatePassword: vi.fn(),
     };
-    refreshTokenRepository = { save: vi.fn(), findByValue: vi.fn(), revoke: vi.fn() };
+    refreshTokenRepository = { save: vi.fn(), findByValue: vi.fn(), revoke: vi.fn(), revokeAllByUser: vi.fn() };
     passwordHasher = { hash: vi.fn(), verify: vi.fn() };
     tokenSigner = { sign: vi.fn(), verify: vi.fn() };
     tokenGenerator = { generate: vi.fn() };
