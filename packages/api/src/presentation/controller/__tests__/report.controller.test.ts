@@ -22,6 +22,8 @@ import {
   InvalidReportTypeError,
   MappingError,
 } from "@application/errors/errors";
+import { validateRequest } from "../../middleware/validate.request";
+import { createReportRequestSchema } from "../../schemas/report/create-report.schema";
 
 const buildRes = (): Partial<Response> => ({
   status: vi.fn().mockReturnThis(),
@@ -34,6 +36,7 @@ const buildReq = (
   params?: Record<string, string>
 ): Partial<Request> => ({
   body,
+  validated: { body, params: params ?? {} },
   params: params ?? {},
   originalUrl: "/api/reports",
   method: "POST",
@@ -62,6 +65,7 @@ const validSightingBody = {
   type: ReportType.SIGHTING,
   userId: 1,
   animalType: AnimalType.DOG,
+  genderType: "male",
   hasIdCollar: false,
   color: "brown",
   occurredAt: "2024-05-01T10:00:00.000Z",
@@ -167,21 +171,23 @@ describe("CreateReportController", () => {
 
       const req = buildReq({ type: "unknown", location: {} });
       const res = buildRes();
+      const next = vi.fn();
 
-      await controller.create(req as Request, res as Response);
+      validateRequest(createReportRequestSchema)(req as Request, res as Response, next);
 
       expect(res.status).toHaveBeenCalledWith(400);
-      expect(createReportUseCase.execute).not.toHaveBeenCalled();
+      expect(next).not.toHaveBeenCalled();
     });
 
     it("retorna 400 si falta el campo location", async () => {
       const req = buildReq({ ...validLostBody, location: undefined });
       const res = buildRes();
+      const next = vi.fn();
 
-      await controller.create(req as Request, res as Response);
+      validateRequest(createReportRequestSchema)(req as Request, res as Response, next);
 
       expect(res.status).toHaveBeenCalledWith(400);
-      expect(createReportUseCase.execute).not.toHaveBeenCalled();
+      expect(next).not.toHaveBeenCalled();
     });
   });
 

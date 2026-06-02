@@ -1,6 +1,9 @@
 
 export interface SightingReportOutput {
+    petName?: string;
     animalType: string;
+    genderType?: string;
+    sizeType?: string;
     hasIdCollar: boolean;
     isInTransit: boolean;
     color: string;

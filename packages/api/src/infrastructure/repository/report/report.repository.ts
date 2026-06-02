@@ -4,9 +4,9 @@ import { Page, PaginationParams } from "@domain/shared/pagination/pagination";
 
 import { ReportMapper } from "./report.mapper";
 import { Prisma, PrismaClient } from "@prisma/client";
-import { ReportQuery } from "@application/usecase/report/ReportQuery";
+import { ReportQuery } from "@application/usecase/report/report-query";
 import { PetMapper } from "../pet/pet.mapper";
-import { ReportStatus, reportStatusMap } from "@domain/report/types/report.status";
+import { reportStatusMap } from "@domain/report/types/report.status";
 
 
 const reportInclude = {
@@ -87,6 +87,8 @@ export class PrismaReportRepository implements ReportRepository {
         if (!raw) {
             return null
         }
+
+        console.log(raw);
         return {
             report: ReportMapper.toDomain(raw),
             pet: raw.lost_report_detail?.pet
@@ -157,7 +159,7 @@ export class PrismaReportRepository implements ReportRepository {
         }
 
         if (query.userPublicId) {
-        where.user = { public_id: query.userPublicId }
+            where.user = { public_id: query.userPublicId }
         }
 
         const reports = await this.prisma.report.findMany({

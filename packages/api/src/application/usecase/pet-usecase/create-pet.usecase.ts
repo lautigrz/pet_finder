@@ -38,6 +38,7 @@ export class CreatePetUseCase {
             sizeType: dto.sizeType,
             color: dto.color,
             hasIdCollar: dto.hasIdCollar,
+            isVaccinated: dto.isVaccinated,
             breed: dto.breed,
             petImage: petImages,
         });

@@ -1,4 +1,4 @@
-import { GenderType } from "./gender.type";
+import { GenderType } from "../../shared/gender-type/gender.type";
 
 export const GenderTypeMap: Record<GenderType, number> = {
    [GenderType.MALE]: 1,
