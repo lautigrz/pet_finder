@@ -17,7 +17,7 @@ describe("LogoutUserUseCase", () => {
   let useCase: LogoutUserUseCase;
 
   beforeEach(() => {
-    refreshTokenRepository = { save: vi.fn(), findByValue: vi.fn(), revoke: vi.fn() };
+    refreshTokenRepository = { save: vi.fn(), findByValue: vi.fn(), revoke: vi.fn(), revokeAllByUser: vi.fn() };
     useCase = new LogoutUserUseCase(refreshTokenRepository);
   });
 

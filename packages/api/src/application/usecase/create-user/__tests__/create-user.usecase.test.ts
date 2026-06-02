@@ -21,7 +21,7 @@ describe("CreateUserUseCase", () => {
   beforeEach(() => {
     userRepository = {
       save: vi.fn(), findByEmail: vi.fn(), markVerified: vi.fn(),
-      findByPublicId: vi.fn(), updateProfile: vi.fn(), findById: vi.fn(),
+      findByPublicId: vi.fn(), updateProfile: vi.fn(), findById: vi.fn(), updatePassword: vi.fn(),
     };
     passwordHasher = { hash: vi.fn(), verify: vi.fn() };
     useCase = new CreateUserUseCase(userRepository, passwordHasher);
