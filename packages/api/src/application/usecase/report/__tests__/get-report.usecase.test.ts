@@ -79,6 +79,7 @@ describe("GetReportUseCase", () => {
     reportRepository = {
       save: vi.fn(),
       findByPublicId: vi.fn(),
+      findDetailByPublicId: vi.fn(),
       findByUserPublicId: vi.fn(),
       findIdsByQuery: vi.fn(),
       findByIds: vi.fn(),
@@ -89,18 +90,18 @@ describe("GetReportUseCase", () => {
 
   describe("reporte LOST", () => {
     it("retorna el output del reporte con datos de la mascota", async () => {
-      // Given reporte lost y mascota existentes
-      vi.mocked(reportRepository.findByPublicId).mockResolvedValue({
+
+      vi.mocked(reportRepository.findDetailByPublicId).mockResolvedValue({
         report: fakeLostReport,
         pet: fakePet,
       });
 
-      // When se obtiene el reporte
+
       const result = await useCase.execute("report-lost-uuid");
 
-      // Then incluye datos de la mascota
+
       expect(result.type).toBe(ReportType.LOST);
-      expect(reportRepository.findByPublicId).toHaveBeenCalledWith("report-lost-uuid");
+      expect(reportRepository.findDetailByPublicId).toHaveBeenCalledWith("report-lost-uuid");
       expect(result.details).toMatchObject({
         name: "Firulais",
         breed: "Labrador",
@@ -108,13 +109,13 @@ describe("GetReportUseCase", () => {
     });
 
     it("lanza MappingError si la mascota del reporte no existe", async () => {
-      // Given reporte lost pero mascota no devuelta por repositorio
-      vi.mocked(reportRepository.findByPublicId).mockResolvedValue({
+
+      vi.mocked(reportRepository.findDetailByPublicId).mockResolvedValue({
         report: fakeLostReport,
         pet: undefined,
       });
 
-      // When/Then
+
       await expect(useCase.execute("report-lost-uuid")).rejects.toThrow(
         MappingError
       );
@@ -123,15 +124,15 @@ describe("GetReportUseCase", () => {
 
   describe("reporte SIGHTING", () => {
     it("retorna el output del reporte sin buscar mascota", async () => {
-      // Given reporte de avistamiento
-      vi.mocked(reportRepository.findByPublicId).mockResolvedValue({
+
+      vi.mocked(reportRepository.findDetailByPublicId).mockResolvedValue({
         report: fakeSightingReport,
       });
 
-      // When
+
       const result = await useCase.execute("report-sighting-uuid");
 
-      // Then devuelve datos del avistamiento
+
       expect(result.type).toBe(ReportType.SIGHTING);
       expect(result.details).toMatchObject({
         animalType: AnimalType.DOG,
@@ -142,10 +143,10 @@ describe("GetReportUseCase", () => {
 
   describe("reporte no encontrado", () => {
     it("lanza ReportNotFoundError si el reporte no existe", async () => {
-      // Given reporte inexistente
-      vi.mocked(reportRepository.findByPublicId).mockResolvedValue(null);
 
-      // When/Then
+      vi.mocked(reportRepository.findDetailByPublicId).mockResolvedValue(null);
+
+
       await expect(useCase.execute("non-existent-uuid")).rejects.toThrow(
         ReportNotFoundError
       );
