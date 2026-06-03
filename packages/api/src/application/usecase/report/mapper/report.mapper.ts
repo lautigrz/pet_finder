@@ -4,15 +4,18 @@ import { ReportType } from "@domain/report/types/report.type";
 import { SightingReportDetails } from "@domain/report/value-objects/sighting-report-details.vo";
 import { MappingError } from "@application/errors/errors";
 import { LostReportOutput, ReportOutput, SightingReportOutput } from "../dto/report.output";
+import { User } from "@domain/entities/User";
 
 
 export class ReportOutputMapper {
 
-    static toOutput(report: Report, pet?: Pet): ReportOutput {
+    static toOutput(report: Report, pet?: Pet, user?: User): ReportOutput {
         return {
             publicId: report.publicId,
             user: {
-                publicId: report.userPublicId
+                publicId: user?.id || report.userPublicId,
+                username: user?.username || "",
+                photoUrl: user?.photoUrl || ""
             },
             type: report.reportType,
             status: report.status,
