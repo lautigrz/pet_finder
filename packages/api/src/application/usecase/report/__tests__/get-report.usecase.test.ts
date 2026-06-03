@@ -13,6 +13,8 @@ import { GenderType } from "@domain/shared/gender-type/gender.type";
 import { SizeType } from "@domain/shared/size-type/size.type";
 import { ReportNotFoundError } from "@domain/errors/ReportNotFoundError";
 import { MappingError } from "@application/errors/errors";
+import { User } from "@domain/entities/User";
+import { IUserRepository } from "@domain/repositories/IUserRepository";
 
 const validLocation = Location.create({
   address: "Av. Corrientes 1234",
@@ -71,8 +73,22 @@ const fakePet = Pet.restore({
   createdAt: new Date(),
 });
 
+const fakeUser = User.reconstruct(
+  5,
+  "user-pub-id",
+  "test@example.com",
+  "testuser",
+  "$2b$10$Somethinghashedhere",
+  true,
+  new Date(),
+  "Test",
+  "User",
+  "http://example.com/photo.jpg"
+);
+
 describe("GetReportUseCase", () => {
   let reportRepository: ReportRepository;
+  let userRepository: IUserRepository;
   let useCase: GetReportUseCase;
 
   beforeEach(() => {
@@ -85,7 +101,11 @@ describe("GetReportUseCase", () => {
       findByIds: vi.fn(),
     } as unknown as ReportRepository;
 
-    useCase = new GetReportUseCase(reportRepository);
+    userRepository = {
+      findById: vi.fn().mockResolvedValue(fakeUser),
+    } as unknown as IUserRepository;
+
+    useCase = new GetReportUseCase(reportRepository, userRepository);
   });
 
   describe("reporte LOST", () => {
@@ -152,4 +172,20 @@ describe("GetReportUseCase", () => {
       );
     });
   });
+
+  describe("usuario no encontrado", () => {
+    it("lanza Error si el usuario asociado al reporte no existe", async () => {
+      vi.mocked(reportRepository.findDetailByPublicId).mockResolvedValue({
+        report: fakeLostReport,
+        pet: fakePet,
+      });
+
+      vi.mocked(userRepository.findById).mockResolvedValue(null);
+
+      await expect(useCase.execute("report-lost-uuid")).rejects.toThrow(
+        "User not found"
+      );
+    });
+  });
 });
+

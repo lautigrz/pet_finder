@@ -30,6 +30,7 @@ const makePet = (name: string) =>
         animalType: AnimalType.DOG,
         genderType: GenderType.MALE,
         sizeType: SizeType.MEDIUM,
+        isVaccinated: false,
         color: "brown",
         hasIdCollar: false,
         breed: "Mix",
