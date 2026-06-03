@@ -2,12 +2,13 @@ import { ReportRepository, ReportWithPet } from "@domain/report/repositories/rep
 import { ReportOutputMapper } from "./mapper/report.mapper";
 import { ReportNotFoundError } from "@domain/errors/ReportNotFoundError";
 import { ReportOutput } from "./dto/report.output";
+import { IUserRepository } from "@domain/repositories/IUserRepository";
 
 
 export type { ReportOutput };
 
 export class GetReportUseCase {
-    constructor(private reportRepository: ReportRepository) { }
+    constructor(private reportRepository: ReportRepository, private userRepository: IUserRepository) { }
 
     async execute(publicId: string): Promise<ReportOutput> {
         const result: ReportWithPet | null = await this.reportRepository.findDetailByPublicId(publicId);
@@ -17,7 +18,13 @@ export class GetReportUseCase {
         }
 
         const { report, pet } = result;
-        return ReportOutputMapper.toOutput(report, pet);
+
+        const user = await this.userRepository.findById(report.userId);
+
+        if (!user) {
+            throw new Error("User not found");
+        }
+        return ReportOutputMapper.toOutput(report, pet, user);
 
     }
 }
