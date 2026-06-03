@@ -29,6 +29,8 @@ export interface ReportOutput {
     publicId: string;
     user: {
         publicId: string;
+        username: string;
+        photoUrl: string;
     };
     type: string;
     status: string;
