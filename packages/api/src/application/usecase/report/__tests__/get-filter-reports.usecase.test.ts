@@ -67,6 +67,7 @@ const fakePet = Pet.restore({
   breed: "Labrador",
   petImage: [],
   createdAt: new Date(),
+  isVaccinated: false
 });
 
 describe("GetFilteredReportsUseCase", () => {
@@ -80,6 +81,10 @@ describe("GetFilteredReportsUseCase", () => {
       findByUserPublicId: vi.fn(),
       findIdsByQuery: vi.fn(),
       findByIds: vi.fn(),
+      update: vi.fn(),
+      updateFields: vi.fn(),
+      // ← método nuevo: devuelve array vacío por defecto
+      findImagesByReportId: vi.fn().mockResolvedValue([]),
     } as unknown as ReportRepository;
 
     useCase = new GetFilteredReportsUseCase(reportRepository);
@@ -120,7 +125,6 @@ describe("GetFilteredReportsUseCase", () => {
     expect(reportRepository.findIdsByQuery).toHaveBeenCalledOnce();
     expect(reportRepository.findByIds).toHaveBeenCalledWith(ids);
 
-    // Mapped elements verify
     expect(result[0]).toMatchObject({
       publicId: "report-sighting-uuid",
       type: ReportType.SIGHTING,

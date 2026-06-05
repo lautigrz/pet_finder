@@ -27,17 +27,13 @@ export class CreateReportUseCase {
 
     async execute(dto: CreateReportDTO, userId: string): Promise<{ publicId: string }> {
         const user = await this.userRepository.findByPublicId(userId);
-        if (!user) {
-            throw new Error("User not found");
-        }
+        if (!user) throw new Error("User not found");
 
         let petInternalId: number | null = null;
 
         if (dto.type === ReportType.LOST && dto.petId) {
             const pet: Pet | null = await this.petRepository.findByPublicId(dto.petId);
-            if (!pet) {
-                throw new Error("Pet not found");
-            }
+            if (!pet) throw new Error("Pet not found");
             petInternalId = pet.idPet;
         }
 
@@ -47,10 +43,17 @@ export class CreateReportUseCase {
         const details = await this.buildDetails(dto, petInternalId!);
         const report = this.buildReport(dto, location, details, user);
 
-        await this.reportRepository.save(report);
+        let images: SightingImage[] = [];
+        if (dto.type === ReportType.LOST && dto.images && dto.images.length > 0) {
+            images = await this.buildImages(dto.images);
+        }
+
+        await this.reportRepository.save(report, images);
 
         return { publicId: report.publicId };
     }
+
+
 
     private buildLocation(locationDTO: LocationDTO): Location {
         return Location.create({

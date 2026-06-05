@@ -32,7 +32,17 @@ function buildSightingReport(i: number): Report {
     type: ReportType.SIGHTING,
     currentStatus: ReportStatus.ACTIVE,
     description: ReportDescription.create(`Avistamiento ${i}`),
-    details: new SightingReportDetails(AnimalType.DOG, true, "brown", false, []),
+    details: new SightingReportDetails(
+      AnimalType.DOG,
+      AnimalType.DOG,
+      GenderType.MALE,
+      null,
+      "" as any,
+      false as any,
+      false as any,
+      false as any,
+      false as any,
+    ),
     location: Location.create(validLocation),
     occurredAt: new Date("2024-05-01"),
     createdAt: new Date("2024-05-01"),
@@ -70,6 +80,7 @@ const fakePet = Pet.restore({
   breed: "Labrador",
   petImage: [],
   createdAt: new Date(),
+  isVaccinated: false
 });
 
 describe("ListUserReportsUseCase", () => {
@@ -85,6 +96,11 @@ describe("ListUserReportsUseCase", () => {
         items: [buildSightingReport(1), buildSightingReport(2)],
         total: 5,
       }),
+      findIdsByQuery: vi.fn(),
+      findByIds: vi.fn(),
+      update: vi.fn(),
+      updateFields: vi.fn(),
+      findImagesByReportId: vi.fn().mockResolvedValue([]),
     } as unknown as ReportRepository;
 
     petRepository = {

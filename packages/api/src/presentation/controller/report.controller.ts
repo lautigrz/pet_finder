@@ -15,6 +15,7 @@ import { InvalidStatusTransitionError } from "@domain/errors/InvalidStatusTransi
 import { InvalidReportDetailsError } from "@domain/errors/InvalidReportDetailsError";
 import { ReportNotFoundError } from "@domain/errors/ReportNotFoundError";
 import { PetNotFoundError } from "@domain/errors/PetNotFoundError";
+import { UnauthorizedReportEditError } from "@domain/errors/UnauthorizedReportEditError";
 import {
     MappingError,
     InvalidFieldError,
@@ -25,6 +26,8 @@ import { GetFilteredReportsDTO } from "../schemas/report/report-filter.schema";
 import { GetFilteredReportsUseCase } from "@application/usecase/report/get-filter-reports.usecase";
 import { UpdateStatus } from "@application/usecase/report/update-status-report";
 import { UpdateStatusDTO } from "@application/usecase/report/dto/update-status.dto";
+import { UpdateReportUseCase } from "@application/usecase/report/update-report.usecase";
+import { UpdateReportInput } from "../schemas/report/update-report.schema";
 
 const DEFAULT_PAGE = 1;
 const DEFAULT_LIMIT = 10;
@@ -36,7 +39,8 @@ export class CreateReportController {
         private getReportUseCase: GetReportUseCase,
         private listUserReportsUseCase: ListUserReportsUseCase,
         private filteresUseCase: GetFilteredReportsUseCase,
-        private updateStatusUseCase: UpdateStatus
+        private updateStatusUseCase: UpdateStatus,
+        private updateReportUseCase: UpdateReportUseCase
     ) { }
 
     create = async (req: Request, res: Response): Promise<void> => {
@@ -235,7 +239,7 @@ export class CreateReportController {
 
     private buildCreateDTO(parsed: CreateReportInput, files: Express.Multer.File[]): CreateReportDTO {
         if (parsed.type === ReportType.LOST) {
-            return parsed as CreateReportDTO;
+            return { ...parsed, images: files.map(f => f.buffer) } as CreateReportDTO;
         }
         return { ...parsed, images: files.map(f => f.buffer) } as CreateReportDTO;
     }
@@ -272,4 +276,44 @@ export class CreateReportController {
             res.status(500).json({ error: 'Internal server error' });
         }
     }
+
+    update = async (req: Request, res: Response): Promise<void> => {
+        const userPublicId = req.auth?.sub;
+        if (!userPublicId) {
+            res.status(401).json({ error: 'Unauthorized' });
+            return;
+        }
+
+        const body = req.validated?.body as UpdateReportInput;
+        const publicId = req.validated?.params.publicId as string;
+        const files = (req.files as Express.Multer.File[] | undefined) ?? [];
+
+        try {
+            await this.updateReportUseCase.execute(
+                {
+                    publicId,
+                    ...body,
+                    newImages: files.map(f => f.buffer),
+                },
+                userPublicId,
+            );
+            logger.info('Report updated successfully', { publicId });
+            res.sendStatus(204);
+        } catch (error) {
+            if (error instanceof ReportNotFoundError) {
+                res.status(404).json({ error: error.message });
+                return;
+            }
+            if (error instanceof UnauthorizedReportEditError) {
+                res.status(403).json({ error: error.message });
+                return;
+            }
+            if (error instanceof InvalidFieldError) {
+                res.status(400).json({ error: error.message });
+                return;
+            }
+            logger.error('Error updating report', { error });
+            res.status(500).json({ error: 'Internal server error' });
+        }
+    };
 }

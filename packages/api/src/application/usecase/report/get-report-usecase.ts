@@ -11,20 +11,15 @@ export class GetReportUseCase {
     constructor(private reportRepository: ReportRepository, private userRepository: IUserRepository) { }
 
     async execute(publicId: string): Promise<ReportOutput> {
-        const result: ReportWithPet | null = await this.reportRepository.findDetailByPublicId(publicId);
+    const result = await this.reportRepository.findDetailByPublicId(publicId);
+    if (!result) throw new ReportNotFoundError(publicId);
 
-        if (!result) {
-            throw new ReportNotFoundError(publicId);
-        }
+    const { report, pet } = result;
+    const user = await this.userRepository.findById(report.userId);
+    if (!user) throw new Error("User not found");
 
-        const { report, pet } = result;
+    const reportImages = await this.reportRepository.findImagesByReportId(publicId);
 
-        const user = await this.userRepository.findById(report.userId);
-
-        if (!user) {
-            throw new Error("User not found");
-        }
-        return ReportOutputMapper.toOutput(report, pet, user);
-
-    }
+    return ReportOutputMapper.toOutput(report, pet, user, reportImages);
+}
 }
