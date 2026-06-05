@@ -3,6 +3,7 @@ import { ReportQuery } from "./report-query";
 import { GetFilteredReportsDTO } from "./dto/get-filtered-reports.dto";
 import { ReportOutputMapper } from "./mapper/report.mapper";
 import { ReportOutput } from "./get-report-usecase";
+import { ReportType } from "@domain/report/types/report.type";
 
 export class GetFilteredReportsUseCase {
 
@@ -16,9 +17,14 @@ export class GetFilteredReportsUseCase {
         if (ids.length === 0) return [];
 
         const results = await this.reportRepository.findByIds(ids);
-        return results.map(({ report, pet }) =>
-            ReportOutputMapper.toOutput(report, pet)
+
+        const outputs = await Promise.all(
+            results.map(async ({ report, pet }) => {
+                const reportImages = await this.reportRepository.findImagesByReportId(report.publicId);
+                return ReportOutputMapper.toOutput(report, pet, undefined, reportImages);
+            })
         );
+        return outputs;
 
     }
 
