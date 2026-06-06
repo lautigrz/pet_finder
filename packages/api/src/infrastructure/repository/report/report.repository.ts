@@ -1,12 +1,17 @@
 import { Report } from "@domain/report/aggregates/ReportAggregate";
 import { ReportRepository, ReportWithPet } from "@domain/report/repositories/report.repository";
 import { Page, PaginationParams } from "@domain/shared/pagination/pagination";
-
 import { ReportMapper } from "./report.mapper";
 import { Prisma, PrismaClient } from "@prisma/client";
 import { ReportQuery } from "@application/usecase/report/report-query";
 import { PetMapper } from "../pet/pet.mapper";
 import { reportStatusMap } from "@domain/report/types/report.status";
+import { ReportType } from '@domain/report/types/report.type';
+import { SightingReportDetails } from '@domain/report/value-objects/sighting-report-details.vo';
+import { AnimalTypeMap } from '@domain/shared/animal-type/animal-type-map';
+import { GenderTypeMap } from '@domain/shared/gender-type/gender-map';
+import { SizeTypeMap } from '@domain/shared/size-type/size-map';
+import { SightingImage } from "@domain/report/value-objects/sighting.images";
 
 
 const reportInclude = {
@@ -36,13 +41,23 @@ export class PrismaReportRepository implements ReportRepository {
     }
 
 
-    async save(report: Report): Promise<void> {
+    async save(report: Report, images?: SightingImage[]): Promise<void> {
+    const data = ReportMapper.toPersistence(report);
 
-        const data = ReportMapper.toPersistence(report)
+    await this.prisma.$transaction(async (tx) => {
+        const created = await tx.report.create({ data });
 
-        await this.prisma.report.create({ data })
-
-    }
+        if (images && images.length > 0) {
+            await tx.reportImage.createMany({
+                data: images.map(img => ({
+                    reportId: created.report_id,  
+                    cloudinaryId: img.cloudinaryId,
+                    photoUrl: img.photoUrl,
+                })),
+            });
+        }
+    });
+}
 
     async update(report: Report): Promise<void> {
         if (!report.idReport) {
@@ -61,7 +76,70 @@ export class PrismaReportRepository implements ReportRepository {
 
     }
 
+    async updateFields(report: Report, images?: SightingImage[]): Promise<void> {
+        if (!report.idReport) throw new Error('Report ID is required');
 
+        const isSighting = report.reportType === ReportType.SIGHTING;
+        const details = isSighting ? report.details as SightingReportDetails : null;
+
+        await this.prisma.$transaction([
+
+            this.prisma.report.update({
+                where: { report_id: report.idReport },
+                data: {
+                    description: report.description?.value ?? null,
+                    occurred_at: report.occurredAt,
+                    location_address: report.location.address,
+                    location_lat: report.location.latitude,
+                    location_lng: report.location.longitude,
+                    updated_at: report.updatedAt,
+                    ...(isSighting && details ? {
+                        sighting_report_detail: {
+                            update: {
+                                pet_name: details.petName ?? null,
+                                color: details.color,
+                                breed: details.breed ?? null,
+                                has_id_collar: details.hasIdCollar,
+                                is_in_transit: details.isInTransit,
+                                animal_type: { connect: { animal_type_id: AnimalTypeMap[details.animalType] } },
+                                ...(details.genderType
+                                    ? { gender: { connect: { gender_id: GenderTypeMap[details.genderType] } } }
+                                    : { gender: { disconnect: true } }),
+                                ...(details.sizeType
+                                    ? { size: { connect: { size_id: SizeTypeMap[details.sizeType] } } }
+                                    : { size: { disconnect: true } }),
+                            }
+                        }
+                    } : {}),
+                },
+            }),
+
+            this.prisma.reportImage.deleteMany({
+                where: { reportId: report.idReport },
+            }),
+
+            ...((images ?? []).length > 0
+                ? [this.prisma.reportImage.createMany({
+                    data: (images ?? []).map(img => ({
+                        reportId: report.idReport!,
+                        cloudinaryId: img.cloudinaryId,
+                        photoUrl: img.photoUrl,
+                    })),
+                })]
+                : []),
+        ]);
+    }
+
+
+    async findImagesByReportId(publicId: string): Promise<SightingImage[]> {
+        const raw = await this.prisma.report.findUnique({
+            where: { public_id: publicId },
+            select: { reportImages: true },
+        });
+        return (raw?.reportImages ?? []).map(img =>
+            SightingImage.create({ cloudinaryId: img.cloudinaryId, photoUrl: img.photoUrl })
+        );
+    }
 
     async findDetailByPublicId(publicId: string): Promise<ReportWithPet | null> {
 
@@ -92,7 +170,7 @@ export class PrismaReportRepository implements ReportRepository {
             report: ReportMapper.toDomain(raw),
             pet: raw.lost_report_detail?.pet
                 ? PetMapper.toDomain(raw.lost_report_detail.pet)
-                : undefined
+                : undefined,
         };
 
     }

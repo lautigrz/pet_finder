@@ -79,7 +79,11 @@ const validSightingBody = {
 
 const fakeReportOutput = {
   publicId: "report-uuid",
-  user: { publicId: "user-uuid" },
+  user: {
+    publicId: "user-uuid",
+    username: "testuser",
+    photoUrl: "https://photo.example.com/avatar.jpg",
+  },
   type: ReportType.SIGHTING,
   status: ReportStatus.ACTIVE,
   description: "",
@@ -100,6 +104,7 @@ describe("CreateReportController", () => {
   let listUserReportsUseCase: ListUserReportsUseCase;
   let filteresUseCase: GetFilteredReportsUseCase;
   let updateStatusUseCase: UpdateStatus;
+  let updateReportUseCase: any;
   let controller: CreateReportController;
 
   beforeEach(() => {
@@ -123,12 +128,17 @@ describe("CreateReportController", () => {
       execute: vi.fn().mockResolvedValue(undefined),
     } as unknown as UpdateStatus;
 
+    updateReportUseCase = {
+      execute: vi.fn().mockResolvedValue(undefined),
+    } as any;
+
     controller = new CreateReportController(
       createReportUseCase,
       getReportUseCase,
       listUserReportsUseCase,
       filteresUseCase,
-      updateStatusUseCase
+      updateStatusUseCase,
+      updateReportUseCase
     );
   });
 

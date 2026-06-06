@@ -71,6 +71,7 @@ const fakePet = Pet.restore({
   breed: "Labrador",
   petImage: [],
   createdAt: new Date(),
+  isVaccinated: false
 });
 
 const fakeUser = User.reconstruct(
@@ -99,6 +100,9 @@ describe("GetReportUseCase", () => {
       findByUserPublicId: vi.fn(),
       findIdsByQuery: vi.fn(),
       findByIds: vi.fn(),
+      update: vi.fn(),
+      updateFields: vi.fn(),
+      findImagesByReportId: vi.fn().mockResolvedValue([]),
     } as unknown as ReportRepository;
 
     userRepository = {
@@ -110,15 +114,12 @@ describe("GetReportUseCase", () => {
 
   describe("reporte LOST", () => {
     it("retorna el output del reporte con datos de la mascota", async () => {
-
       vi.mocked(reportRepository.findDetailByPublicId).mockResolvedValue({
         report: fakeLostReport,
         pet: fakePet,
       });
 
-
       const result = await useCase.execute("report-lost-uuid");
-
 
       expect(result.type).toBe(ReportType.LOST);
       expect(reportRepository.findDetailByPublicId).toHaveBeenCalledWith("report-lost-uuid");
@@ -129,12 +130,10 @@ describe("GetReportUseCase", () => {
     });
 
     it("lanza MappingError si la mascota del reporte no existe", async () => {
-
       vi.mocked(reportRepository.findDetailByPublicId).mockResolvedValue({
         report: fakeLostReport,
         pet: undefined,
       });
-
 
       await expect(useCase.execute("report-lost-uuid")).rejects.toThrow(
         MappingError
@@ -144,14 +143,11 @@ describe("GetReportUseCase", () => {
 
   describe("reporte SIGHTING", () => {
     it("retorna el output del reporte sin buscar mascota", async () => {
-
       vi.mocked(reportRepository.findDetailByPublicId).mockResolvedValue({
         report: fakeSightingReport,
       });
 
-
       const result = await useCase.execute("report-sighting-uuid");
-
 
       expect(result.type).toBe(ReportType.SIGHTING);
       expect(result.details).toMatchObject({
@@ -163,9 +159,7 @@ describe("GetReportUseCase", () => {
 
   describe("reporte no encontrado", () => {
     it("lanza ReportNotFoundError si el reporte no existe", async () => {
-
       vi.mocked(reportRepository.findDetailByPublicId).mockResolvedValue(null);
-
 
       await expect(useCase.execute("non-existent-uuid")).rejects.toThrow(
         ReportNotFoundError
@@ -179,7 +173,6 @@ describe("GetReportUseCase", () => {
         report: fakeLostReport,
         pet: fakePet,
       });
-
       vi.mocked(userRepository.findById).mockResolvedValue(null);
 
       await expect(useCase.execute("report-lost-uuid")).rejects.toThrow(
@@ -188,4 +181,3 @@ describe("GetReportUseCase", () => {
     });
   });
 });
-

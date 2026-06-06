@@ -5,11 +5,12 @@ import { SightingReportDetails } from "@domain/report/value-objects/sighting-rep
 import { MappingError } from "@application/errors/errors";
 import { LostReportOutput, ReportOutput, SightingReportOutput } from "../dto/report.output";
 import { User } from "@domain/entities/User";
+import { SightingImage } from "@domain/report/value-objects/sighting.images";
 
 
 export class ReportOutputMapper {
 
-    static toOutput(report: Report, pet?: Pet, user?: User): ReportOutput {
+    static toOutput(report: Report, pet?: Pet, user?: User, reportImages?: SightingImage[]): ReportOutput {
         return {
             publicId: report.publicId,
             user: {
@@ -25,13 +26,13 @@ export class ReportOutputMapper {
                 latitude: report.location.latitude,
                 longitude: report.location.longitude
             },
-            details: this.buildDetails(report, pet),
+            details: this.buildDetails(report, pet, reportImages),
             occurredAt: report.occurredAt,
             createdAt: report.createdAt
         }
     }
 
-    static buildDetails(report: Report, pet?: Pet): SightingReportOutput | LostReportOutput {
+    static buildDetails(report: Report, pet?: Pet, reportImages?: SightingImage[]): SightingReportOutput | LostReportOutput {
         if (report.reportType === ReportType.SIGHTING) {
             const details = report.details as SightingReportDetails;
             return {
@@ -43,9 +44,7 @@ export class ReportOutputMapper {
                 hasIdCollar: details.hasIdCollar,
                 isInTransit: details.isInTransit,
                 color: details.color,
-                images: (details.images || []).map(img => ({
-                    url: img.photoUrl
-                }))
+                images: (reportImages || details.images || []).map(img => ({ url: img.photoUrl }))
             }
         } else {
             if (!pet) {
@@ -60,9 +59,7 @@ export class ReportOutputMapper {
                 color: pet.color,
                 hasIdCollar: pet.hasIdCollar,
                 breed: pet.breed,
-                images: (pet.images || []).map(img => ({
-                    url: img.photoUrl
-                }))
+                images: (reportImages || []).map(img => ({ url: img.photoUrl }))
             }
         }
     }

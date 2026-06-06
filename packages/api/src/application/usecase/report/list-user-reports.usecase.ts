@@ -35,14 +35,12 @@ export class ListUserReportsUseCase {
     if (report.reportType === ReportType.LOST) {
       const details = report.details as LostReportDetails;
       const pet = await this.petRepository.findById(details.petId);
-
-      if (!pet) {
-        throw new PetNotFoundError(details.petId);
-      }
-
-      return ReportOutputMapper.toOutput(report, pet);
+      if (!pet) throw new PetNotFoundError(details.petId);
+      const reportImages = await this.reportRepository.findImagesByReportId(report.publicId);
+      return ReportOutputMapper.toOutput(report, pet, undefined, reportImages);
     }
 
-    return ReportOutputMapper.toOutput(report);
+    const reportImages = await this.reportRepository.findImagesByReportId(report.publicId);
+    return ReportOutputMapper.toOutput(report, undefined, undefined, reportImages);
   }
 }
