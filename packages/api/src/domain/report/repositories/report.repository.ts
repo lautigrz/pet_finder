@@ -3,11 +3,13 @@ import { Page, PaginationParams } from "../../shared/pagination/pagination";
 import { ReportQuery } from "@application/usecase/report/report-query";
 import { Pet } from "@domain/pet/aggregates/PetAggregate";
 import { ReportStatus } from "../types/report.status";
+import { SightingImage } from "../value-objects/sighting.images";
 
-export type ReportWithPet = { report: Report; pet?: Pet }
+export type ReportWithPet = { report: Report; pet?: Pet}
 
 export interface ReportRepository {
-  save(report: Report): Promise<void>
+  
+  save(report: Report, images?: SightingImage[]): Promise<void>;
 
   findByPublicId(publicId: string): Promise<Report | null>
 
@@ -21,4 +23,6 @@ export interface ReportRepository {
 
   update(report: Report): Promise<void>;
 
+  findImagesByReportId(publicId: string): Promise<SightingImage[]>;
+  updateFields(report: Report, images?: SightingImage[]): Promise<void>;
 }

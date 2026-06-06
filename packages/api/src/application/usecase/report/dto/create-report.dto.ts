@@ -16,6 +16,7 @@ export type CreateReportDTO =
         occurredAt: Date;
         location: LocationDTO;
         description: string;
+        images?: Buffer[];
     }
     | {
         type: typeof ReportType.SIGHTING;

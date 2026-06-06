@@ -169,6 +169,26 @@ export class Pet {
         this.touch();
     }
 
+    updateBreed(breed: string): void {
+        this._breed = breed;
+        this.touch();
+    }
+
+    updateAnimalType(animalType: AnimalType): void {
+        this._animalType = animalType;
+        this.touch();
+    }
+
+    updateGenderType(genderType: GenderType): void {
+        this._genderType = genderType;
+        this.touch();
+    }
+
+    updateSizeType(sizeType: SizeType): void {
+        this._sizeType = sizeType;
+        this.touch();
+    }
+
     updateVaccinationStatus(isVaccinated: boolean): void {
         this._isVaccinated = isVaccinated;
         this.touch();

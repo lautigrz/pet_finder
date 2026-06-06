@@ -44,10 +44,10 @@ export class Report {
         private readonly _userPublicId: string,
         private readonly type: ReportType,
         private currentStatus: ReportStatus,
-        private readonly _location: Location,
+        private _location: Location,
         private _description: ReportDescription | null,
-        private readonly _details: ReportDetails,
-        private readonly _occurredAt: Date,
+        private _details: ReportDetails,
+        private _occurredAt: Date,
         private readonly _createdAt: Date,
         private _updatedAt: Date | null = null,
     ) { }
@@ -94,6 +94,20 @@ export class Report {
     ): void {
         this._description = description
         this._updatedAt = new Date()
+    }
+
+
+    updateFields(params: {
+        description?: ReportDescription | null;
+        occurredAt?: Date;
+        location?: Location;
+        details?: ReportDetails;  
+    }): void {
+        if (params.description !== undefined) this._description = params.description;
+        if (params.occurredAt  !== undefined) this._occurredAt  = params.occurredAt;
+        if (params.location    !== undefined) this._location    = params.location;
+        if (params.details     !== undefined) this._details     = params.details;  
+        this._updatedAt = new Date();
     }
 
     get idReport(): number | null {
