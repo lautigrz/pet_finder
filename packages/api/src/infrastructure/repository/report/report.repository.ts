@@ -12,19 +12,24 @@ import { AnimalTypeMap } from '@domain/shared/animal-type/animal-type-map';
 import { GenderTypeMap } from '@domain/shared/gender-type/gender-map';
 import { SizeTypeMap } from '@domain/shared/size-type/size-map';
 import { SightingImage } from "@domain/report/value-objects/sighting.images";
+import { CatalogResolver } from "../catalog/catalog-resolver";
 
 
 const reportInclude = {
     user: {
         select: { user_id: true, public_id: true }
     },
-    sighting_report_detail: true,
+    sighting_report_detail: { include: { color: true, breed: true } },
     lost_report_detail: true,
     reportImages: true,
 } satisfies Prisma.ReportInclude
 
 export class PrismaReportRepository implements ReportRepository {
-    constructor(private readonly prisma: PrismaClient) { }
+    private readonly catalog: CatalogResolver;
+
+    constructor(private readonly prisma: PrismaClient) {
+        this.catalog = new CatalogResolver(prisma);
+    }
 
     async findByPublicId(publicId: string): Promise<Report | null> {
         const raw = await this.prisma.report.findUnique(
@@ -42,7 +47,14 @@ export class PrismaReportRepository implements ReportRepository {
 
 
     async save(report: Report, images?: SightingImage[]): Promise<void> {
-    const data = ReportMapper.toPersistence(report);
+    let colorId: number | undefined;
+    let breedId: number | null | undefined;
+    if (report.reportType === ReportType.SIGHTING) {
+        const details = report.details as SightingReportDetails;
+        colorId = await this.catalog.colorId(details.color);
+        breedId = await this.catalog.breedId(details.breed, details.animalType);
+    }
+    const data = ReportMapper.toPersistence(report, colorId, breedId);
 
     await this.prisma.$transaction(async (tx) => {
         const created = await tx.report.create({ data });
@@ -82,6 +94,9 @@ export class PrismaReportRepository implements ReportRepository {
         const isSighting = report.reportType === ReportType.SIGHTING;
         const details = isSighting ? report.details as SightingReportDetails : null;
 
+        const colorId = details ? await this.catalog.colorId(details.color) : undefined;
+        const breedId = details ? await this.catalog.breedId(details.breed, details.animalType) : undefined;
+
         await this.prisma.$transaction([
 
             this.prisma.report.update({
@@ -97,8 +112,10 @@ export class PrismaReportRepository implements ReportRepository {
                         sighting_report_detail: {
                             update: {
                                 pet_name: details.petName ?? null,
-                                color: details.color,
-                                breed: details.breed ?? null,
+                                color: { connect: { color_id: colorId! } },
+                                ...(breedId !== null && breedId !== undefined
+                                    ? { breed: { connect: { breed_id: breedId } } }
+                                    : { breed: { disconnect: true } }),
                                 has_id_collar: details.hasIdCollar,
                                 is_in_transit: details.isInTransit,
                                 animal_type: { connect: { animal_type_id: AnimalTypeMap[details.animalType] } },
@@ -150,11 +167,11 @@ export class PrismaReportRepository implements ReportRepository {
                     user: {
                         select: { user_id: true, public_id: true }
                     },
-                    sighting_report_detail: true,
+                    sighting_report_detail: { include: { color: true, breed: true } },
                     lost_report_detail: {
                         include: {
                             pet: {
-                                include: { animal_type: true, gender: true, size: true, petImages: true }
+                                include: { animal_type: true, gender: true, size: true, petImages: true, color: true, breed: true }
                             }
                         }
                     },
@@ -260,12 +277,12 @@ export class PrismaReportRepository implements ReportRepository {
                 reportStatus: true,
                 reportImages: true,
                 sighting_report_detail: {
-                    include: { animal_type: true }
+                    include: { animal_type: true, color: true, breed: true }
                 },
                 lost_report_detail: {
                     include: {
                         pet: {
-                            include: { animal_type: true, gender: true, size: true, petImages: true }
+                            include: { animal_type: true, gender: true, size: true, petImages: true, color: true, breed: true }
                         }
                     }
                 }
