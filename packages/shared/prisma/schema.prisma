@@ -149,17 +149,19 @@ model LostReportDetail {
 model SightingReportDetail {
   report_id      Int        @id
   animal_type_id Int
-  color          String     @db.VarChar(150)
+  color_id       Int        @db.SmallInt
   pet_name       String?    @db.VarChar(30)
   gender_id      Int?       @db.SmallInt
   size_id        Int?       @db.SmallInt
   has_id_collar  Boolean    @default(false)
   is_in_transit  Boolean    @default(false)
-  breed          String?    @db.VarChar(100)
+  breed_id       Int?       @db.SmallInt
   report         Report     @relation(fields: [report_id], references: [report_id])
   animal_type    AnimalType @relation(fields: [animal_type_id], references: [animal_type_id])
   gender         Gender?    @relation(fields: [gender_id], references: [gender_id])
   size           PetSize?   @relation(fields: [size_id], references: [size_id])
+  color          Color      @relation(fields: [color_id], references: [color_id])
+  breed          Breed?     @relation(fields: [breed_id], references: [breed_id])
 
   @@map("sighting_report_details")
 }
@@ -172,10 +174,10 @@ model Pet {
   gender_id      Int       @db.SmallInt
   size_id        Int       @db.SmallInt
   pet_name       String    @db.VarChar(30)
-  color          String    @db.VarChar(150)
+  color_id       Int       @db.SmallInt
   has_id_collar  Boolean   @default(false)
   is_vaccinated  Boolean   @default(false)
-  breed          String?   @db.VarChar(100)
+  breed_id       Int?      @db.SmallInt
   created_at     DateTime  @db.Timestamp(6)
   updated_at     DateTime? @updatedAt
 
@@ -183,6 +185,8 @@ model Pet {
   animal_type         AnimalType         @relation(fields: [animal_type_id], references: [animal_type_id])
   gender              Gender             @relation(fields: [gender_id], references: [gender_id])
   size                PetSize            @relation(fields: [size_id], references: [size_id])
+  color               Color              @relation(fields: [color_id], references: [color_id])
+  breed               Breed?             @relation(fields: [breed_id], references: [breed_id])
   petImages           PetImage[]
   lost_report_details LostReportDetail[]
 
@@ -219,8 +223,33 @@ model AnimalType {
 
   sighting_report_details SightingReportDetail[]
   pets                    Pet[]
+  breeds                  Breed[]
 
   @@map("animal_types")
+}
+
+model Breed {
+  breed_id       Int    @id @default(autoincrement()) @db.SmallInt
+  name           String @db.VarChar(100)
+  animal_type_id Int    @db.SmallInt
+
+  animal_type AnimalType @relation(fields: [animal_type_id], references: [animal_type_id])
+
+  pets                    Pet[]
+  sighting_report_details SightingReportDetail[]
+
+  @@unique([name, animal_type_id])
+  @@map("breeds")
+}
+
+model Color {
+  color_id Int    @id @default(autoincrement()) @db.SmallInt
+  name     String @unique @db.VarChar(150)
+
+  pets                    Pet[]
+  sighting_report_details SightingReportDetail[]
+
+  @@map("colors")
 }
 
 model Gender {

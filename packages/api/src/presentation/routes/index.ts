@@ -4,6 +4,7 @@ import userRouter from "./user/user.router";
 import { createReportRoute } from "./report/report.router";
 import { createPetRoute } from "./pet/pet.router";
 import authRouter from "./auth/auth.router";
+import { catalogRouter } from "./catalog/catalog.router";
 
 const router = Router();
 
@@ -11,6 +12,7 @@ router.use('/health', healthRouter);
 router.use('/users', userRouter);
 router.use('/reports', createReportRoute);
 router.use('/pets', createPetRoute);
+router.use('/catalog', catalogRouter);
 
 router.use('/auth', authRouter);
 
