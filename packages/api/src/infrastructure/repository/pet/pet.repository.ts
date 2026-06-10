@@ -5,17 +5,23 @@ import { PetMapper } from "./pet.mapper";
 import { GenderTypeMap } from "@domain/shared/gender-type/gender-map";
 import { AnimalTypeMap } from "@domain/shared/animal-type/animal-type-map";
 import { SizeTypeMap } from "@domain/shared/size-type/size-map";
+import { CatalogResolver } from "../catalog/catalog-resolver";
 
 export class PrismaPetRepository implements PetRepository {
+    private readonly catalog: CatalogResolver;
 
-    constructor(private readonly prisma: PrismaClient) { }
+    constructor(private readonly prisma: PrismaClient) {
+        this.catalog = new CatalogResolver(prisma);
+    }
 
 
     async findById(id: number): Promise<Pet | null> {
         const pet = await this.prisma.pet.findUnique({
             where: { pet_id: id },
             include: {
-                petImages: true
+                petImages: true,
+                color: true,
+                breed: true
             }
         });
 
@@ -24,7 +30,9 @@ export class PrismaPetRepository implements PetRepository {
 
 
     async save(pet: Pet): Promise<void> {
-        const data = PetMapper.toPersistence(pet);
+        const colorId = await this.catalog.colorId(pet.color);
+        const breedId = await this.catalog.breedId(pet.breed, pet.animalType);
+        const data = PetMapper.toPersistence(pet, colorId, breedId);
         await this.prisma.pet.create({ data });
     }
 
@@ -32,6 +40,9 @@ export class PrismaPetRepository implements PetRepository {
         if (pet.idPet === null) {
             throw new Error('Pet id is required for update');
         }
+
+        const colorId = await this.catalog.colorId(pet.color);
+        const breedId = await this.catalog.breedId(pet.breed, pet.animalType);
 
         await this.prisma.pet.update({
             where: { pet_id: pet.idPet },
@@ -42,8 +53,10 @@ export class PrismaPetRepository implements PetRepository {
                 size: { connect: { size_id: SizeTypeMap[pet.sizeType] } },
                 has_id_collar: pet.hasIdCollar,
                 is_vaccinated: pet.isVaccinated,
-                breed: pet.breed,
-                color: pet.color,
+                color: { connect: { color_id: colorId } },
+                ...(breedId !== null
+                    ? { breed: { connect: { breed_id: breedId } } }
+                    : { breed: { disconnect: true } }),
                 updated_at: pet.updatedAt ?? new Date(),
             },
         });
@@ -53,7 +66,9 @@ export class PrismaPetRepository implements PetRepository {
         const pet = await this.prisma.pet.findUnique({
             where: { public_id: publicId },
             include: {
-                petImages: true
+                petImages: true,
+                color: true,
+                breed: true
             }
         });
 
@@ -66,7 +81,9 @@ export class PrismaPetRepository implements PetRepository {
         const pets = await this.prisma.pet.findMany({
             where: { user_id: userId },
             include: {
-                petImages: true
+                petImages: true,
+                color: true,
+                breed: true
             }
         });
 

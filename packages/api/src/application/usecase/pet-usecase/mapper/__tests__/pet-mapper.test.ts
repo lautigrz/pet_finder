@@ -17,6 +17,7 @@ const makeRestoredPet = (overrides?: Partial<Parameters<typeof Pet.restore>[0]>)
     sizeType: SizeType.MEDIUM,
     color: "brown",
     hasIdCollar: true,
+    isVaccinated: true,
     breed: "Labrador",
     petImage: [],
     createdAt: new Date("2024-01-01T00:00:00.000Z"),
