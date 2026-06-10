@@ -7,14 +7,16 @@ import { Prisma } from "@prisma/client";
 
 type PrismaPetWithImages = Prisma.PetGetPayload<{
     include: {
-        petImages: true
+        petImages: true,
+        color: true,
+        breed: true
     }
 }>;
 
 
 export class PetMapper {
 
-    static toPersistence(pet: Pet): Prisma.PetCreateInput {
+    static toPersistence(pet: Pet, colorId: number, breedId: number | null): Prisma.PetCreateInput {
         return {
             public_id: pet.publicId,
             user: { connect: { user_id: pet.userId } },
@@ -24,8 +26,8 @@ export class PetMapper {
             size: { connect: { size_id: SizeTypeMap[pet.sizeType] } },
             has_id_collar: pet.hasIdCollar,
             is_vaccinated: pet.isVaccinated,
-            breed: pet.breed,
-            color: pet.color,
+            color: { connect: { color_id: colorId } },
+            ...(breedId !== null ? { breed: { connect: { breed_id: breedId } } } : {}),
             petImages: {
                 create: pet.images.map(img => ({
                     cloudinaryId: img.cloudinaryId,
@@ -46,10 +48,10 @@ export class PetMapper {
             animalType: AnimalReverseTypeMap[raw.animal_type_id]!,
             genderType: GenderReverseTypeMap[raw.gender_id]!,
             sizeType: SizeReverseTypeMap[raw.size_id]!,
-            color: raw.color,
+            color: raw.color.name,
             hasIdCollar: raw.has_id_collar,
             isVaccinated: raw.is_vaccinated,
-            breed: raw.breed!,
+            breed: raw.breed?.name ?? '',
             petImage: raw.petImages.map(img => PetImage.create({
                 cloudinaryId: img.cloudinaryId,
                 photoUrl: img.photoUrl

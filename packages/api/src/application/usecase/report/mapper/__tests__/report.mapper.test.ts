@@ -29,6 +29,7 @@ const fakePet = Pet.restore({
   sizeType: SizeType.MEDIUM,
   color: "brown",
   hasIdCollar: true,
+  isVaccinated: true,
   breed: "Labrador",
   petImage: [],
   createdAt: new Date("2024-01-01"),
