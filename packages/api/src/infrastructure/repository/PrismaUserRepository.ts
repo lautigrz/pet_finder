@@ -62,4 +62,12 @@ export class PrismaUserRepository implements IUserRepository {
       data: { password: passwordHash },
     });
   }
+
+  async updateNotificationPreferences(publicId : string, notificationRadius:number,): Promise<User> {
+    const record = await prisma.user.update({
+      where: { public_id: publicId },
+      data: { notification_radius: notificationRadius },
+    });
+    return UserMapper.toDomain(record);
+  }
 }

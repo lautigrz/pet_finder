@@ -21,13 +21,14 @@ export class User {
     public readonly name: string | null,
     public readonly lastname: string | null,
     public readonly photoUrl: string | null,
+    public readonly notificationRadius: number,
   ) {}
 
   static create(email: string, username: string, passwordHash: string): User {
     User.assertValidEmail(email);
     User.assertValidUsername(username);
     User.assertValidPasswordHash(passwordHash);
-    return new User(null, randomUUID(), email, username, passwordHash, false, new Date(), null, null, null);
+    return new User(null, randomUUID(), email, username, passwordHash, false, new Date(), null, null, null,5);
   }
 
   static reconstruct(
@@ -41,8 +42,9 @@ export class User {
     name: string | null,
     lastname: string | null,
     photoUrl: string | null,
+    notificationRadius: number
   ): User {
-    return new User(internalId, id, email, username, passwordHash, isVerified, createdAt,name, lastname, photoUrl);
+    return new User(internalId, id, email, username, passwordHash, isVerified, createdAt,name, lastname, photoUrl,notificationRadius);
   }
 
   private static assertValidEmail(email: string): void {
