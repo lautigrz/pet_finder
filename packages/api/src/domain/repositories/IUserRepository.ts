@@ -14,5 +14,4 @@ export interface IUserRepository {
       photoUrl?: string;
     },): Promise<User>;
   updatePassword(internalUserId: number, passwordHash: string): Promise<void>;
-  updateNotificationPreferences(publicId : string, notificationRadius:number,): Promise<User>;
 }
