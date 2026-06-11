@@ -17,7 +17,12 @@ import { UpdateProfileInput } from "../../application/usecase/update-profile/upd
 import { UpdateProfileRequest } from "../dto/UpdateProfileRequest";
 import { UserNotFoundError } from "../../domain/errors/UserNotFoundError";
 import { GetProfileUseCase } from "../../application/usecase/get-profile/get-profile.usecase";
+import { UpdateNotificationPreferencesUseCase } from "../../application/usecase/update-notification-preferences/update-notification-preferences.usecase";
+import { UpdateNotificationPreferencesInput } from "../../application/usecase/update-notification-preferences/update-notification-preferences.input";
+import { UpdateNotificationPreferencesRequest } from "../dto/UpdateNotificationPreferencesRequest";
+import { InvalidNotificationRadiusError } from "../../domain/errors/InvalidNotificationRadiusError";
 import { ClaudinaryService } from "../../infrastructure/storage/CloudinaryService";
+
 
 const PASSWORD_MIN_LENGTH = 8;
 const PASSWORD_MAX_LENGTH = 100;
@@ -32,7 +37,8 @@ export class UserController {
     private readonly updateProfileUseCase: UpdateProfileUseCase,
     private readonly getProfileUseCase: GetProfileUseCase,
     private readonly cloudinaryService: ClaudinaryService,
-  ) {}
+    private readonly updateNotificationsPreferenceUseCase: UpdateNotificationPreferencesUseCase,
+  ) { }
 
   create = async (req: Request, res: Response): Promise<void> => {
     try {
@@ -57,10 +63,10 @@ export class UserController {
     }
   };
 
-  updateProfile = async (req: Request, res:Response): Promise<void> => {
-    try{
+  updateProfile = async (req: Request, res: Response): Promise<void> => {
+    try {
       const body = this.validateUpdateProfileBody(req.body);
-      
+
       const updated = await this.updateProfileUseCase.execute(
         new UpdateProfileInput(
           req.auth!.sub,
@@ -68,15 +74,15 @@ export class UserController {
           body.lastname,
           body.username,
           body.photoUrl,
-          ),
+        ),
       );
       res.status(200).json(updated);
-    } catch (error){
+    } catch (error) {
       this.handleError(error, res);
     }
   }
 
-  getProfile = async (req:Request, res:Response): Promise<void> => {
+  getProfile = async (req: Request, res: Response): Promise<void> => {
     try {
       const profile = await this.getProfileUseCase.execute(req.auth!.sub);
 
@@ -86,29 +92,48 @@ export class UserController {
     }
 
   };
-  
-  uploadProfilePhoto = async (req:Request, res:Response): Promise<void> => {
-    try{
-      if(!req.file){
-        res.status(400).json({error: "photo is required"});
+
+  uploadProfilePhoto = async (req: Request, res: Response): Promise<void> => {
+    try {
+      if (!req.file) {
+        res.status(400).json({ error: "photo is required" });
         return;
       }
 
       const uploadedImage = await this.cloudinaryService.upload(req.file.buffer, "profiles");
-      
+
       const updated = await this.updateProfileUseCase.execute(
         new UpdateProfileInput(
           req.auth!.sub,
           undefined,
           undefined,
           undefined,
-          uploadedImage.url  
+          uploadedImage.url
         ),
       );
 
       res.status(200).json(updated);
-    } catch(error){
-      this.handleError(error,res);
+    } catch (error) {
+      this.handleError(error, res);
+    }
+  }
+
+  updateNotificationPreferences = async (
+    req: Request,
+    res: Response,
+  ): Promise<void> => {
+    try {
+      const body = this.validateNotificationPreferencesBody(req.body);
+
+      const updated = await this.updateNotificationsPreferenceUseCase.execute(
+        new UpdateNotificationPreferencesInput(
+          req.auth!.sub,
+          body.notificationRadius,
+        ),
+      );
+      res.status(200).json(updated);
+    } catch(error) {
+      this.handleError(error, res);
     }
   }
 
@@ -144,28 +169,54 @@ export class UserController {
     return data as VerifyEmailRequest;
   }
 
+  private validateNotificationPreferencesBody(
+    body: unknown,
+  ): UpdateNotificationPreferencesRequest {
+    const data = (body ?? {}) as Partial<UpdateNotificationPreferencesRequest>;
+    const issues: string[] = [];
+
+    if (typeof data.notificationRadius !== "number") {
+      issues.push("notificationRadius must be a number");
+    } else if (!Number.isInteger(data.notificationRadius)) {
+      issues.push("notificationRadius must be an integer");
+    } else if (
+      data.notificationRadius < 1 ||
+      data.notificationRadius > 100
+    ) {
+      issues.push(
+        "notificationRadius must be between 1 and 100 kilometers",
+      );
+    }
+
+    if (issues.length > 0) {
+      throw new ValidationError(issues);
+    }
+
+    return data as UpdateNotificationPreferencesRequest;
+  }
+
   private toCreateInput(body: CreateUserRequest): CreateUserInput {
     return new CreateUserInput(body.email, body.username, body.password);
   }
 
-  private validateUpdateProfileBody(body:unknown): UpdateProfileRequest{
+  private validateUpdateProfileBody(body: unknown): UpdateProfileRequest {
     const data = (body ?? {}) as Partial<UpdateProfileRequest>;
     const issues: string[] = [];
 
-    if(data.name && typeof data.name !== "string"){
+    if (data.name && typeof data.name !== "string") {
       issues.push("name must be a string");
     }
     if (data.lastname && typeof data.lastname !== "string") {
       issues.push("lastname must be a string");
     }
-      if (data.username && typeof data.username !== "string") {
+    if (data.username && typeof data.username !== "string") {
       issues.push("username must be a string");
     }
     if (data.photoUrl && typeof data.photoUrl !== "string") {
       issues.push("photoUrl must be a string");
     }
 
-    if(issues.length > 0){
+    if (issues.length > 0) {
       throw new ValidationError(issues);
     }
 
@@ -176,7 +227,8 @@ export class UserController {
     if (
       error instanceof ValidationError ||
       error instanceof InvalidEmailError ||
-      error instanceof InvalidUsernameError
+      error instanceof InvalidUsernameError ||
+      error instanceof InvalidNotificationRadiusError
     ) {
       res.status(400).json({ error: error.message });
       return;
@@ -189,7 +241,7 @@ export class UserController {
       res.status(400).json({ error: error.message, reason: error.reason });
       return;
     }
-    if(error instanceof UserNotFoundError){
+    if (error instanceof UserNotFoundError) {
       res.status(404).json({ error: error.message });
       return;
     }

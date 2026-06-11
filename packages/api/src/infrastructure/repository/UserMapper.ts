@@ -14,6 +14,7 @@ export class UserMapper {
       record.name,
       record.lastname,
       record.photo_url,
+      record.notification_radius
     );
   }
 
@@ -27,6 +28,7 @@ export class UserMapper {
       name: user.name,
       lastname: user.lastname,
       photo_url: user.photoUrl,
+      notification_radius: user.notificationRadius
     };
   }
 }
