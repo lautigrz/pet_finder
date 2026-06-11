@@ -5,25 +5,19 @@ import { SendEmailVerificationUseCase } from "../../application/usecase/send-ema
 import { SendEmailVerificationInput } from "../../application/usecase/send-email-verification/send-email-verification.input";
 import { VerifyEmailUseCase } from "../../application/usecase/verify-email/verify-email.usecase";
 import { VerifyEmailInput } from "../../application/usecase/verify-email/verify-email.input";
-import { EmailAlreadyExistsError } from "../../domain/errors/EmailAlreadyExistsError";
-import { InvalidEmailError } from "../../domain/errors/InvalidEmailError";
-import { InvalidUsernameError } from "../../domain/errors/InvalidUsernameError";
-import { InvalidVerificationTokenError } from "../../domain/errors/InvalidVerificationTokenError";
 import { CreateUserRequest } from "../dto/CreateUserRequest";
 import { VerifyEmailRequest } from "../dto/VerifyEmailRequest";
 import { ValidationError } from "../errors/ValidationError";
 import { UpdateProfileUseCase } from "../../application/usecase/update-profile/update-profile.usecase";
 import { UpdateProfileInput } from "../../application/usecase/update-profile/update-profile.input";
 import { UpdateProfileRequest } from "../dto/UpdateProfileRequest";
-import { UserNotFoundError } from "../../domain/errors/UserNotFoundError";
 import { GetProfileUseCase } from "../../application/usecase/get-profile/get-profile.usecase";
 import { GetNotificationPreferencesUseCase } from "../../application/usecase/get-notification-preferences/get-notification-preferences.usecase";
 import { UpdateNotificationPreferencesUseCase } from "../../application/usecase/update-notification-preferences/update-notification-preferences.usecase";
 import { UpdateNotificationPreferencesInput } from "../../application/usecase/update-notification-preferences/update-notification-preferences.input";
 import { UpdateNotificationPreferencesRequest } from "../dto/UpdateNotificationPreferencesRequest";
-import { InvalidNotificationRadiusError } from "../../domain/errors/InvalidNotificationRadiusError";
-import { InvalidMutedUntilError } from "../../domain/errors/InvalidMutedUntilError";
 import { ClaudinaryService } from "../../infrastructure/storage/CloudinaryService";
+import { asyncHandler } from "@presentation/handler/async-handler";
 
 
 const PASSWORD_MIN_LENGTH = 8;
@@ -43,120 +37,98 @@ export class UserController {
     private readonly getNotificationPreferencesUseCase: GetNotificationPreferencesUseCase,
   ) { }
 
-  create = async (req: Request, res: Response): Promise<void> => {
-    try {
-      const body = this.validateCreateBody(req.body);
-      const created = await this.createUserUseCase.execute(this.toCreateInput(body));
-      await this.sendEmailVerificationUseCase.execute(
-        new SendEmailVerificationInput(created.internalUserId, created.email),
-      );
-      res.status(201).json({ id: created.userId });
-    } catch (error) {
-      this.handleError(error, res);
+  create = asyncHandler(async (req: Request, res: Response): Promise<void> => {
+
+    const body = this.validateCreateBody(req.body);
+    const created = await this.createUserUseCase.execute(this.toCreateInput(body));
+    await this.sendEmailVerificationUseCase.execute(
+      new SendEmailVerificationInput(created.internalUserId, created.email),
+    );
+    res.status(201).json({ id: created.userId });
+
+  });
+
+  verifyEmail = asyncHandler(async (req: Request, res: Response): Promise<void> => {
+
+    const body = this.validateVerifyBody(req.body);
+    await this.verifyEmailUseCase.execute(new VerifyEmailInput(body.token));
+    res.status(200).json({ verified: true });
+
+  });
+
+  updateProfile = asyncHandler(async (req: Request, res: Response): Promise<void> => {
+
+    const body = this.validateUpdateProfileBody(req.body);
+
+    const updated = await this.updateProfileUseCase.execute(
+      new UpdateProfileInput(
+        req.auth!.sub,
+        body.name,
+        body.lastname,
+        body.username,
+        body.photoUrl,
+      ),
+    );
+    res.status(200).json(updated);
+
+  });
+
+  getProfile = asyncHandler(async (req: Request, res: Response): Promise<void> => {
+
+    const profile = await this.getProfileUseCase.execute(req.auth!.sub);
+
+    res.status(200).json(profile);
+
+  });
+
+  uploadProfilePhoto = asyncHandler(async (req: Request, res: Response): Promise<void> => {
+    if (!req.file) {
+      res.status(400).json({ error: "photo is required" });
+      return;
     }
-  };
 
-  verifyEmail = async (req: Request, res: Response): Promise<void> => {
-    try {
-      const body = this.validateVerifyBody(req.body);
-      await this.verifyEmailUseCase.execute(new VerifyEmailInput(body.token));
-      res.status(200).json({ verified: true });
-    } catch (error) {
-      this.handleError(error, res);
-    }
-  };
+    const uploadedImage = await this.cloudinaryService.upload(req.file.buffer, "profiles");
 
-  updateProfile = async (req: Request, res: Response): Promise<void> => {
-    try {
-      const body = this.validateUpdateProfileBody(req.body);
+    const updated = await this.updateProfileUseCase.execute(
+      new UpdateProfileInput(
+        req.auth!.sub,
+        undefined,
+        undefined,
+        undefined,
+        uploadedImage.url
+      ),
+    );
 
-      const updated = await this.updateProfileUseCase.execute(
-        new UpdateProfileInput(
-          req.auth!.sub,
-          body.name,
-          body.lastname,
-          body.username,
-          body.photoUrl,
-        ),
-      );
-      res.status(200).json(updated);
-    } catch (error) {
-      this.handleError(error, res);
-    }
-  }
+    res.status(200).json(updated);
 
-  getProfile = async (req: Request, res: Response): Promise<void> => {
-    try {
-      const profile = await this.getProfileUseCase.execute(req.auth!.sub);
+  });
 
-      res.status(200).json(profile);
-    } catch (error) {
-      this.handleError(error, res);
-    }
+  getNotificationPreferences = asyncHandler(async (req: Request, res: Response): Promise<void> => {
 
-  };
+    const preferences = await this.getNotificationPreferencesUseCase.execute(req.auth!.sub);
+    res.status(200).json(preferences);
 
-  uploadProfilePhoto = async (req: Request, res: Response): Promise<void> => {
-    try {
-      if (!req.file) {
-        res.status(400).json({ error: "photo is required" });
-        return;
-      }
+  });
 
-      const uploadedImage = await this.cloudinaryService.upload(req.file.buffer, "profiles");
+  updateNotificationPreferences = asyncHandler(async (req: Request, res: Response): Promise<void> => {
 
-      const updated = await this.updateProfileUseCase.execute(
-        new UpdateProfileInput(
-          req.auth!.sub,
-          undefined,
-          undefined,
-          undefined,
-          uploadedImage.url
-        ),
-      );
+    const body = this.validateNotificationPreferencesBody(req.body);
 
-      res.status(200).json(updated);
-    } catch (error) {
-      this.handleError(error, res);
-    }
-  }
+    const mutedUntil = body.mutedUntil === undefined ? undefined : body.mutedUntil === null ? null : new Date(body.mutedUntil);
+    const preferences = await this.updateNotificationsPreferenceUseCase.execute(
+      new UpdateNotificationPreferencesInput(
+        req.auth!.sub,
+        body.notificationRadius,
+        body.lostReportsEnabled,
+        body.sightingReportsEnabled,
+        body.matchesEnabled,
+        mutedUntil,
+      ),
+    );
 
-  getNotificationPreferences = async (
-    req: Request,
-    res: Response,
-  ): Promise<void> => {
-    try {
-      const preferences = await this.getNotificationPreferencesUseCase.execute(req.auth!.sub);
-      res.status(200).json(preferences);
-    } catch (error) {
-      this.handleError(error, res);
-    }
-  }
+    res.status(200).json(preferences);
 
-  updateNotificationPreferences = async (
-    req: Request,
-    res: Response,
-  ): Promise<void> => {
-    try {
-      const body = this.validateNotificationPreferencesBody(req.body);
-
-      const mutedUntil = body.mutedUntil === undefined ? undefined : body.mutedUntil === null ? null : new Date(body.mutedUntil);
-      const preferences = await this.updateNotificationsPreferenceUseCase.execute(
-        new UpdateNotificationPreferencesInput(
-          req.auth!.sub,
-          body.notificationRadius,
-          body.lostReportsEnabled,
-          body.sightingReportsEnabled,
-          body.matchesEnabled,
-          mutedUntil,
-        ),
-      );
-
-      res.status(200).json(preferences);
-    } catch (error) {
-      this.handleError(error, res);
-    }
-  }
+  });
 
   private validateCreateBody(body: unknown): CreateUserRequest {
     const issues: string[] = [];
@@ -288,29 +260,4 @@ export class UserController {
     return data as UpdateProfileRequest;
   }
 
-  private handleError(error: unknown, res: Response): void {
-    if (
-      error instanceof ValidationError ||
-      error instanceof InvalidEmailError ||
-      error instanceof InvalidUsernameError ||
-      error instanceof InvalidNotificationRadiusError ||
-      error instanceof InvalidMutedUntilError
-    ) {
-      res.status(400).json({ error: error.message });
-      return;
-    }
-    if (error instanceof EmailAlreadyExistsError) {
-      res.status(409).json({ error: error.message });
-      return;
-    }
-    if (error instanceof InvalidVerificationTokenError) {
-      res.status(400).json({ error: error.message, reason: error.reason });
-      return;
-    }
-    if (error instanceof UserNotFoundError) {
-      res.status(404).json({ error: error.message });
-      return;
-    }
-    res.status(500).json({ error: "Internal server error" });
-  }
 }

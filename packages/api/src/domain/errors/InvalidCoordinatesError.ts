@@ -1,6 +1,7 @@
-export class InvalidCoordinatesError extends Error {
+import { DomainError } from "./DomainError";
+
+export class InvalidCoordinatesError extends DomainError {
   constructor(message: string) {
-    super(message);
-    this.name = "InvalidCoordinatesError";
+    super(message, "INVALID_COORDINATES");
   }
 }

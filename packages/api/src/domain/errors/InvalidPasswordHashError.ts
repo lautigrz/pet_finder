@@ -1,6 +1,7 @@
-export class InvalidPasswordHashError extends Error {
+import { DomainError } from "./DomainError";
+
+export class InvalidPasswordHashError extends DomainError {
   constructor() {
-    super("Invalid password hash");
-    this.name = "InvalidPasswordHashError";
+    super("Invalid password hash", "INVALID_PASSWORD_HASH");
   }
 }

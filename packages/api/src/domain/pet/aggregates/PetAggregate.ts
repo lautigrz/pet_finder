@@ -3,6 +3,7 @@ import { SizeType } from "../../shared/size-type/size.type";
 import { GenderType } from "../../shared/gender-type/gender.type";
 import { InvalidPetNameError } from "../../errors/InvalidPetNameError";
 import { PetImage } from "../value-objects/image.vo";
+import { InvalidImageError } from "@domain/errors/InvalidImageError";
 
 
 export interface CreatePetParams {
@@ -54,7 +55,7 @@ export class Pet {
         private readonly _images: PetImage[],
         private readonly _createdAt: Date,
         private _updatedAt?: Date
-    ) { this.validateName() }
+    ) { this.validateName(); this.validateLenghtImage(); }
 
 
     static create(params: CreatePetParams) {
@@ -197,6 +198,12 @@ export class Pet {
     private validateName() {
         if (this._name.length < 2) {
             throw new InvalidPetNameError("Name must be at least 2 characters long");
+        }
+    }
+
+    private validateLenghtImage() {
+        if (this._images.length === 0 || this._images.length > 5) {
+            throw new InvalidImageError("Image is required, maximum 5 images allowed");
         }
     }
 
