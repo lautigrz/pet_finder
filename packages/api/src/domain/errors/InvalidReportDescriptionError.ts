@@ -1,6 +1,7 @@
-export class InvalidReportDescriptionError extends Error {
+import { DomainError } from "./DomainError";
+
+export class InvalidReportDescriptionError extends DomainError {
   constructor(message: string) {
-    super(message);
-    this.name = "InvalidReportDescriptionError";
+    super(message, "INVALID_REPORT_DESCRIPTION");
   }
 }

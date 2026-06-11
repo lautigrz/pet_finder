@@ -2,25 +2,10 @@ import { CreateReportUseCase } from "@application/usecase/report/create-report.u
 import { CreateReportDTO } from "@application/usecase/report/dto/create-report.dto";
 import { GetReportUseCase } from "@application/usecase/report/get-report-usecase";
 import { Request, Response } from "express";
-import { CreateReportInput, createReportSchema } from "../schemas/report/create-report.schema";
-import logger from "@infrastructure/logger/";
+import { CreateReportInput } from "../schemas/report/create-report.schema";
 import { ValidationError } from "../errors/ValidationError";
 import { PaginationParams } from "@domain/shared/pagination/pagination";
 import { ListUserReportsUseCase } from "@application/usecase/report/list-user-reports.usecase";
-
-import { InvalidCoordinatesError } from "@domain/errors/InvalidCoordinatesError";
-import { InvalidLocationError } from "@domain/errors/InvalidLocationError";
-import { InvalidReportDescriptionError } from "@domain/errors/InvalidReportDescriptionError";
-import { InvalidStatusTransitionError } from "@domain/errors/InvalidStatusTransitionError";
-import { InvalidReportDetailsError } from "@domain/errors/InvalidReportDetailsError";
-import { ReportNotFoundError } from "@domain/errors/ReportNotFoundError";
-import { PetNotFoundError } from "@domain/errors/PetNotFoundError";
-import { UnauthorizedReportEditError } from "@domain/errors/UnauthorizedReportEditError";
-import {
-    MappingError,
-    InvalidFieldError,
-    InvalidReportTypeError
-} from "@application/errors/errors";
 import { ReportType } from "@domain/report/types/report.type";
 import { GetFilteredReportsDTO } from "../schemas/report/report-filter.schema";
 import { GetFilteredReportsUseCase } from "@application/usecase/report/get-filter-reports.usecase";
@@ -28,6 +13,9 @@ import { UpdateStatus } from "@application/usecase/report/update-status-report";
 import { UpdateStatusDTO } from "@application/usecase/report/dto/update-status.dto";
 import { UpdateReportUseCase } from "@application/usecase/report/update-report.usecase";
 import { UpdateReportInput } from "../schemas/report/update-report.schema";
+import { asyncHandler } from "@presentation/handler/async-handler";
+import { UserNotFoundError } from "@domain/errors/UserNotFoundError";
+import logger from "@infrastructure/logger";
 
 const DEFAULT_PAGE = 1;
 const DEFAULT_LIMIT = 10;
@@ -43,104 +31,40 @@ export class CreateReportController {
         private updateReportUseCase: UpdateReportUseCase
     ) { }
 
-    create = async (req: Request, res: Response): Promise<void> => {
+    create = asyncHandler(async (req: Request, res: Response): Promise<void> => {
         const parsed = req.validated?.body as CreateReportInput;
         const files = (req.files as Express.Multer.File[] | undefined) ?? [];
 
         const userPublicId = req.auth?.sub;
+
         if (!userPublicId) {
-            res.status(401).json({ error: "Unauthorized" });
-            return;
+            throw new UserNotFoundError();
+        }
+        const dto = this.buildCreateDTO(parsed, files);
+        const result = await this.useCase.execute(dto, userPublicId);
+        logger.info("Report created successfully", { type: parsed.type });
+        res.status(201).json({ message: "Report created successfully", publicId: result.publicId });
+    });
+
+
+    list = asyncHandler(async (req: Request, res: Response): Promise<void> => {
+
+        const pagination = this.validateListQuery(req.query);
+
+        const userId = req.auth!.sub;
+        if (!userId) {
+            throw new UserNotFoundError();
         }
 
-        try {
-            const dto = this.buildCreateDTO(parsed, files);
-            const result = await this.useCase.execute(dto, userPublicId);
-            logger.info("Report created successfully", { type: parsed.type });
-            res.status(201).json({ message: "Report created successfully", publicId: result.publicId });
-        } catch (error) {
+        const result = await this.listUserReportsUseCase.execute(userId, pagination);
+        logger.info("Listed user reports successfully", {
+            userId,
+            page: pagination.page,
+            limit: pagination.limit
+        });
+        res.status(200).json(result);
 
-            if (
-                error instanceof InvalidCoordinatesError ||
-                error instanceof InvalidLocationError ||
-                error instanceof InvalidReportDescriptionError ||
-                error instanceof InvalidStatusTransitionError ||
-                error instanceof InvalidReportDetailsError ||
-                error instanceof InvalidFieldError ||
-                error instanceof InvalidReportTypeError ||
-                error instanceof MappingError
-            ) {
-                logger.warn("Business validation error on report creation", { message: error.message });
-                res.status(400).json({ error: error.message });
-                return;
-            }
-
-            if (error instanceof PetNotFoundError) {
-                logger.warn("Dependency error on report creation", { message: error.message });
-                res.status(404).json({ error: error.message });
-                return;
-            }
-
-            logger.error("Error creating report", {
-                error: error instanceof Error ? error.message : String(error),
-                stack: error instanceof Error ? error.stack : undefined,
-                route: req.originalUrl,
-                method: req.method,
-                body: req.body
-            });
-            res.status(500).json({ error: 'Internal server error' });
-        }
-    }
-
-
-    list = async (req: Request, res: Response): Promise<void> => {
-        try {
-            const pagination = this.validateListQuery(req.query);
-
-            const userId = req.auth!.sub;
-            if (!userId) {
-                res.status(401).json({ error: "Unauthorized" });
-                return;
-            }
-
-            const result = await this.listUserReportsUseCase.execute(userId, pagination);
-            logger.info("Listed user reports successfully", {
-                userId,
-                page: pagination.page,
-                limit: pagination.limit
-            });
-            res.status(200).json(result);
-        } catch (error) {
-
-            if (error instanceof ValidationError) {
-                logger.warn("Validation error on report listing", { message: error.message });
-                res.status(400).json({ error: error.message });
-                return;
-            }
-
-            if (error instanceof PetNotFoundError) {
-                logger.warn("Dependency error on report listing", { message: error.message });
-                res.status(404).json({ error: error.message });
-                return;
-            }
-
-            if (error instanceof MappingError) {
-                logger.warn("Mapping error on report listing", { message: error.message });
-                res.status(400).json({ error: error.message });
-                return;
-            }
-
-            logger.error("Error listing reports", {
-                error: error instanceof Error ? error.message : String(error),
-                stack: error instanceof Error ? error.stack : undefined,
-                route: req.originalUrl,
-                method: req.method,
-                query: req.query
-            });
-            res.status(500).json({ error: 'Internal server error' });
-        }
-
-    }
+    });
 
 
     private validateListQuery(query: unknown): PaginationParams {
@@ -176,66 +100,26 @@ export class CreateReportController {
 
 
 
-    getFilteres = async (req: Request, res: Response): Promise<void> => {
-        try {
+    getFilteres = asyncHandler(async (req: Request, res: Response): Promise<void> => {
 
-            const dto = req.validated?.query as GetFilteredReportsDTO;
-            const reports = await this.filteresUseCase.execute(dto);
+        const dto = req.validated?.query as GetFilteredReportsDTO;
+        const reports = await this.filteresUseCase.execute(dto);
 
-            logger.info("Filtered reports successfully", {
-                query: dto,
-                count: reports.length
-            });
-            res.status(200).json(reports);
+        logger.info("Filtered reports successfully", {
+            query: dto,
+            count: reports.length
+        });
+        res.status(200).json(reports);
 
-        } catch (error) {
-            if (error instanceof ValidationError) {
-                logger.warn("Validation error on report filtering", { message: error.message });
-                res.status(400).json({ error: error.message });
-                return;
-            }
-
-            if (error instanceof MappingError) {
-                logger.warn("Mapping error on report filtering", { message: error.message });
-                res.status(400).json({ error: error.message });
-                return;
-            }
-            logger.error("Error filtering reports", {
-                error: error instanceof Error ? error.message : String(error),
-                stack: error instanceof Error ? error.stack : undefined,
-                route: req.originalUrl,
-                method: req.method,
-                query: req.query
-            });
-            res.status(500).json({ error: 'Internal server error' });
-        }
-    }
+    });
 
 
-    getByPublicId = async (req: Request, res: Response): Promise<void> => {
+    getByPublicId = asyncHandler(async (req: Request, res: Response): Promise<void> => {
         const { publicId } = req.params;
-
-        try {
-            const report = await this.getReportUseCase.execute(publicId as string);
-            logger.info("Fetched report successfully", { publicId });
-            res.status(200).json(report);
-        } catch (error) {
-            if (error instanceof ReportNotFoundError) {
-                logger.warn("Report not found", { publicId, message: error.message });
-                res.status(404).json({ error: error.message });
-                return;
-            }
-
-            logger.error("Error fetching report", {
-                error: error instanceof Error ? error.message : String(error),
-                stack: error instanceof Error ? error.stack : undefined,
-                route: req.originalUrl,
-                method: req.method,
-                params: req.params
-            });
-            res.status(500).json({ error: 'Internal server error' });
-        }
-    }
+        const report = await this.getReportUseCase.execute(publicId as string);
+        logger.info("Fetched report successfully", { publicId });
+        res.status(200).json(report);
+    });
 
     private buildCreateDTO(parsed: CreateReportInput, files: Express.Multer.File[]): CreateReportDTO {
         if (parsed.type === ReportType.LOST) {
@@ -244,40 +128,24 @@ export class CreateReportController {
         return { ...parsed, images: files.map(f => f.buffer) } as CreateReportDTO;
     }
 
-    updateStatus = async (req: Request, res: Response): Promise<void> => {
-        try {
-            const dto = req.validated?.body as UpdateStatusDTO;
-            const publicId = req.validated?.params.publicId;
+    updateStatus = asyncHandler(async (req: Request, res: Response): Promise<void> => {
+        const dto = req.validated?.body as UpdateStatusDTO;
+        const publicId = req.validated?.params.publicId;
 
-            if (!publicId) {
-                res.status(401).json({ error: "Unauthorized" });
-                return;
-            }
+        dto.publicId = publicId;
 
-            dto.publicId = publicId;
+        await this.updateStatusUseCase.execute(dto);
 
-            await this.updateStatusUseCase.execute(dto);
+        logger.info("Updated report status successfully", {
+            publicId,
+            status: dto.status
+        });
 
-            logger.info("Updated report status successfully", {
-                publicId,
-                status: dto.status
-            });
+        res.sendStatus(204);
 
-            res.sendStatus(204);
-        } catch (error) {
-            logger.error("Error updating report status", {
-                error: error instanceof Error ? error.message : String(error),
-                stack: error instanceof Error ? error.stack : undefined,
-                route: req.originalUrl,
-                method: req.method,
-                params: req.params,
-                body: req.body
-            });
-            res.status(500).json({ error: 'Internal server error' });
-        }
-    }
+    });
 
-    update = async (req: Request, res: Response): Promise<void> => {
+    update = asyncHandler(async (req: Request, res: Response): Promise<void> => {
         const userPublicId = req.auth?.sub;
         if (!userPublicId) {
             res.status(401).json({ error: 'Unauthorized' });
@@ -287,33 +155,16 @@ export class CreateReportController {
         const body = req.validated?.body as UpdateReportInput;
         const publicId = req.validated?.params.publicId as string;
         const files = (req.files as Express.Multer.File[] | undefined) ?? [];
+        await this.updateReportUseCase.execute(
+            {
+                publicId,
+                ...body,
+                newImages: files.map(f => f.buffer),
+            },
+            userPublicId,
+        );
+        logger.info('Report updated successfully', { publicId });
+        res.sendStatus(204);
 
-        try {
-            await this.updateReportUseCase.execute(
-                {
-                    publicId,
-                    ...body,
-                    newImages: files.map(f => f.buffer),
-                },
-                userPublicId,
-            );
-            logger.info('Report updated successfully', { publicId });
-            res.sendStatus(204);
-        } catch (error) {
-            if (error instanceof ReportNotFoundError) {
-                res.status(404).json({ error: error.message });
-                return;
-            }
-            if (error instanceof UnauthorizedReportEditError) {
-                res.status(403).json({ error: error.message });
-                return;
-            }
-            if (error instanceof InvalidFieldError) {
-                res.status(400).json({ error: error.message });
-                return;
-            }
-            logger.error('Error updating report', { error });
-            res.status(500).json({ error: 'Internal server error' });
-        }
-    };
+    });
 }

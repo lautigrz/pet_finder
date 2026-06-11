@@ -1,6 +1,7 @@
-export class InvalidLocationError extends Error {
-  constructor(message: string) {
-    super(message);
-    this.name = "InvalidLocationError";
+import { DomainError } from "./DomainError";
+
+export class InvalidLocationError extends DomainError {
+  constructor() {
+    super("Location is required and must be a valid address", "INVALID_LOCATION");
   }
 }
