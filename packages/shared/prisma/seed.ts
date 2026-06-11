@@ -8,6 +8,73 @@ async function main(): Promise<void> {
   await seedAnimalTypes()
   await seedGenders()
   await seedPetSizes()
+  await seedColors()
+  await seedBreeds()
+}
+
+const DOG = 1
+const CAT = 2
+
+async function seedColors(): Promise<void> {
+  const colors = [
+    'Negro',
+    'Blanco',
+    'Marrón',
+    'Gris',
+    'Atigrado',
+    'Naranja',
+    'Crema',
+    'Beige',
+    'Dorado',
+    'Negro y blanco',
+    'Marrón y blanco',
+    'Tricolor',
+    'Manchado',
+    'Otro',
+  ]
+  await prisma.color.createMany({
+    data: colors.map((name) => ({ name })),
+    skipDuplicates: true,
+  })
+}
+
+async function seedBreeds(): Promise<void> {
+  const dogBreeds = [
+    'Mestizo',
+    'Labrador',
+    'Caniche',
+    'Bulldog',
+    'Pastor Alemán',
+    'Golden Retriever',
+    'Chihuahua',
+    'Boxer',
+    'Dálmata',
+    'Salchicha',
+    'Pitbull',
+    'Rottweiler',
+    'Beagle',
+    'Border Collie',
+    'Pug',
+    'Otra',
+  ]
+  const catBreeds = [
+    'Mestizo',
+    'Siamés',
+    'Persa',
+    'Angora',
+    'Bengalí',
+    'Maine Coon',
+    'Esfinge',
+    'Común europeo',
+    'Otra',
+  ]
+  await prisma.breed.createMany({
+    data: [
+      ...dogBreeds.map((name) => ({ name, animal_type_id: DOG })),
+      ...catBreeds.map((name) => ({ name, animal_type_id: CAT })),
+    ],
+    skipDuplicates: true,
+  })
 }
 
 async function seedReportStatuses(): Promise<void> {
