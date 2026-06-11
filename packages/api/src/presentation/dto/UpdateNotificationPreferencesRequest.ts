@@ -1,3 +1,7 @@
 export interface UpdateNotificationPreferencesRequest {
-     notificationRadius: number;
+     notificationRadius?: number;
+     lostReportsEnabled?: boolean;
+     sightingReportsEnabled?: boolean;
+     matchesEnabled?: boolean;
+     mutedUntil?: string | null;
 }

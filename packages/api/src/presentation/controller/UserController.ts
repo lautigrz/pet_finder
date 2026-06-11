@@ -17,10 +17,12 @@ import { UpdateProfileInput } from "../../application/usecase/update-profile/upd
 import { UpdateProfileRequest } from "../dto/UpdateProfileRequest";
 import { UserNotFoundError } from "../../domain/errors/UserNotFoundError";
 import { GetProfileUseCase } from "../../application/usecase/get-profile/get-profile.usecase";
+import { GetNotificationPreferencesUseCase } from "../../application/usecase/get-notification-preferences/get-notification-preferences.usecase";
 import { UpdateNotificationPreferencesUseCase } from "../../application/usecase/update-notification-preferences/update-notification-preferences.usecase";
 import { UpdateNotificationPreferencesInput } from "../../application/usecase/update-notification-preferences/update-notification-preferences.input";
 import { UpdateNotificationPreferencesRequest } from "../dto/UpdateNotificationPreferencesRequest";
 import { InvalidNotificationRadiusError } from "../../domain/errors/InvalidNotificationRadiusError";
+import { InvalidMutedUntilError } from "../../domain/errors/InvalidMutedUntilError";
 import { ClaudinaryService } from "../../infrastructure/storage/CloudinaryService";
 
 
@@ -38,6 +40,7 @@ export class UserController {
     private readonly getProfileUseCase: GetProfileUseCase,
     private readonly cloudinaryService: ClaudinaryService,
     private readonly updateNotificationsPreferenceUseCase: UpdateNotificationPreferencesUseCase,
+    private readonly getNotificationPreferencesUseCase: GetNotificationPreferencesUseCase,
   ) { }
 
   create = async (req: Request, res: Response): Promise<void> => {
@@ -118,6 +121,18 @@ export class UserController {
     }
   }
 
+  getNotificationPreferences = async (
+    req: Request,
+    res: Response,
+  ): Promise<void> => {
+    try {
+      const preferences = await this.getNotificationPreferencesUseCase.execute(req.auth!.sub);
+      res.status(200).json(preferences);
+    } catch (error) {
+      this.handleError(error, res);
+    }
+  }
+
   updateNotificationPreferences = async (
     req: Request,
     res: Response,
@@ -125,14 +140,20 @@ export class UserController {
     try {
       const body = this.validateNotificationPreferencesBody(req.body);
 
-      const updated = await this.updateNotificationsPreferenceUseCase.execute(
+      const mutedUntil = body.mutedUntil === undefined ? undefined : body.mutedUntil === null ? null : new Date(body.mutedUntil);
+      const preferences = await this.updateNotificationsPreferenceUseCase.execute(
         new UpdateNotificationPreferencesInput(
           req.auth!.sub,
           body.notificationRadius,
+          body.lostReportsEnabled,
+          body.sightingReportsEnabled,
+          body.matchesEnabled,
+          mutedUntil,
         ),
       );
-      res.status(200).json(updated);
-    } catch(error) {
+
+      res.status(200).json(preferences);
+    } catch (error) {
       this.handleError(error, res);
     }
   }
@@ -175,17 +196,61 @@ export class UserController {
     const data = (body ?? {}) as Partial<UpdateNotificationPreferencesRequest>;
     const issues: string[] = [];
 
-    if (typeof data.notificationRadius !== "number") {
-      issues.push("notificationRadius must be a number");
-    } else if (!Number.isInteger(data.notificationRadius)) {
-      issues.push("notificationRadius must be an integer");
-    } else if (
-      data.notificationRadius < 1 ||
-      data.notificationRadius > 100
+    const hasAtLeastOneField =
+      data.notificationRadius !== undefined ||
+      data.lostReportsEnabled !== undefined ||
+      data.sightingReportsEnabled !== undefined ||
+      data.matchesEnabled !== undefined ||
+      data.mutedUntil !== undefined;
+
+    if (!hasAtLeastOneField) {
+      issues.push("at least one preference is required");
+    }
+
+    if (data.notificationRadius !== undefined) {
+      if (
+        typeof data.notificationRadius !== "number" ||
+        !Number.isInteger(data.notificationRadius)
+      ) {
+        issues.push("notificationRadius must be an integer");
+      } else if (
+        data.notificationRadius < 1 ||
+        data.notificationRadius > 100
+      ) {
+        issues.push(
+          "notificationRadius must be between 1 and 100 kilometers",
+        );
+      }
+    }
+
+    const booleanFields: Array<
+      keyof Pick<
+        UpdateNotificationPreferencesRequest,
+        | "lostReportsEnabled"
+        | "sightingReportsEnabled"
+        | "matchesEnabled"
+      >
+    > = [
+        "lostReportsEnabled",
+        "sightingReportsEnabled",
+        "matchesEnabled",
+      ];
+
+    for (const field of booleanFields) {
+      if (
+        data[field] !== undefined &&
+        typeof data[field] !== "boolean"
+      ) {
+        issues.push(`${field} must be a boolean`);
+      }
+    }
+
+    if (
+      data.mutedUntil !== undefined &&
+      data.mutedUntil !== null &&
+      typeof data.mutedUntil !== "string"
     ) {
-      issues.push(
-        "notificationRadius must be between 1 and 100 kilometers",
-      );
+      issues.push("mutedUntil must be an ISO date string or null");
     }
 
     if (issues.length > 0) {
@@ -228,7 +293,8 @@ export class UserController {
       error instanceof ValidationError ||
       error instanceof InvalidEmailError ||
       error instanceof InvalidUsernameError ||
-      error instanceof InvalidNotificationRadiusError
+      error instanceof InvalidNotificationRadiusError ||
+      error instanceof InvalidMutedUntilError
     ) {
       res.status(400).json({ error: error.message });
       return;
