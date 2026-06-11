@@ -27,7 +27,7 @@ export class User {
     User.assertValidEmail(email);
     User.assertValidUsername(username);
     User.assertValidPasswordHash(passwordHash);
-    return new User(null, randomUUID(), email, username, passwordHash, false, new Date(), null, null, null);
+    return new User(null, randomUUID(), email, username, passwordHash, false, new Date(), null, null, null,);
   }
 
   static reconstruct(
@@ -42,7 +42,7 @@ export class User {
     lastname: string | null,
     photoUrl: string | null,
   ): User {
-    return new User(internalId, id, email, username, passwordHash, isVerified, createdAt,name, lastname, photoUrl);
+    return new User(internalId, id, email, username, passwordHash, isVerified, createdAt,name, lastname, photoUrl,);
   }
 
   private static assertValidEmail(email: string): void {
