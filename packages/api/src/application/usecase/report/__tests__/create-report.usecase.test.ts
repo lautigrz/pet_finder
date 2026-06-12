@@ -13,6 +13,7 @@ import { SightingReportDetails } from "@domain/report/value-objects/sighting-rep
 import { IUserRepository } from "@domain/repositories/IUserRepository";
 import { PetRepository } from "@domain/pet/repositories/pet.repository";
 import { StorageService } from "@application/ports/StorageService";
+import { PetImage } from "@domain/pet/value-objects/image.vo";
 
 const TEST_EMAIL = "test.user@example.com";
 
@@ -41,7 +42,7 @@ const fakePet = Pet.restore({
   hasIdCollar: true,
   isVaccinated: true,
   breed: "Labrador",
-  petImage: [],
+  petImage: [PetImage.create({ cloudinaryId: "fake-id", photoUrl: "https://fake.com/img.jpg" })],
   createdAt: new Date(),
 });
 

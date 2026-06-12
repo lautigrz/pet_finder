@@ -1,6 +1,7 @@
-export class InvalidAccessTokenError extends Error {
+import { DomainError } from "./DomainError";
+
+export class InvalidAccessTokenError extends DomainError {
   constructor() {
-    super("Invalid or expired access token");
-    this.name = "InvalidAccessTokenError";
+    super("Invalid or expired access token", "INVALID_ACCESS_TOKEN");
   }
 }

@@ -1,6 +1,7 @@
-export class InvalidCredentialsError extends Error {
+import { DomainError } from "./DomainError";
+
+export class InvalidCredentialsError extends DomainError {
   constructor() {
-    super("Invalid credentials");
-    this.name = "InvalidCredentialsError";
+    super("Invalid credentials", "INVALID_CREDENTIALS");
   }
 }

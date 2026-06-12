@@ -19,7 +19,10 @@ const makeRestoredPet = (overrides?: Partial<Parameters<typeof Pet.restore>[0]>)
     hasIdCollar: true,
     isVaccinated: true,
     breed: "Labrador",
-    petImage: [],
+    petImage: [PetImage.create({
+      cloudinaryId: "fake-id",
+      photoUrl: "https://fake.com/img.jpg",
+    })],
     createdAt: new Date("2024-01-01T00:00:00.000Z"),
     updatedAt: null,
     ...overrides,
@@ -62,14 +65,6 @@ describe("PetMapper.toOutput", () => {
 
     expect(output.updatedAt).toBe("2024-06-15T12:00:00.000Z");
   });
-
-  it("retorna lista de imágenes vacía si el pet no tiene imágenes", () => {
-    const pet = makeRestoredPet({ petImage: [] });
-    const output = PetMapper.toOutput(pet);
-
-    expect(output.images).toHaveLength(0);
-  });
-
   it("mapea múltiples imágenes correctamente", () => {
     const images = [
       PetImage.create({ cloudinaryId: "id1", photoUrl: "https://url.com/1.jpg" }),
