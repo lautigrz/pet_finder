@@ -40,11 +40,20 @@ export function errorToHttpStatus(error: Error): HttpError {
             case 'VALIDATION_ERROR': return { statusCode: 400, code: error.code, message: error.message };
             case 'INVALID_NOTIFICATION_RADIUS': return { statusCode: 400, code: error.code, message: error.message };
             case 'INVALID_MUTED_UNTIL': return { statusCode: 400, code: error.code, message: error.message };
+            case 'INVALID_PET_NAME': return { statusCode: 400, code: error.code, message: error.message };
         }
     }
 
     if (error instanceof ApplicationError) {
         return { statusCode: 500, code: error.code, message: error.message };
+    }
+
+
+    switch (error.name) {
+        case 'InvalidFieldError': return { statusCode: 400, code: 'INVALID_FIELD', message: error.message };
+        case 'InvalidReportTypeError': return { statusCode: 400, code: 'INVALID_REPORT_TYPE', message: error.message };
+        case 'MappingError': return { statusCode: 400, code: 'MAPPING_ERROR', message: error.message };
+        case 'MissingFieldError': return { statusCode: 400, code: 'MISSING_FIELD', message: error.message };
     }
 
     return { statusCode: 500, code: 'INTERNAL_ERROR', message: 'Internal server error' };

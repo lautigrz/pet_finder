@@ -15,6 +15,8 @@ import { ReportNotFoundError } from "@domain/errors/ReportNotFoundError";
 import { MappingError } from "@application/errors/errors";
 import { User } from "@domain/entities/User";
 import { IUserRepository } from "@domain/repositories/IUserRepository";
+import { SightingImage } from "@domain/report/value-objects/sighting.images";
+import { PetImage } from "@domain/pet/value-objects/image.vo";
 
 const validLocation = Location.create({
   address: "Av. Corrientes 1234",
@@ -50,7 +52,10 @@ const fakeSightingReport = Report.restore({
     hasIdCollar: false,
     color: "black",
     isInTransit: false,
-    images: [],
+    images: [SightingImage.create({
+      cloudinaryId: "fake-id",
+      photoUrl: "https://fake.com/img.jpg",
+    })],
   }),
   location: validLocation,
   occurredAt: new Date("2024-05-01"),
@@ -69,7 +74,10 @@ const fakePet = Pet.restore({
   color: "brown",
   hasIdCollar: true,
   breed: "Labrador",
-  petImage: [],
+  petImage: [PetImage.create({
+    cloudinaryId: "fake-id",
+    photoUrl: "https://fake.com/img.jpg",
+  })],
   createdAt: new Date(),
   isVaccinated: false
 });
