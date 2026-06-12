@@ -45,6 +45,11 @@ export class User {
     return new User(internalId, id, email, username, passwordHash, isVerified, createdAt,name, lastname, photoUrl,);
   }
 
+  requireInternalId(): number {
+    if (this.internalId === null) throw new Error("User is not persisted");
+    return this.internalId;
+  }
+
   private static assertValidEmail(email: string): void {
     if (!EMAIL_REGEX.test(email)) throw new InvalidEmailError(email);
   }

@@ -5,9 +5,13 @@ import type { IUserRepository } from "../../../../domain/repositories/IUserRepos
 import type { IPasswordResetTokenRepository } from "../../../../domain/repositories/IPasswordResetTokenRepository";
 import type { ITokenGenerator } from "../../../../domain/services/ITokenGenerator";
 import type { IEmailService } from "../../../../domain/services/IEmailService";
-import type { User } from "../../../../domain/entities/User";
+import { User } from "../../../../domain/entities/User";
 
 const VALID_TOKEN = "a".repeat(64);
+const VALID_HASH = "h".repeat(60);
+
+const existingUser = () =>
+  User.reconstruct(42, "user-abc", "juan@example.com", "juancho", VALID_HASH, true, new Date(), null, null, null);
 
 describe("RequestPasswordResetUseCase", () => {
   let userRepository: IUserRepository;
@@ -32,10 +36,7 @@ describe("RequestPasswordResetUseCase", () => {
   describe("when the user exists", () => {
     it("generates a token, persists it and sends the reset email", async () => {
       // Given un usuario existente y un token generado
-      vi.mocked(userRepository.findByEmail).mockResolvedValue({
-        internalId: 42,
-        email: "juan@example.com",
-      } as unknown as User);
+      vi.mocked(userRepository.findByEmail).mockResolvedValue(existingUser());
       vi.mocked(tokenGenerator.generate).mockReturnValue(VALID_TOKEN);
 
       // When pido el reset

@@ -5,6 +5,8 @@ import { IRefreshTokenRepository } from "../../../domain/repositories/IRefreshTo
 import { IPasswordHasher } from "../../../domain/services/IPasswordHasher";
 import { ITokenSigner } from "../../../domain/services/ITokenSigner";
 import { ITokenGenerator } from "../../../domain/services/ITokenGenerator";
+import { accessTokenPayloadFor } from "../../../domain/services/access-token-payload";
+import { normalizeEmail } from "../../../domain/shared/email/normalize-email";
 import { InvalidCredentialsError } from "../../../domain/errors/InvalidCredentialsError";
 import { LoginUserInput } from "./login-user.input";
 import { LoginUserOutput } from "./login-user.output";
@@ -20,15 +22,14 @@ export class LoginUserUseCase {
   ) {}
 
   async execute(input: LoginUserInput): Promise<LoginUserOutput> {
-    const user = await this.findVerifiedUser(input.email);
+    const user = await this.findUserByEmail(input.email);
     await this.assertPasswordMatches(input.plainPassword, user.passwordHash);
-    const accessToken = this.issueAccessToken(user);
-    const refreshToken = await this.issueRefreshToken(user.internalId!);
-    return new LoginUserOutput(accessToken, refreshToken);
+    const accessToken = this.tokenSigner.sign(accessTokenPayloadFor(user));
+    return new LoginUserOutput(accessToken, await this.issueRefreshToken(user.requireInternalId()));
   }
 
-  private async findVerifiedUser(email: string): Promise<User> {
-    const user = await this.userRepository.findByEmail(email.trim().toLowerCase());
+  private async findUserByEmail(email: string): Promise<User> {
+    const user = await this.userRepository.findByEmail(normalizeEmail(email));
     if (!user) throw new InvalidCredentialsError();
     return user;
   }
@@ -38,19 +39,10 @@ export class LoginUserUseCase {
     if (!matches) throw new InvalidCredentialsError();
   }
 
-  private issueAccessToken(user: User): string {
-    return this.tokenSigner.sign({
-      sub: user.id,
-      email: user.email,
-      isVerified: user.isVerified,
-    });
-  }
-
   private async issueRefreshToken(internalUserId: number): Promise<string> {
     const value = this.tokenGenerator.generate();
     const expiresAt = new Date(Date.now() + this.refreshTtlMs);
-    const token = RefreshToken.create(internalUserId, value, expiresAt);
-    await this.refreshTokenRepository.save(token);
+    await this.refreshTokenRepository.save(RefreshToken.create(internalUserId, value, expiresAt));
     return value;
   }
 }

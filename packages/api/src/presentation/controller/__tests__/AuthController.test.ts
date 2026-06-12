@@ -41,7 +41,7 @@ describe("AuthController", () => {
     };
   });
 
-  const buildReq = (body: unknown): Partial<Request> => ({ body });
+  const buildReq = (body: unknown): Partial<Request> => ({ body, validated: { body } });
 
   describe("when credentials are valid", () => {
     it("returns 200 with access and refresh tokens", async () => {
@@ -55,42 +55,6 @@ describe("AuthController", () => {
         accessToken: "jwt-access",
         refreshToken: "refresh-string",
       });
-    });
-  });
-
-  describe("when the body is missing fields", () => {
-    it("returns 400 if email is missing", async () => {
-      const req = buildReq({ password: "miPass123" });
-      await invoke(controller.login, req, res);
-
-      expect(res.status).toHaveBeenCalledWith(400);
-      expect(useCase.execute).not.toHaveBeenCalled();
-    });
-
-    it("returns 400 if password is missing", async () => {
-      const req = buildReq({ email: "juan@example.com" });
-      await invoke(controller.login, req, res);
-
-      expect(res.status).toHaveBeenCalledWith(400);
-      expect(useCase.execute).not.toHaveBeenCalled();
-    });
-
-    it("returns 400 if email exceeds 255 characters", async () => {
-      const longEmail = "a".repeat(250) + "@x.com";
-      const req = buildReq({ email: longEmail, password: "miPass123" });
-      await invoke(controller.login, req, res);
-
-      expect(res.status).toHaveBeenCalledWith(400);
-      expect(useCase.execute).not.toHaveBeenCalled();
-    });
-
-    it("returns 400 if password exceeds 100 characters", async () => {
-      const longPassword = "a".repeat(101);
-      const req = buildReq({ email: "juan@example.com", password: longPassword });
-      await invoke(controller.login, req, res);
-
-      expect(res.status).toHaveBeenCalledWith(400);
-      expect(useCase.execute).not.toHaveBeenCalled();
     });
   });
 
@@ -124,14 +88,6 @@ describe("AuthController", () => {
       expect(logoutUseCase.execute).toHaveBeenCalled();
       expect(res.status).toHaveBeenCalledWith(204);
     });
-
-    it("returns 400 and does NOT run the use case when refreshToken is missing", async () => {
-      const req = buildReq({});
-      await invoke(controller.logout, req, res);
-
-      expect(res.status).toHaveBeenCalledWith(400);
-      expect(logoutUseCase.execute).not.toHaveBeenCalled();
-    });
   });
 
   describe("refresh", () => {
@@ -144,14 +100,6 @@ describe("AuthController", () => {
       expect(res.status).toHaveBeenCalledWith(200);
       expect(res.json).toHaveBeenCalledWith({ accessToken: "new-access" });
     });
-
-    it("returns 400 and does NOT run the use case when refreshToken is missing", async () => {
-      const req = buildReq({});
-      await invoke(controller.refresh, req, res);
-
-      expect(res.status).toHaveBeenCalledWith(400);
-      expect(refreshUseCase.execute).not.toHaveBeenCalled();
-    });
   });
 
   describe("forgotPassword", () => {
@@ -162,14 +110,6 @@ describe("AuthController", () => {
       expect(requestResetUseCase.execute).toHaveBeenCalled();
       expect(res.status).toHaveBeenCalledWith(200);
     });
-
-    it("returns 400 and does NOT run the use case when email is missing", async () => {
-      const req = buildReq({});
-      await invoke(controller.forgotPassword, req, res);
-
-      expect(res.status).toHaveBeenCalledWith(400);
-      expect(requestResetUseCase.execute).not.toHaveBeenCalled();
-    });
   });
 
   describe("resetPassword", () => {
@@ -179,14 +119,6 @@ describe("AuthController", () => {
 
       expect(resetPasswordUseCase.execute).toHaveBeenCalled();
       expect(res.status).toHaveBeenCalledWith(200);
-    });
-
-    it("returns 400 when newPassword is too short", async () => {
-      const req = buildReq({ token: "tok-123", newPassword: "123" });
-      await invoke(controller.resetPassword, req, res);
-
-      expect(res.status).toHaveBeenCalledWith(400);
-      expect(resetPasswordUseCase.execute).not.toHaveBeenCalled();
     });
 
     it("returns 400 when the token is invalid/expired", async () => {

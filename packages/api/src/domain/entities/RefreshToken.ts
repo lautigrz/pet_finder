@@ -1,3 +1,5 @@
+import { assertExpirationInFuture, assertTokenValue } from "../shared/token/token-invariants";
+
 export class RefreshToken {
   private constructor(
     public readonly id: number | null,
@@ -9,8 +11,8 @@ export class RefreshToken {
   ) {}
 
   static create(userId: number, value: string, expiresAt: Date): RefreshToken {
-    RefreshToken.assertValidValue(value);
-    RefreshToken.assertExpirationInFuture(expiresAt);
+    assertTokenValue(value, "Refresh token value too short");
+    assertExpirationInFuture(expiresAt);
     return new RefreshToken(null, userId, value, expiresAt, null, new Date());
   }
 
@@ -33,11 +35,12 @@ export class RefreshToken {
     return this.revokedAt !== null;
   }
 
-  private static assertValidValue(value: string): void {
-    if (value.length < 32) throw new Error("Refresh token value too short");
+  isActive(): boolean {
+    return !this.isRevoked() && !this.isExpired();
   }
 
-  private static assertExpirationInFuture(expiresAt: Date): void {
-    if (expiresAt <= new Date()) throw new Error("Expiration must be in the future");
+  requireId(): number {
+    if (this.id === null) throw new Error("Refresh token is not persisted");
+    return this.id;
   }
 }
