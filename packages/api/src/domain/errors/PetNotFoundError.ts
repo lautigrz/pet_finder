@@ -1,6 +1,7 @@
-export class PetNotFoundError extends Error {
+import { DomainError } from "./DomainError";
+
+export class PetNotFoundError extends DomainError {
   constructor(petId: number | string) {
-    super(`Pet not found with ID: ${petId}`);
-    this.name = "PetNotFoundError";
+    super(`Pet not found with ID: ${petId}`, "PET_NOT_FOUND");
   }
 }

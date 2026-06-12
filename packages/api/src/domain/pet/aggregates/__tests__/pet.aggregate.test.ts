@@ -4,7 +4,10 @@ import { AnimalType } from "@domain/shared/animal-type/animal-type";
 import { GenderType } from "@domain/shared/gender-type/gender.type";
 import { SizeType } from "@domain/shared/size-type/size.type";
 import { InvalidPetNameError } from "@domain/errors/InvalidPetNameError";
+import { InvalidImageError } from "@domain/errors/InvalidImageError";
 import { PetImage } from "@domain/pet/value-objects/image.vo";
+
+const fakeImage = PetImage.create({ cloudinaryId: "pets/abc", photoUrl: "https://url.com/img.jpg" });
 
 const validParams = {
   userId: 1,
@@ -16,14 +19,13 @@ const validParams = {
   hasIdCollar: true,
   isVaccinated: false,
   breed: "Labrador",
-  petImage: [],
+  petImage: [fakeImage],
 };
 
 describe("Pet.create", () => {
   it("crea una mascota con publicId generado y idPet null", () => {
 
     const pet = Pet.create(validParams);
-
 
     expect(pet.idPet).toBeNull();
     expect(pet.publicId).toBeDefined();
@@ -64,7 +66,6 @@ describe("Pet.restore", () => {
     const createdAt = new Date("2024-01-01");
     const updatedAt = new Date("2024-06-01");
 
-
     const pet = Pet.restore({
       idPet: 42,
       publicId: "uuid-test-1234",
@@ -77,7 +78,7 @@ describe("Pet.restore", () => {
       hasIdCollar: false,
       isVaccinated: false,
       breed: "Siamese",
-      petImage: [],
+      petImage: [fakeImage],
       createdAt,
       updatedAt,
     });
@@ -109,7 +110,7 @@ describe("Pet.restore", () => {
       hasIdCollar: false,
       isVaccinated: false,
       breed: "Poodle",
-      petImage: [],
+      petImage: [fakeImage],
       createdAt: new Date(),
       updatedAt: null,
     });
@@ -123,7 +124,6 @@ describe("Pet.rename", () => {
 
     const pet = Pet.create(validParams);
     pet.rename("Rex");
-
 
     expect(pet.name).toBe("Rex");
     expect(pet.updatedAt).toBeInstanceOf(Date);
@@ -160,9 +160,8 @@ describe("Pet.updateColor", () => {
 });
 
 describe("Pet — imágenes", () => {
-  it("create sin petImage resulta en imágenes vacías por defecto del DTO", () => {
-    const pet = Pet.create({ ...validParams, petImage: [] });
-    expect(pet.images).toHaveLength(0);
+  it("lanza InvalidImageError si se crea sin imágenes", () => {
+    expect(() => Pet.create({ ...validParams, petImage: [] })).toThrow(InvalidImageError);
   });
 
   it("restore preserva las imágenes del pet", () => {

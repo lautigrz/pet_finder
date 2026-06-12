@@ -1,6 +1,7 @@
-export class EmailAlreadyExistsError extends Error {
+import { DomainError } from "./DomainError";
+
+export class EmailAlreadyExistsError extends DomainError {
   constructor(email: string) {
-    super(`Email already registered: ${email}`);
-    this.name = "EmailAlreadyExistsError";
+    super(`Email already registered: ${email}`, "EMAIL_ALREADY_EXISTS");
   }
 }

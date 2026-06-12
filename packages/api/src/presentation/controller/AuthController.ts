@@ -1,7 +1,6 @@
 import { Request, Response } from "express";
 import { LoginUserUseCase } from "../../application/usecase/login-user/login-user.usecase";
 import { LoginUserInput } from "../../application/usecase/login-user/login-user.input";
-import { InvalidCredentialsError } from "../../domain/errors/InvalidCredentialsError";
 import { LoginRequest } from "../dto/LoginRequest";
 import { ValidationError } from "../errors/ValidationError";
 import { LogoutUserUseCase } from "../../application/usecase/logout-user/logout-user.usecase";
@@ -10,14 +9,13 @@ import { LogoutRequest } from "../dto/LogoutRequest";
 import { RefreshAccessTokenUseCase } from "../../application/usecase/refresh-access-token/refresh-access-token.usecase";
 import { RefreshAccessTokenInput } from "../../application/usecase/refresh-access-token/refresh-access-token.input";
 import { RefreshRequest } from "../dto/RefreshRequest";
-import { InvalidRefreshTokenError } from "../../domain/errors/InvalidRefreshTokenError";
 import { RequestPasswordResetUseCase } from "../../application/usecase/request-password-reset/request-password-reset.usecase";
 import { RequestPasswordResetInput } from "../../application/usecase/request-password-reset/request-password-reset.input";
 import { ResetPasswordUseCase } from "../../application/usecase/reset-password/reset-password.usecase";
 import { ResetPasswordInput } from "../../application/usecase/reset-password/reset-password.input";
 import { ForgotPasswordRequest } from "../dto/ForgotPasswordRequest";
 import { ResetPasswordRequest } from "../dto/ResetPasswordRequest";
-import { InvalidPasswordResetTokenError } from "../../domain/errors/InvalidPasswordResetTokenError";
+import { asyncHandler } from "@presentation/handler/async-handler";
 
 const EMAIL_MAX_LENGTH = 255;
 const PASSWORD_MAX_LENGTH = 100;
@@ -30,68 +28,56 @@ export class AuthController {
     private readonly refreshAccessTokenUseCase: RefreshAccessTokenUseCase,
     private readonly requestPasswordResetUseCase: RequestPasswordResetUseCase,
     private readonly resetPasswordUseCase: ResetPasswordUseCase,
-  ) {}
+  ) { }
 
-  login = async (req: Request, res: Response): Promise<void> => {
-    try {
-      const body = this.validateLoginBody(req.body);
-      const output = await this.loginUserUseCase.execute(
-        new LoginUserInput(body.email, body.password),
-      );
-      res.status(200).json({
-        accessToken: output.accessToken,
-        refreshToken: output.refreshToken,
-      });
-    } catch (error) {
-      this.handleError(error, res);
-    }
-  };
+  login = asyncHandler(async (req: Request, res: Response): Promise<void> => {
 
-  logout = async (req: Request, res: Response): Promise<void> => {
-    try {
-      const body = this.validateLogoutBody(req.body);
-      await this.logoutUserUseCase.execute(new LogoutUserInput(body.refreshToken));
-      res.status(204).send();
-    } catch (error) {
-      this.handleError(error, res);
-    }
-  };
+    const body = this.validateLoginBody(req.body);
+    const output = await this.loginUserUseCase.execute(
+      new LoginUserInput(body.email, body.password),
+    );
+    res.status(200).json({
+      accessToken: output.accessToken,
+      refreshToken: output.refreshToken,
+    });
+  });
 
-  refresh = async (req: Request, res: Response): Promise<void> => {
-    try {
-      const body = this.validateRefreshBody(req.body);
-      const output = await this.refreshAccessTokenUseCase.execute(
-        new RefreshAccessTokenInput(body.refreshToken),
-      );
-      res.status(200).json({ accessToken: output.accessToken });
-    } catch (error) {
-      this.handleError(error, res);
-    }
-  };
+  logout = asyncHandler(async (req: Request, res: Response): Promise<void> => {
 
-  forgotPassword = async (req: Request, res: Response): Promise<void> => {
-    try {
-      const body = this.validateForgotBody(req.body);
-      await this.requestPasswordResetUseCase.execute(
-        new RequestPasswordResetInput(body.email),
-      );
-      res.status(200).json({ message: "If the email exists, a reset link was sent" });
-    } catch (error) {
-      this.handleError(error, res);
-    }
-  };
+    const body = this.validateLogoutBody(req.body);
+    await this.logoutUserUseCase.execute(new LogoutUserInput(body.refreshToken));
+    res.status(204).send();
+  });
 
-  resetPassword = async (req: Request, res: Response): Promise<void> => {
-    try {
-      const body = this.validateResetBody(req.body);
-      await this.resetPasswordUseCase.execute(
-        new ResetPasswordInput(body.token, body.newPassword),
-      );
-      res.status(200).json({ message: "Password updated" });
-    } catch (error) {
-      this.handleError(error, res);
-    }
-  };
+  refresh = asyncHandler(async (req: Request, res: Response): Promise<void> => {
+
+    const body = this.validateRefreshBody(req.body);
+    const output = await this.refreshAccessTokenUseCase.execute(
+      new RefreshAccessTokenInput(body.refreshToken),
+    );
+    res.status(200).json({ accessToken: output.accessToken });
+
+  });
+
+  forgotPassword = asyncHandler(async (req: Request, res: Response): Promise<void> => {
+
+    const body = this.validateForgotBody(req.body);
+    await this.requestPasswordResetUseCase.execute(
+      new RequestPasswordResetInput(body.email),
+    );
+    res.status(200).json({ message: "If the email exists, a reset link was sent" });
+
+  });
+
+  resetPassword = asyncHandler(async (req: Request, res: Response): Promise<void> => {
+
+    const body = this.validateResetBody(req.body);
+    await this.resetPasswordUseCase.execute(
+      new ResetPasswordInput(body.token, body.newPassword),
+    );
+    res.status(200).json({ message: "Password updated" });
+
+  });
 
   private validateLoginBody(body: unknown): LoginRequest {
     const issues: string[] = [];
@@ -153,19 +139,4 @@ export class AuthController {
     return data as ResetPasswordRequest;
   }
 
-  private handleError(error: unknown, res: Response): void {
-    if (error instanceof ValidationError) {
-      res.status(400).json({ error: error.message });
-      return;
-    }
-    if (error instanceof InvalidCredentialsError || error instanceof InvalidRefreshTokenError) {
-      res.status(401).json({ error: error.message });
-      return;
-    }
-    if (error instanceof InvalidPasswordResetTokenError) {
-      res.status(400).json({ error: error.message, reason: error.reason });
-      return;
-    }
-    res.status(500).json({ error: "Internal server error" });
-  }
 }

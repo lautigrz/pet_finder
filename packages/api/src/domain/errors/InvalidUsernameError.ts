@@ -1,6 +1,7 @@
-export class InvalidUsernameError extends Error {
+import { DomainError } from "./DomainError";
+
+export class InvalidUsernameError extends DomainError {
   constructor(message: string) {
-    super(message);
-    this.name = "InvalidUsernameError";
+    super(message, "INVALID_USERNAME");
   }
 }

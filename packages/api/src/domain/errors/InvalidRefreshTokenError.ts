@@ -1,6 +1,7 @@
-export class InvalidRefreshTokenError extends Error {
+import { DomainError } from "./DomainError";
+
+export class InvalidRefreshTokenError extends DomainError {
   constructor() {
-    super("Invalid refresh token");
-    this.name = "InvalidRefreshTokenError";
+    super("Invalid refresh token", "INVALID_REFRESH_TOKEN");
   }
 }

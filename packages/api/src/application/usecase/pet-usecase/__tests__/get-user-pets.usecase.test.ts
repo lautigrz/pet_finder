@@ -7,6 +7,7 @@ import { User } from "@domain/entities/User";
 import { AnimalType } from "@domain/shared/animal-type/animal-type";
 import { GenderType } from "@domain/shared/gender-type/gender.type";
 import { SizeType } from "@domain/shared/size-type/size.type";
+import { PetImage } from "@domain/pet/value-objects/image.vo";
 
 const fakeUser = User.reconstruct(
     1,
@@ -34,7 +35,10 @@ const makePet = (name: string) =>
         color: "brown",
         hasIdCollar: false,
         breed: "Mix",
-        petImage: [],
+        petImage: [PetImage.create({
+            cloudinaryId: "fake-id",
+            photoUrl: "https://fake.com/img.jpg",
+        })],
         createdAt: new Date(),
     });
 
