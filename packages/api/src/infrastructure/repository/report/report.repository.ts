@@ -1,6 +1,5 @@
 import { Report } from "@domain/report/aggregates/ReportAggregate";
 import { ReportRepository, ReportWithPet } from "@domain/report/repositories/report.repository";
-import { Page, PaginationParams } from "@domain/shared/pagination/pagination";
 import { ReportMapper } from "./report.mapper";
 import { Prisma, PrismaClient } from "@prisma/client";
 import { ReportQuery } from "@application/usecase/report/report-query";
@@ -193,22 +192,35 @@ export class PrismaReportRepository implements ReportRepository {
     }
 
 
-    async findByUserPublicId(userPublicId: string, pagination: PaginationParams): Promise<Page<Report>> {
+    async findByUserPublicId(userPublicId: string, filters?: { reportType?: string; animalType?: string; createdFrom?: string; createdTo?: string }): Promise<Report[]> {
 
         const where: Prisma.ReportWhereInput = { user: { public_id: userPublicId } }
 
-        const [rows, total] = await Promise.all([
-            this.prisma.report.findMany({
-                where,
-                include: reportInclude,
-                orderBy: { created_at: "desc" },
-                skip: (pagination.page - 1) * pagination.limit,
-                take: pagination.limit,
-            }),
-            this.prisma.report.count({ where }),
-        ])
+        if (filters?.reportType) {
+            where.reportType = { name: filters.reportType }
+        }
 
-        return { items: rows.map(ReportMapper.toDomain), total }
+        if (filters?.animalType) {
+            where.OR = [
+                { sighting_report_detail: { animal_type: { name: filters.animalType } } },
+                { lost_report_detail: { pet: { animal_type: { name: filters.animalType } } } }
+            ]
+        }
+
+        if (filters?.createdFrom || filters?.createdTo) {
+            where.created_at = {
+                ...(filters.createdFrom && { gte: new Date(`${filters.createdFrom}T00:00:00.000Z`) }),
+                ...(filters.createdTo && { lte: new Date(`${filters.createdTo}T23:59:59.999Z`) })
+            }
+        }
+
+        const rows = await this.prisma.report.findMany({
+            where,
+            include: reportInclude,
+            orderBy: { created_at: "desc" },
+        })
+
+        return rows.map(ReportMapper.toDomain)
 
     }
 
