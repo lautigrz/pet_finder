@@ -311,8 +311,8 @@ describe("CreateReportController", () => {
 
   // ─── list ─────────────────────────────────────────────────────────────────
 
-  const buildListReq = (query: Record<string, string>): Partial<Request> => ({
-    query,
+  const buildListReq = (query: Record<string, unknown>): Partial<Request> => ({
+    validated: { query },
     originalUrl: "/api/reports",
     method: "GET",
     auth: {
@@ -322,64 +322,54 @@ describe("CreateReportController", () => {
     },
   });
 
-  describe("list — query válida", () => {
-    it("retorna 200 con la lista paginada del usuario autenticado", async () => {
-
-      const req = buildListReq({ page: "1", limit: "10" });
+  describe("list", () => {
+    it("retorna 200 con la lista del usuario autenticado", async () => {
+      const req = buildListReq({ page: 1, limit: 10 });
       const res = buildRes();
       await controller.list(req as Request, res as Response);
       expect(res.status).toHaveBeenCalledWith(200);
       expect(res.json).toHaveBeenCalledWith(fakeListOutput);
-      expect(listUserReportsUseCase.execute).toHaveBeenCalledWith("user-public-id", {
-        page: 1,
-        limit: 10,
-      });
+      expect(listUserReportsUseCase.execute).toHaveBeenCalledWith(
+        "user-public-id",
+        { page: 1, limit: 10 },
+        expect.anything(),
+      );
     });
 
-    it("usa los valores por defecto de paginación si no vienen en la query", async () => {
-      const req = buildListReq({});
+    it("pasa los filtros al use case", async () => {
+      const req = buildListReq({
+        page: 1,
+        limit: 10,
+        reportType: "LOST",
+        animalType: "DOG",
+        radiusKm: 5,
+      });
       const res = buildRes();
       await controller.list(req as Request, res as Response);
 
-      expect(listUserReportsUseCase.execute).toHaveBeenCalledWith("user-public-id", {
-        page: 1,
-        limit: 10,
-      });
+      expect(listUserReportsUseCase.execute).toHaveBeenCalledWith(
+        "user-public-id",
+        { page: 1, limit: 10 },
+        expect.objectContaining({ reportType: "LOST", animalType: "DOG", radiusKm: 5 }),
+      );
     });
-  });
 
-  describe("list — query inválida", () => {
-    it("retorna 400 si page es menor a 1", async () => {
-      const req = buildListReq({ page: "0" });
-      const res = buildRes();
-      await controller.list(req as Request, res as Response);
-
-      expect(res.status).toHaveBeenCalledWith(400);
-      expect(listUserReportsUseCase.execute).not.toHaveBeenCalled();
-    });
-  });
-
-  describe("list — PetNotFoundError (404)", () => {
     it("retorna 404 si un reporte LOST referencia una mascota inexistente", async () => {
       const petErr = new PetNotFoundError(99);
       vi.mocked(listUserReportsUseCase.execute).mockRejectedValue(petErr);
 
-      const req = buildListReq({ page: "1", limit: "10" });
+      const req = buildListReq({ page: 1, limit: 10 });
       const res = buildRes();
       await controller.list(req as Request, res as Response);
 
       expect(res.status).toHaveBeenCalledWith(404);
       expect(res.json).toHaveBeenCalledWith({ error: petErr.message });
     });
-  });
 
-  describe("list — error inesperado (500)", () => {
     it("retorna 500 si ocurre un error no controlado", async () => {
-      vi.mocked(listUserReportsUseCase.execute).mockRejectedValue(
-        new Error("DB failure")
-      );
+      vi.mocked(listUserReportsUseCase.execute).mockRejectedValue(new Error("DB failure"));
 
-      const req = buildListReq({ page: "1", limit: "10" });
+      const req = buildListReq({ page: 1, limit: 10 });
       const res = buildRes();
       await controller.list(req as Request, res as Response);
 

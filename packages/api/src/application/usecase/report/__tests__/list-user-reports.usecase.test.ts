@@ -23,7 +23,7 @@ const validLocation = {
   longitude: -58.381592,
 };
 
-function buildSightingReport(i: number): Report {
+function buildSightingReport(i: number, loc = validLocation): Report {
   return Report.restore({
     idReport: i,
     publicId: `sighting-${i}`,
@@ -43,7 +43,7 @@ function buildSightingReport(i: number): Report {
       false as any,
       false as any,
     ),
-    location: Location.create(validLocation),
+    location: Location.create(loc),
     occurredAt: new Date("2024-05-01"),
     createdAt: new Date("2024-05-01"),
     updatedAt: null,
@@ -92,10 +92,7 @@ describe("ListUserReportsUseCase", () => {
     reportRepository = {
       save: vi.fn(),
       findByPublicId: vi.fn(),
-      findByUserPublicId: vi.fn().mockResolvedValue({
-        items: [buildSightingReport(1), buildSightingReport(2)],
-        total: 5,
-      }),
+      findByUserPublicId: vi.fn().mockResolvedValue([buildSightingReport(1), buildSightingReport(2)]),
       findIdsByQuery: vi.fn(),
       findByIds: vi.fn(),
       update: vi.fn(),
@@ -114,16 +111,30 @@ describe("ListUserReportsUseCase", () => {
     useCase = new ListUserReportsUseCase(reportRepository, petRepository);
   });
 
-  it("pasa el id público del usuario y la paginación al repositorio", async () => {
-    await useCase.execute(USER_PUBLIC_ID, { page: 2, limit: 10 });
+  it("pasa el id del usuario y los filtros al repositorio", async () => {
+    await useCase.execute(USER_PUBLIC_ID, { page: 2, limit: 10 }, {
+      reportType: "LOST",
+      createdFrom: "2026-06-01",
+      createdTo: "2026-06-10",
+    });
 
     expect(reportRepository.findByUserPublicId).toHaveBeenCalledWith(USER_PUBLIC_ID, {
-      page: 2,
-      limit: 10,
+      reportType: "LOST",
+      animalType: undefined,
+      createdFrom: "2026-06-01",
+      createdTo: "2026-06-10",
     });
   });
 
-  it("devuelve los reportes mapeados con la metadata de paginación", async () => {
+  it("devuelve los reportes paginados con la metadata", async () => {
+    vi.mocked(reportRepository.findByUserPublicId).mockResolvedValue([
+      buildSightingReport(1),
+      buildSightingReport(2),
+      buildSightingReport(3),
+      buildSightingReport(4),
+      buildSightingReport(5),
+    ]);
+
     const result = await useCase.execute(USER_PUBLIC_ID, { page: 1, limit: 2 });
 
     expect(result.data).toHaveLength(2);
@@ -142,10 +153,7 @@ describe("ListUserReportsUseCase", () => {
   });
 
   it("carga la mascota para reportes LOST e incluye su detalle", async () => {
-    vi.mocked(reportRepository.findByUserPublicId).mockResolvedValue({
-      items: [buildLostReport(1, 10)],
-      total: 1,
-    });
+    vi.mocked(reportRepository.findByUserPublicId).mockResolvedValue([buildLostReport(1, 10)]);
 
     const result = await useCase.execute(USER_PUBLIC_ID, { page: 1, limit: 10 });
 
@@ -154,10 +162,7 @@ describe("ListUserReportsUseCase", () => {
   });
 
   it("lanza PetNotFoundError si la mascota de un reporte LOST no existe", async () => {
-    vi.mocked(reportRepository.findByUserPublicId).mockResolvedValue({
-      items: [buildLostReport(1, 99)],
-      total: 1,
-    });
+    vi.mocked(reportRepository.findByUserPublicId).mockResolvedValue([buildLostReport(1, 99)]);
     vi.mocked(petRepository.findById).mockResolvedValue(null);
 
     await expect(useCase.execute(USER_PUBLIC_ID, { page: 1, limit: 10 })).rejects.toThrow(
@@ -166,14 +171,34 @@ describe("ListUserReportsUseCase", () => {
   });
 
   it("calcula totalPages en 0 cuando no hay reportes", async () => {
-    vi.mocked(reportRepository.findByUserPublicId).mockResolvedValue({
-      items: [],
-      total: 0,
-    });
+    vi.mocked(reportRepository.findByUserPublicId).mockResolvedValue([]);
 
     const result = await useCase.execute(USER_PUBLIC_ID, { page: 1, limit: 10 });
 
     expect(result.data).toHaveLength(0);
     expect(result.pagination.totalPages).toBe(0);
+  });
+
+  it("descarta los reportes fuera del radio", async () => {
+    const cerca = buildSightingReport(1, {
+      address: "Obelisco",
+      latitude: -34.6037,
+      longitude: -58.3816,
+    });
+    const lejos = buildSightingReport(2, {
+      address: "Cordoba",
+      latitude: -31.4201,
+      longitude: -64.1888,
+    });
+    vi.mocked(reportRepository.findByUserPublicId).mockResolvedValue([cerca, lejos]);
+
+    const result = await useCase.execute(
+      USER_PUBLIC_ID,
+      { page: 1, limit: 10 },
+      { lat: -34.6037, lng: -58.3816, radiusKm: 50 },
+    );
+
+    expect(result.data).toHaveLength(1);
+    expect(result.data[0]!.publicId).toBe("sighting-1");
   });
 });
