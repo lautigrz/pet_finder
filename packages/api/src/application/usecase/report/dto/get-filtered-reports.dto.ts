@@ -6,4 +6,8 @@ export interface GetFilteredReportsDTO {
     createdFrom?: string;
     createdTo?: string;
     userPublicId?: string;
+    lat?: number;
+    lng?: number;
+    radiusKm?: number;
+    sort?: string;
 }

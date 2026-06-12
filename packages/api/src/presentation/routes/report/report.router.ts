@@ -15,6 +15,7 @@ import { ClaudinaryService } from "@infrastructure/storage/CloudinaryService";
 import { GetFilteredReportsUseCase } from "@application/usecase/report/get-filter-reports.usecase";
 import { validateRequest } from "src/presentation/middleware/validate.request";
 import { getFilteredReportsSchema } from "src/presentation/schemas/report/report-filter.schema";
+import { listUserReportsSchema } from "src/presentation/schemas/report/list-user-reports.schema";
 import { updateStatusReportSchema } from "src/presentation/schemas/report/update-status-report.schema";
 import { UpdateStatus } from "@application/usecase/report/update-status-report";
 import { createReportRequestSchema } from "src/presentation/schemas/report/create-report.schema";
@@ -40,7 +41,7 @@ const createReportController = new CreateReportController(createReportUseCase, g
 
 
 router.post('/', requireAuth(tokenSigner), upload.array('photos', 5), validateRequest(createReportRequestSchema), createReportController.create)
-router.get('/', requireAuth(tokenSigner), createReportController.list)
+router.get('/', requireAuth(tokenSigner), validateRequest(listUserReportsSchema), createReportController.list)
 router.get('/filter', requireAuth(tokenSigner), validateRequest(getFilteredReportsSchema), createReportController.getFilteres)
 router.get('/:publicId', createReportController.getByPublicId)
 router.patch('/status/:publicId', requireAuth(tokenSigner), validateRequest(updateStatusReportSchema), createReportController.updateStatus)

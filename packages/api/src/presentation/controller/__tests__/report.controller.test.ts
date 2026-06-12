@@ -24,6 +24,7 @@ import {
 } from "@application/errors/errors";
 import { validateRequest } from "../../middleware/validate.request";
 import { createReportRequestSchema } from "../../schemas/report/create-report.schema";
+import { listUserReportsSchema } from "../../schemas/report/list-user-reports.schema";
 import { invoke } from "./test-helpers";
 
 const buildRes = (): Partial<Response> => ({
@@ -288,8 +289,8 @@ describe("CreateReportController", () => {
 
   // ─── list ─────────────────────────────────────────────────────────────────
 
-  const buildListReq = (query: Record<string, string>): Partial<Request> => ({
-    query,
+  const buildListReq = (query: Record<string, unknown>): Partial<Request> => ({
+    validated: { query },
     originalUrl: "/api/reports",
     method: "GET",
     auth: {
@@ -299,170 +300,182 @@ describe("CreateReportController", () => {
     },
   });
 
+
   describe("list — query válida", () => {
     it("retorna 200 con la lista paginada del usuario autenticado", async () => {
-      const req = buildListReq({ page: "1", limit: "10" });
+      const req = buildListReq({ page: 1, limit: 10 });
+
       const res = buildRes();
       await invoke(controller.list, req, res);
       expect(res.status).toHaveBeenCalledWith(200);
       expect(res.json).toHaveBeenCalledWith(fakeListOutput);
-      expect(listUserReportsUseCase.execute).toHaveBeenCalledWith("user-public-id", {
+      expect(listUserReportsUseCase.execute).toHaveBeenCalledWith(
+        "user-public-id",
+        { page: 1, limit: 10 },
+        expect.anything(),
+      );
+    });
+
+    it("pasa los filtros al use case", async () => {
+      const req = buildListReq({
         page: 1,
         limit: 10,
+        reportType: "LOST",
+        animalType: "DOG",
+        radiusKm: 5,
+      });
+      const res = buildRes();
+      await invoke(controller.list, req, res);
+
+      expect(listUserReportsUseCase.execute).toHaveBeenCalledWith(
+        "user-public-id",
+        { page: 1, limit: 10 },
+        expect.objectContaining({ reportType: "LOST", animalType: "DOG", radiusKm: 5 }),
+      );
+    });
+
+
+    describe("list — query inválida", () => {
+      it("retorna 400 si page es menor a 1", async () => {
+        const req = { query: { page: "0" } } as unknown as Request;
+        const res = buildRes();
+        const next = vi.fn();
+
+        validateRequest(listUserReportsSchema)(req, res as Response, next);
+
+        expect(res.status).toHaveBeenCalledWith(400);
+        expect(next).not.toHaveBeenCalled();
+        expect(listUserReportsUseCase.execute).not.toHaveBeenCalled();
       });
     });
 
-    it("usa los valores por defecto de paginación si no vienen en la query", async () => {
-      const req = buildListReq({});
-      const res = buildRes();
-      await invoke(controller.list, req, res);
+    describe("list — PetNotFoundError (404)", () => {
+      it("retorna 404 si un reporte LOST referencia una mascota inexistente", async () => {
+        const petErr = new PetNotFoundError(99);
+        vi.mocked(listUserReportsUseCase.execute).mockRejectedValue(petErr);
 
-      expect(listUserReportsUseCase.execute).toHaveBeenCalledWith("user-public-id", {
-        page: 1,
-        limit: 10,
+        const req = buildListReq({ page: 1, limit: 10 });
+        const res = buildRes();
+        await invoke(controller.list, req, res);
+
+        expect(res.status).toHaveBeenCalledWith(404);
       });
-    });
-  });
 
-  describe("list — query inválida", () => {
-    it("retorna 400 si page es menor a 1", async () => {
-      const req = buildListReq({ page: "0" });
-      const res = buildRes();
-      await invoke(controller.list, req, res);
+      it("retorna 500 si ocurre un error no controlado", async () => {
+        vi.mocked(listUserReportsUseCase.execute).mockRejectedValue(new Error("DB failure"));
 
-      expect(res.status).toHaveBeenCalledWith(400);
-      expect(listUserReportsUseCase.execute).not.toHaveBeenCalled();
-    });
-  });
+        const req = buildListReq({ page: 1, limit: 10 });
+        const res = buildRes();
+        await invoke(controller.list, req, res);
 
-  describe("list — PetNotFoundError (404)", () => {
-    it("retorna 404 si un reporte LOST referencia una mascota inexistente", async () => {
-      const petErr = new PetNotFoundError(99);
-      vi.mocked(listUserReportsUseCase.execute).mockRejectedValue(petErr);
-
-      const req = buildListReq({ page: "1", limit: "10" });
-      const res = buildRes();
-      await invoke(controller.list, req, res);
-
-      expect(res.status).toHaveBeenCalledWith(404);
-    });
-  });
-
-  describe("list — error inesperado (500)", () => {
-    it("retorna 500 si ocurre un error no controlado", async () => {
-      vi.mocked(listUserReportsUseCase.execute).mockRejectedValue(new Error("DB failure"));
-
-      const req = buildListReq({ page: "1", limit: "10" });
-      const res = buildRes();
-      await invoke(controller.list, req, res);
-
-      expect(res.status).toHaveBeenCalledWith(500);
-    });
-  });
-
-  // ─── getFilteres ──────────────────────────────────────────────────────────
-
-  describe("getFilteres", () => {
-    const buildFilterReq = (query: Record<string, string>): Partial<Request> => ({
-      validated: { query },
-      originalUrl: "/api/reports/filter",
-      method: "GET",
-    });
-
-    it("retorna 200 con la lista de reportes filtrados", async () => {
-      vi.mocked(filteresUseCase.execute).mockResolvedValue([fakeReportOutput]);
-
-      const req = buildFilterReq({ reportType: "LOST" });
-      const res = buildRes();
-
-      await invoke(controller.getFilteres, req, res);
-
-      expect(res.status).toHaveBeenCalledWith(200);
-      expect(res.json).toHaveBeenCalledWith([fakeReportOutput]);
-      expect(filteresUseCase.execute).toHaveBeenCalledWith({ reportType: "LOST" });
-    });
-
-    it("retorna 400 si el caso de uso lanza ValidationError", async () => {
-      const validationErr = new ValidationError(["ReportType inválido"]);
-      vi.mocked(filteresUseCase.execute).mockRejectedValue(validationErr);
-
-      const req = buildFilterReq({ reportType: "INVALID" });
-      const res = buildRes();
-
-      await invoke(controller.getFilteres, req, res);
-
-      expect(res.status).toHaveBeenCalledWith(400);
-    });
-
-    it("retorna 400 si el caso de uso lanza MappingError", async () => {
-      const mappingErr = new MappingError("Error de mapeo");
-      vi.mocked(filteresUseCase.execute).mockRejectedValue(mappingErr);
-
-      const req = buildFilterReq({ reportType: "LOST" });
-      const res = buildRes();
-
-      await invoke(controller.getFilteres, req, res);
-
-      expect(res.status).toHaveBeenCalledWith(400);
-    });
-
-    it("retorna 500 si ocurre un error no controlado", async () => {
-      vi.mocked(filteresUseCase.execute).mockRejectedValue(new Error("Unexpected DB fail"));
-
-      const req = buildFilterReq({ reportType: "LOST" });
-      const res = buildRes();
-
-      await invoke(controller.getFilteres, req, res);
-
-      expect(res.status).toHaveBeenCalledWith(500);
-    });
-  });
-
-  // ─── updateStatus ─────────────────────────────────────────────────────────
-
-  describe("updateStatus", () => {
-    const buildUpdateStatusReq = (publicId: string | undefined, status: string): Partial<Request> => ({
-      validated: {
-        params: { publicId },
-        body: { status },
-      },
-      originalUrl: `/api/reports/status/${publicId}`,
-      method: "PATCH",
-    });
-
-    it("retorna 204 cuando el estado se actualiza con éxito", async () => {
-      const req = buildUpdateStatusReq("report-uuid", "RESOLVED");
-      const res = buildRes();
-      vi.mocked(updateStatusUseCase.execute).mockResolvedValue(undefined);
-
-      await invoke(controller.updateStatus, req, res);
-
-      expect(res.sendStatus).toHaveBeenCalledWith(204);
-      expect(updateStatusUseCase.execute).toHaveBeenCalledWith({
-        publicId: "report-uuid",
-        status: "RESOLVED",
+        expect(res.status).toHaveBeenCalledWith(500);
       });
     });
 
-    it("retorna 401 si falta publicId en los parámetros", async () => {
-      const req = buildUpdateStatusReq(undefined, "RESOLVED");
-      const res = buildRes();
+    // ─── getFilteres ──────────────────────────────────────────────────────────
 
-      await invoke(controller.updateStatus, req, res);
+    describe("getFilteres", () => {
+      const buildFilterReq = (query: Record<string, string>): Partial<Request> => ({
+        validated: { query },
+        originalUrl: "/api/reports/filter",
+        method: "GET",
+      });
 
-      expect(res.status).toHaveBeenCalledWith(401);
-      expect(res.json).toHaveBeenCalledWith({ error: "Unauthorized" });
-      expect(updateStatusUseCase.execute).not.toHaveBeenCalled();
+      it("retorna 200 con la lista de reportes filtrados", async () => {
+        vi.mocked(filteresUseCase.execute).mockResolvedValue([fakeReportOutput]);
+
+        const req = buildFilterReq({ reportType: "LOST" });
+        const res = buildRes();
+
+        await invoke(controller.getFilteres, req, res);
+
+        expect(res.status).toHaveBeenCalledWith(200);
+        expect(res.json).toHaveBeenCalledWith([fakeReportOutput]);
+        expect(filteresUseCase.execute).toHaveBeenCalledWith({ reportType: "LOST" });
+      });
+
+      it("retorna 400 si el caso de uso lanza ValidationError", async () => {
+        const validationErr = new ValidationError(["ReportType inválido"]);
+        vi.mocked(filteresUseCase.execute).mockRejectedValue(validationErr);
+
+        const req = buildFilterReq({ reportType: "INVALID" });
+        const res = buildRes();
+
+        await invoke(controller.getFilteres, req, res);
+
+        expect(res.status).toHaveBeenCalledWith(400);
+      });
+
+      it("retorna 400 si el caso de uso lanza MappingError", async () => {
+        const mappingErr = new MappingError("Error de mapeo");
+        vi.mocked(filteresUseCase.execute).mockRejectedValue(mappingErr);
+
+        const req = buildFilterReq({ reportType: "LOST" });
+        const res = buildRes();
+
+        await invoke(controller.getFilteres, req, res);
+
+        expect(res.status).toHaveBeenCalledWith(400);
+      });
+
+      it("retorna 500 si ocurre un error no controlado", async () => {
+        vi.mocked(filteresUseCase.execute).mockRejectedValue(new Error("Unexpected DB fail"));
+
+        const req = buildFilterReq({ reportType: "LOST" });
+        const res = buildRes();
+
+        await invoke(controller.getFilteres, req, res);
+
+        expect(res.status).toHaveBeenCalledWith(500);
+      });
     });
 
-    it("propaga errores del caso de uso", async () => {
-      const req = buildUpdateStatusReq("report-uuid", "RESOLVED");
-      const res = buildRes();
-      vi.mocked(updateStatusUseCase.execute).mockRejectedValue(new Error("Report not found"));
+    // ─── updateStatus ─────────────────────────────────────────────────────────
 
-      await invoke(controller.updateStatus, req, res);
+    describe("updateStatus", () => {
+      const buildUpdateStatusReq = (publicId: string | undefined, status: string): Partial<Request> => ({
+        validated: {
+          params: { publicId },
+          body: { status },
+        },
+        originalUrl: `/api/reports/status/${publicId}`,
+        method: "PATCH",
+      });
 
-      expect(res.status).toHaveBeenCalledWith(500);
+      it("retorna 204 cuando el estado se actualiza con éxito", async () => {
+        const req = buildUpdateStatusReq("report-uuid", "RESOLVED");
+        const res = buildRes();
+        vi.mocked(updateStatusUseCase.execute).mockResolvedValue(undefined);
+
+        await invoke(controller.updateStatus, req, res);
+
+        expect(res.sendStatus).toHaveBeenCalledWith(204);
+        expect(updateStatusUseCase.execute).toHaveBeenCalledWith({
+          publicId: "report-uuid",
+          status: "RESOLVED",
+        });
+      });
+
+      it("retorna 401 si falta publicId en los parámetros", async () => {
+        const req = buildUpdateStatusReq(undefined, "RESOLVED");
+        const res = buildRes();
+
+        await invoke(controller.updateStatus, req, res);
+
+        expect(res.status).toHaveBeenCalledWith(401);
+        expect(res.json).toHaveBeenCalledWith({ error: "Unauthorized" });
+        expect(updateStatusUseCase.execute).not.toHaveBeenCalled();
+      });
+
+      it("propaga errores del caso de uso", async () => {
+        const req = buildUpdateStatusReq("report-uuid", "RESOLVED");
+        const res = buildRes();
+        vi.mocked(updateStatusUseCase.execute).mockRejectedValue(new Error("Report not found"));
+
+        await invoke(controller.updateStatus, req, res);
+
+        expect(res.status).toHaveBeenCalledWith(500);
+      });
     });
   });
 });
