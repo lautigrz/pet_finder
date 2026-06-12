@@ -12,6 +12,7 @@ import { AnimalType } from "@domain/shared/animal-type/animal-type";
 import { GenderType } from "@domain/shared/gender-type/gender.type";
 import { SizeType } from "@domain/shared/size-type/size.type";
 import { MappingError } from "../../../../errors/errors";
+import { PetImage } from "@domain/pet/value-objects/image.vo";
 
 const validLocation = Location.create({
   address: "Av. Corrientes 1234",
@@ -31,7 +32,10 @@ const fakePet = Pet.restore({
   hasIdCollar: true,
   isVaccinated: true,
   breed: "Labrador",
-  petImage: [],
+  petImage: [PetImage.create({
+    cloudinaryId: "fake-id",
+    photoUrl: "https://fake.com/img.jpg",
+  })],
   createdAt: new Date("2024-01-01"),
 });
 

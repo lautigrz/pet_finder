@@ -132,6 +132,11 @@ export class CreateReportController {
         const dto = req.validated?.body as UpdateStatusDTO;
         const publicId = req.validated?.params.publicId;
 
+        if (!publicId) {
+            res.status(401).json({ error: "Unauthorized" });
+            return;
+        }
+
         dto.publicId = publicId;
 
         await this.updateStatusUseCase.execute(dto);

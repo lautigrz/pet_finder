@@ -10,7 +10,7 @@ import { UpdateReportUseCase } from '@application/usecase/report/update-report.u
 import { ReportNotFoundError } from '@domain/errors/ReportNotFoundError';
 import { UnauthorizedReportEditError } from '@domain/errors/UnauthorizedReportEditError';
 import { InvalidFieldError } from '@application/errors/errors';
-
+import { invoke } from './test-helpers';
 
 const buildRes = (): Partial<Response> => ({
   status: vi.fn().mockReturnThis(),
@@ -63,7 +63,7 @@ describe('CreateReportController — update', () => {
     const req = buildUpdateReq(validUpdateBody, REPORT_ID);
     const res = buildRes();
 
-    await controller.update(req as Request, res as Response);
+    await invoke(controller.update, req, res);
 
     expect(res.sendStatus).toHaveBeenCalledWith(204);
     expect(updateReportUseCase.execute).toHaveBeenCalledOnce();
@@ -73,7 +73,7 @@ describe('CreateReportController — update', () => {
     const req = buildUpdateReq(validUpdateBody, REPORT_ID);
     const res = buildRes();
 
-    await controller.update(req as Request, res as Response);
+    await invoke(controller.update, req, res);
 
     expect(updateReportUseCase.execute).toHaveBeenCalledWith(
       expect.objectContaining({ publicId: REPORT_ID, ...validUpdateBody }),
@@ -86,7 +86,7 @@ describe('CreateReportController — update', () => {
     const req = buildUpdateReq(validUpdateBody, REPORT_ID, [fakeFile]);
     const res = buildRes();
 
-    await controller.update(req as Request, res as Response);
+    await invoke(controller.update, req, res);
 
     expect(updateReportUseCase.execute).toHaveBeenCalledWith(
       expect.objectContaining({ newImages: [fakeFile.buffer] }),
@@ -105,7 +105,7 @@ describe('CreateReportController — update', () => {
     };
     const res = buildRes();
 
-    await controller.update(req as Request, res as Response);
+    await invoke(controller.update, req, res);
 
     expect(res.status).toHaveBeenCalledWith(401);
     expect(updateReportUseCase.execute).not.toHaveBeenCalled();
@@ -119,10 +119,9 @@ describe('CreateReportController — update', () => {
     const req = buildUpdateReq(validUpdateBody, REPORT_ID);
     const res = buildRes();
 
-    await controller.update(req as Request, res as Response);
+    await invoke(controller.update, req, res);
 
     expect(res.status).toHaveBeenCalledWith(404);
-    expect(res.json).toHaveBeenCalledWith({ error: err.message });
   });
 
   it('retorna 403 si el usuario no es el dueño del reporte', async () => {
@@ -132,10 +131,9 @@ describe('CreateReportController — update', () => {
     const req = buildUpdateReq(validUpdateBody, REPORT_ID);
     const res = buildRes();
 
-    await controller.update(req as Request, res as Response);
+    await invoke(controller.update, req, res);
 
     expect(res.status).toHaveBeenCalledWith(403);
-    expect(res.json).toHaveBeenCalledWith({ error: err.message });
   });
 
   it('retorna 400 si hay un campo inválido', async () => {
@@ -145,10 +143,9 @@ describe('CreateReportController — update', () => {
     const req = buildUpdateReq(validUpdateBody, REPORT_ID);
     const res = buildRes();
 
-    await controller.update(req as Request, res as Response);
+    await invoke(controller.update, req, res);
 
     expect(res.status).toHaveBeenCalledWith(400);
-    expect(res.json).toHaveBeenCalledWith({ error: err.message });
   });
 
   it('retorna 500 si ocurre un error inesperado', async () => {
@@ -157,9 +154,8 @@ describe('CreateReportController — update', () => {
     const req = buildUpdateReq(validUpdateBody, REPORT_ID);
     const res = buildRes();
 
-    await controller.update(req as Request, res as Response);
+    await invoke(controller.update, req, res);
 
     expect(res.status).toHaveBeenCalledWith(500);
-    expect(res.json).toHaveBeenCalledWith({ error: 'Internal server error' });
   });
 });

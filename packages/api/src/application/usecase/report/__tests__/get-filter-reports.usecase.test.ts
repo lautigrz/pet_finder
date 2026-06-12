@@ -11,6 +11,8 @@ import { SightingReportDetails } from "@domain/report/value-objects/sighting-rep
 import { AnimalType } from "@domain/shared/animal-type/animal-type";
 import { GenderType } from "@domain/shared/gender-type/gender.type";
 import { SizeType } from "@domain/shared/size-type/size.type";
+import { SightingImage } from "@domain/report/value-objects/sighting.images";
+import { PetImage } from "@domain/pet/value-objects/image.vo";
 
 const validLocation = Location.create({
   address: "Av. Corrientes 1234",
@@ -46,7 +48,10 @@ const fakeSightingReport = Report.restore({
     hasIdCollar: false,
     color: "black",
     isInTransit: false,
-    images: [],
+    images: [SightingImage.create({
+      cloudinaryId: "fake-id",
+      photoUrl: "https://fake.com/img.jpg",
+    })],
   }),
   location: validLocation,
   occurredAt: new Date("2024-05-01"),
@@ -65,7 +70,10 @@ const fakePet = Pet.restore({
   color: "brown",
   hasIdCollar: true,
   breed: "Labrador",
-  petImage: [],
+  petImage: [PetImage.create({
+    cloudinaryId: "fake-id",
+    photoUrl: "https://fake.com/img.jpg",
+  })],
   createdAt: new Date(),
   isVaccinated: false
 });
@@ -83,7 +91,6 @@ describe("GetFilteredReportsUseCase", () => {
       findByIds: vi.fn(),
       update: vi.fn(),
       updateFields: vi.fn(),
-      // ← método nuevo: devuelve array vacío por defecto
       findImagesByReportId: vi.fn().mockResolvedValue([]),
     } as unknown as ReportRepository;
 

@@ -14,6 +14,7 @@ import { ReportDescription } from "@domain/report/value-objects/description.vo";
 import { SightingReportDetails } from "@domain/report/value-objects/sighting-report-details.vo";
 import { LostReportDetails } from "@domain/report/value-objects/lost-report-details.vo";
 import { PetNotFoundError } from "@domain/errors/PetNotFoundError";
+import { PetImage } from "@domain/pet/value-objects/image.vo";
 
 const USER_PUBLIC_ID = "user-pub-id";
 
@@ -78,7 +79,10 @@ const fakePet = Pet.restore({
   color: "brown",
   hasIdCollar: true,
   breed: "Labrador",
-  petImage: [],
+  petImage: [PetImage.create({
+    cloudinaryId: "fake-id",
+    photoUrl: "https://fake.com/img.jpg",
+  })],
   createdAt: new Date(),
   isVaccinated: false
 });
