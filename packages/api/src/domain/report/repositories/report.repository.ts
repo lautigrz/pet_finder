@@ -1,5 +1,4 @@
 import { Report } from "../aggregates/ReportAggregate";
-import { Page, PaginationParams } from "../../shared/pagination/pagination";
 import { ReportQuery } from "@application/usecase/report/report-query";
 import { Pet } from "@domain/pet/aggregates/PetAggregate";
 import { ReportStatus } from "../types/report.status";
@@ -15,7 +14,7 @@ export interface ReportRepository {
 
   findDetailByPublicId(publicId: string): Promise<ReportWithPet | null>
 
-  findByUserPublicId(userPublicId: string, pagination: PaginationParams): Promise<Page<Report>>
+  findByUserPublicId(userPublicId: string, filters?: { reportType?: string; animalType?: string; createdFrom?: string; createdTo?: string }): Promise<Report[]>
 
   findIdsByQuery(query: ReportQuery): Promise<string[]>
 

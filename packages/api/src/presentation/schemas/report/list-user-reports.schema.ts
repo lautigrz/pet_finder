@@ -1,10 +1,11 @@
 import { z } from 'zod';
 import { isValidReportType } from '@domain/report/types/report.type';
-import { isValidReportStatus } from '@domain/report/types/report.status';
 import { isValidAnimalType } from '@domain/shared/animal-type/animal-type';
 
-export const getFilteredReportsSchema = z.object({
+export const listUserReportsSchema = z.object({
     query: z.object({
+        page: z.coerce.number().int().min(1).default(1),
+        limit: z.coerce.number().int().min(1).max(100).default(10),
         reportType: z.string()
             .transform(val => val.toUpperCase())
             .refine(val => isValidReportType(val), { message: 'ReportType inválido' })
@@ -13,18 +14,12 @@ export const getFilteredReportsSchema = z.object({
             .transform(val => val.toUpperCase())
             .refine(val => isValidAnimalType(val), { message: 'AnimalType inválido' })
             .optional(),
-        status: z.string()
-            .transform(val => val.toUpperCase())
-            .refine(val => isValidReportStatus(val), { message: 'ReportStatus inválido' })
-            .optional(),
-        createdFrom: z.string().date().optional(),
-        createdTo: z.string().date().optional(),
-        userPublicId: z.string().optional(),
         lat: z.coerce.number().min(-90).max(90).optional(),
         lng: z.coerce.number().min(-180).max(180).optional(),
         radiusKm: z.coerce.number().positive().optional(),
-        sort: z.enum(['recent']).optional(),
+        createdFrom: z.string().date().optional(),
+        createdTo: z.string().date().optional(),
     })
 });
 
-export type GetFilteredReportsDTO = z.infer<typeof getFilteredReportsSchema>['query'];
+export type ListUserReportsQuery = z.infer<typeof listUserReportsSchema>['query'];
