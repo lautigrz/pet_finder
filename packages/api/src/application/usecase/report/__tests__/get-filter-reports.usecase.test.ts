@@ -231,4 +231,175 @@ describe("GetFilteredReportsUseCase", () => {
       user: { publicId: "user-pub-id" },
     });
   });
+
+  it("ordena los reportes del mas cercano al mas lejano cuando llegan lat y lng", async () => {
+    const sightingDetails = () =>
+      SightingReportDetails.create({
+        animalType: AnimalType.DOG,
+        hasIdCollar: false,
+        color: "black",
+        isInTransit: false,
+        images: [],
+      });
+
+    const cerca = Report.restore({
+      idReport: 20,
+      publicId: "report-cerca",
+      userId: 5,
+      userPublicId: "user-pub-id",
+      type: ReportType.SIGHTING,
+      currentStatus: ReportStatus.ACTIVE,
+      description: null,
+      details: sightingDetails(),
+      location: Location.create({ address: "Obelisco", latitude: -34.6037, longitude: -58.3816 }),
+      occurredAt: new Date("2024-05-01"),
+      createdAt: new Date("2024-05-01"),
+      updatedAt: null,
+    });
+
+    const lejos = Report.restore({
+      idReport: 21,
+      publicId: "report-lejos",
+      userId: 5,
+      userPublicId: "user-pub-id",
+      type: ReportType.SIGHTING,
+      currentStatus: ReportStatus.ACTIVE,
+      description: null,
+      details: sightingDetails(),
+      location: Location.create({ address: "Cordoba", latitude: -31.4201, longitude: -64.1888 }),
+      occurredAt: new Date("2024-05-01"),
+      createdAt: new Date("2024-05-01"),
+      updatedAt: null,
+    });
+
+    vi.mocked(reportRepository.findIdsByQuery).mockResolvedValue(["report-lejos", "report-cerca"]);
+    vi.mocked(reportRepository.findByIds).mockResolvedValue([
+      { report: lejos },
+      { report: cerca },
+    ]);
+
+    const result = await useCase.execute({ lat: -34.6, lng: -58.38 });
+
+    expect(result.map((r) => r.publicId)).toEqual(["report-cerca", "report-lejos"]);
+  });
+
+  it("mantiene el orden del repositorio cuando no llegan lat y lng", async () => {
+    vi.mocked(reportRepository.findIdsByQuery).mockResolvedValue([
+      "report-sighting-uuid",
+      "report-lost-uuid",
+    ]);
+    vi.mocked(reportRepository.findByIds).mockResolvedValue([
+      { report: fakeSightingReport },
+      { report: fakeLostReport, pet: fakePet },
+    ]);
+
+    const result = await useCase.execute({});
+
+    expect(result.map((r) => r.publicId)).toEqual([
+      "report-sighting-uuid",
+      "report-lost-uuid",
+    ]);
+  });
+
+  it("ordena del mas nuevo al mas antiguo cuando sort es recent", async () => {
+    const sightingDetails = () =>
+      SightingReportDetails.create({
+        animalType: AnimalType.DOG,
+        hasIdCollar: false,
+        color: "black",
+        isInTransit: false,
+        images: [],
+      });
+
+    const viejo = Report.restore({
+      idReport: 30,
+      publicId: "report-viejo",
+      userId: 5,
+      userPublicId: "user-pub-id",
+      type: ReportType.SIGHTING,
+      currentStatus: ReportStatus.ACTIVE,
+      description: null,
+      details: sightingDetails(),
+      location: validLocation,
+      occurredAt: new Date("2024-01-01"),
+      createdAt: new Date("2024-01-01"),
+      updatedAt: null,
+    });
+
+    const nuevo = Report.restore({
+      idReport: 31,
+      publicId: "report-nuevo",
+      userId: 5,
+      userPublicId: "user-pub-id",
+      type: ReportType.SIGHTING,
+      currentStatus: ReportStatus.ACTIVE,
+      description: null,
+      details: sightingDetails(),
+      location: validLocation,
+      occurredAt: new Date("2026-06-01"),
+      createdAt: new Date("2026-06-01"),
+      updatedAt: null,
+    });
+
+    vi.mocked(reportRepository.findIdsByQuery).mockResolvedValue(["report-viejo", "report-nuevo"]);
+    vi.mocked(reportRepository.findByIds).mockResolvedValue([
+      { report: viejo },
+      { report: nuevo },
+    ]);
+
+    const result = await useCase.execute({ sort: "recent" });
+
+    expect(result.map((r) => r.publicId)).toEqual(["report-nuevo", "report-viejo"]);
+  });
+
+  it("descarta los reportes fuera del radio cuando llega radiusKm", async () => {
+    const sightingDetails = () =>
+      SightingReportDetails.create({
+        animalType: AnimalType.DOG,
+        hasIdCollar: false,
+        color: "black",
+        isInTransit: false,
+        images: [],
+      });
+
+    const cerca = Report.restore({
+      idReport: 40,
+      publicId: "report-cerca",
+      userId: 5,
+      userPublicId: "user-pub-id",
+      type: ReportType.SIGHTING,
+      currentStatus: ReportStatus.ACTIVE,
+      description: null,
+      details: sightingDetails(),
+      location: Location.create({ address: "Obelisco", latitude: -34.6037, longitude: -58.3816 }),
+      occurredAt: new Date("2024-05-01"),
+      createdAt: new Date("2024-05-01"),
+      updatedAt: null,
+    });
+
+    const lejos = Report.restore({
+      idReport: 41,
+      publicId: "report-lejos",
+      userId: 5,
+      userPublicId: "user-pub-id",
+      type: ReportType.SIGHTING,
+      currentStatus: ReportStatus.ACTIVE,
+      description: null,
+      details: sightingDetails(),
+      location: Location.create({ address: "Cordoba", latitude: -31.4201, longitude: -64.1888 }),
+      occurredAt: new Date("2024-05-01"),
+      createdAt: new Date("2024-05-01"),
+      updatedAt: null,
+    });
+
+    vi.mocked(reportRepository.findIdsByQuery).mockResolvedValue(["report-cerca", "report-lejos"]);
+    vi.mocked(reportRepository.findByIds).mockResolvedValue([
+      { report: cerca },
+      { report: lejos },
+    ]);
+
+    const result = await useCase.execute({ lat: -34.6037, lng: -58.3816, radiusKm: 50 });
+
+    expect(result.map((r) => r.publicId)).toEqual(["report-cerca"]);
+  });
 });
