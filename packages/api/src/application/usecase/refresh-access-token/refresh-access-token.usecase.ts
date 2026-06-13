@@ -1,7 +1,7 @@
 import { IRefreshTokenRepository } from "../../../domain/repositories/IRefreshTokenRepository";
 import { IUserRepository } from "../../../domain/repositories/IUserRepository";
 import { ITokenSigner } from "../../../domain/services/ITokenSigner";
-import { accessTokenPayloadFor } from "../../../domain/services/access-token-payload";
+import { accessTokenPayloadFor } from "../../../domain/auth/access-token-payload";
 import { InvalidRefreshTokenError } from "../../../domain/errors/InvalidRefreshTokenError";
 import { RefreshToken } from "../../../domain/entities/RefreshToken";
 import { User } from "../../../domain/entities/User";

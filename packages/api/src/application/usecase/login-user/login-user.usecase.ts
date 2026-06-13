@@ -5,7 +5,7 @@ import { IRefreshTokenRepository } from "../../../domain/repositories/IRefreshTo
 import { IPasswordHasher } from "../../../domain/services/IPasswordHasher";
 import { ITokenSigner } from "../../../domain/services/ITokenSigner";
 import { ITokenGenerator } from "../../../domain/services/ITokenGenerator";
-import { accessTokenPayloadFor } from "../../../domain/services/access-token-payload";
+import { accessTokenPayloadFor } from "../../../domain/auth/access-token-payload";
 import { EmailAddress } from "../../../domain/shared/email/email-address.vo";
 import { InvalidCredentialsError } from "../../../domain/errors/InvalidCredentialsError";
 import { LoginUserInput } from "./login-user.input";
