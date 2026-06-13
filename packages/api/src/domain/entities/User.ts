@@ -1,9 +1,8 @@
 import { randomUUID } from "node:crypto";
-import { InvalidEmailError } from "../errors/InvalidEmailError";
+import { EmailAddress } from "../shared/email/email-address.vo";
 import { InvalidPasswordHashError } from "../errors/InvalidPasswordHashError";
 import { InvalidUsernameError } from "../errors/InvalidUsernameError";
 
-const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const USERNAME_REGEX = /^[\p{L}\d_\s]+$/u;
 const USERNAME_MIN_LENGTH = 3;
 const USERNAME_MAX_LENGTH = 30;
@@ -23,11 +22,10 @@ export class User {
     public readonly photoUrl: string | null,
   ) {}
 
-  static create(email: string, username: string, passwordHash: string): User {
-    User.assertValidEmail(email);
+  static create(email: EmailAddress, username: string, passwordHash: string): User {
     User.assertValidUsername(username);
     User.assertValidPasswordHash(passwordHash);
-    return new User(null, randomUUID(), email, username, passwordHash, false, new Date(), null, null, null,);
+    return new User(null, randomUUID(), email.value, username, passwordHash, false, new Date(), null, null, null,);
   }
 
   static reconstruct(
@@ -45,8 +43,9 @@ export class User {
     return new User(internalId, id, email, username, passwordHash, isVerified, createdAt,name, lastname, photoUrl,);
   }
 
-  private static assertValidEmail(email: string): void {
-    if (!EMAIL_REGEX.test(email)) throw new InvalidEmailError(email);
+  requireInternalId(): number {
+    if (this.internalId === null) throw new Error("User is not persisted");
+    return this.internalId;
   }
 
   private static assertValidUsername(username: string): void {

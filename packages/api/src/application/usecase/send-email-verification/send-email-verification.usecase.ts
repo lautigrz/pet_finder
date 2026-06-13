@@ -4,7 +4,7 @@ import { ITokenGenerator } from "../../../domain/services/ITokenGenerator";
 import { IEmailService } from "../../../domain/services/IEmailService";
 import { SendEmailVerificationInput } from "./send-email-verification.input";
 
-const VERIFICATION_TOKEN_TTL_MS = 24 * 60 * 60 * 1000; // 24 horas
+const VERIFICATION_TOKEN_TTL_MS = 24 * 60 * 60 * 1000;
 
 export class SendEmailVerificationUseCase {
   constructor(
@@ -14,10 +14,14 @@ export class SendEmailVerificationUseCase {
   ) {}
 
   async execute(input: SendEmailVerificationInput): Promise<void> {
+    const tokenValue = await this.issueVerificationToken(input.internalUserId);
+    await this.emailService.sendVerificationLink(input.email, tokenValue);
+  }
+
+  private async issueVerificationToken(userId: number): Promise<string> {
     const tokenValue = this.tokenGenerator.generate();
     const expiresAt = new Date(Date.now() + VERIFICATION_TOKEN_TTL_MS);
-    const token = EmailVerificationToken.create(input.internalUserId, tokenValue, expiresAt);
-    await this.tokenRepository.save(token);
-    await this.emailService.sendVerificationLink(input.email, tokenValue);
+    await this.tokenRepository.save(EmailVerificationToken.create(userId, tokenValue, expiresAt));
+    return tokenValue;
   }
 }

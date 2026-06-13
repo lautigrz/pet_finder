@@ -1,6 +1,14 @@
 import { Router } from "express";
 import rateLimit from "express-rate-limit";
 import { AuthController } from "../../controller/AuthController";
+import { validateRequest } from "../../middleware/validate.request";
+import {
+  loginRequestSchema,
+  logoutRequestSchema,
+  refreshRequestSchema,
+  forgotPasswordRequestSchema,
+  resetPasswordRequestSchema,
+} from "../../schemas/auth/auth.schema";
 import { LoginUserUseCase } from "../../../application/usecase/login-user/login-user.usecase";
 import { LogoutUserUseCase } from "../../../application/usecase/logout-user/logout-user.usecase";
 import { RefreshAccessTokenUseCase } from "../../../application/usecase/refresh-access-token/refresh-access-token.usecase";
@@ -82,10 +90,10 @@ const passwordResetLimiter = rateLimit({
   legacyHeaders: false,
 });
 
-router.post("/login", loginLimiter, authController.login);
-router.post("/logout", authController.logout);
-router.post("/refresh", authController.refresh);
-router.post("/forgot-password", passwordResetLimiter, authController.forgotPassword);
-router.post("/reset-password", authController.resetPassword);
+router.post("/login", loginLimiter, validateRequest(loginRequestSchema), authController.login);
+router.post("/logout", validateRequest(logoutRequestSchema), authController.logout);
+router.post("/refresh", validateRequest(refreshRequestSchema), authController.refresh);
+router.post("/forgot-password", passwordResetLimiter, validateRequest(forgotPasswordRequestSchema), authController.forgotPassword);
+router.post("/reset-password", validateRequest(resetPasswordRequestSchema), authController.resetPassword);
 
 export default router;
