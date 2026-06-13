@@ -4,7 +4,7 @@ import { ITokenGenerator } from "../../../domain/services/ITokenGenerator";
 import { IEmailService } from "../../../domain/services/IEmailService";
 import { PasswordResetToken } from "../../../domain/entities/PasswordResetToken";
 import { User } from "../../../domain/entities/User";
-import { normalizeEmail } from "../../../domain/shared/email/normalize-email";
+import { EmailAddress } from "../../../domain/shared/email/email-address.vo";
 import { RequestPasswordResetInput } from "./request-password-reset.input";
 
 const RESET_TOKEN_TTL_MS = 60 * 60 * 1000;
@@ -18,7 +18,7 @@ export class RequestPasswordResetUseCase {
   ) {}
 
   async execute(input: RequestPasswordResetInput): Promise<void> {
-    const user = await this.userRepository.findByEmail(normalizeEmail(input.email));
+    const user = await this.userRepository.findByEmail(EmailAddress.create(input.email).value);
     if (!user) return;
     await this.sendResetLink(user);
   }
