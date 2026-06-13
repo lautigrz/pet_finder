@@ -1,4 +1,3 @@
-
 export interface GetFilteredReportsDTO {
     reportType?: string;
     animalType?: string;
@@ -10,4 +9,5 @@ export interface GetFilteredReportsDTO {
     lng?: number;
     radiusKm?: number;
     sort?: string;
+    q?: string;
 }
