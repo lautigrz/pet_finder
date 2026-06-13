@@ -1,4 +1,3 @@
-
 import { InvalidLocationError } from "../../errors/InvalidLocationError";
 import { Coordinates } from "./coordinates.vo";
 
