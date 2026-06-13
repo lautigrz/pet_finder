@@ -6,7 +6,7 @@ import { IPasswordHasher } from "../../../domain/services/IPasswordHasher";
 import { ITokenSigner } from "../../../domain/services/ITokenSigner";
 import { ITokenGenerator } from "../../../domain/services/ITokenGenerator";
 import { accessTokenPayloadFor } from "../../../domain/services/access-token-payload";
-import { normalizeEmail } from "../../../domain/shared/email/normalize-email";
+import { EmailAddress } from "../../../domain/shared/email/email-address.vo";
 import { InvalidCredentialsError } from "../../../domain/errors/InvalidCredentialsError";
 import { LoginUserInput } from "./login-user.input";
 import { LoginUserOutput } from "./login-user.output";
@@ -29,7 +29,7 @@ export class LoginUserUseCase {
   }
 
   private async findUserByEmail(email: string): Promise<User> {
-    const user = await this.userRepository.findByEmail(normalizeEmail(email));
+    const user = await this.userRepository.findByEmail(EmailAddress.create(email).value);
     if (!user) throw new InvalidCredentialsError();
     return user;
   }
