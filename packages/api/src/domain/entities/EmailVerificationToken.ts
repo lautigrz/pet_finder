@@ -1,3 +1,6 @@
+import { InvalidVerificationTokenError } from "../errors/InvalidVerificationTokenError";
+import { assertExpirationInFuture, assertTokenValue } from "../shared/token/token-invariants";
+
 export class EmailVerificationToken {
   private constructor(
     public readonly id: number | null,
@@ -9,8 +12,8 @@ export class EmailVerificationToken {
   ) {}
 
   static create(userId: number, value: string, expiresAt: Date): EmailVerificationToken {
-    EmailVerificationToken.assertValidValue(value);
-    EmailVerificationToken.assertExpirationInFuture(expiresAt);
+    assertTokenValue(value, "Token value too short");
+    assertExpirationInFuture(expiresAt);
     return new EmailVerificationToken(null, userId, value, expiresAt, null, new Date());
   }
 
@@ -33,11 +36,13 @@ export class EmailVerificationToken {
     return this.usedAt !== null;
   }
 
-  private static assertValidValue(value: string): void {
-    if (value.length < 32) throw new Error("Token value too short");
+  ensureUsable(): void {
+    if (this.isUsed()) throw new InvalidVerificationTokenError("already_used");
+    if (this.isExpired()) throw new InvalidVerificationTokenError("expired");
   }
 
-  private static assertExpirationInFuture(expiresAt: Date): void {
-    if (expiresAt <= new Date()) throw new Error("Expiration must be in the future");
+  requireId(): number {
+    if (this.id === null) throw new Error("Email verification token is not persisted");
+    return this.id;
   }
 }

@@ -12,6 +12,8 @@ import { UpdateProfileUseCase } from "../../../application/usecase/update-profil
 import { JwtTokenSigner } from "../../../infrastructure/security/JwtTokenSigner";
 import { readAuthConfig } from "../../config/authConfig";
 import { requireAuth } from "../../middleware/requireAuth.middleware";
+import { validateRequest } from "../../middleware/validate.request";
+import { createUserRequestSchema, verifyEmailRequestSchema } from "../../schemas/user/user.schema";
 import { GetProfileUseCase } from "../../../application/usecase/get-profile/get-profile.usecase";
 import { ClaudinaryService } from "../../../infrastructure/storage/CloudinaryService";
 import { PrismaNotificationPreferencesRepository } from "../../../infrastructure/repository/PrismaNotificationPreferencesRepository";
@@ -57,8 +59,8 @@ const userController = new UserController(
   getNotificationPreferencesUseCase
 );
 
-router.post("/", userController.create);
-router.post("/verify-email", userController.verifyEmail);
+router.post("/", validateRequest(createUserRequestSchema), userController.create);
+router.post("/verify-email", validateRequest(verifyEmailRequestSchema), userController.verifyEmail);
 router.patch("/me", requireAuth(tokenSigner), userController.updateProfile);
 router.get("/me", requireAuth(tokenSigner), userController.getProfile);
 router.post("/me/photo", requireAuth(tokenSigner), upload.single("photo"), userController.uploadProfilePhoto);

@@ -53,7 +53,7 @@ describe("UserController", () => {
     };
   });
 
-  const buildReq = (body: unknown): Partial<Request> => ({ body });
+  const buildReq = (body: unknown): Partial<Request> => ({ body, validated: { body } });
   const validCreateOutput = new CreateUserOutput("user-abc", 42, "juan@example.com");
 
   describe("create — when the use case succeeds", () => {
@@ -66,33 +66,6 @@ describe("UserController", () => {
       expect(res.status).toHaveBeenCalledWith(201);
       expect(res.json).toHaveBeenCalledWith({ id: "user-abc" });
       expect(sendEmailVerificationUseCase.execute).toHaveBeenCalledOnce();
-    });
-  });
-
-  describe("create — when the body is missing fields", () => {
-    it("returns 400 if email is missing", async () => {
-      const req = buildReq({ username: "juancho", password: "miPass123" });
-      await invoke(controller.create, req, res);
-
-      expect(res.status).toHaveBeenCalledWith(400);
-      expect(createUserUseCase.execute).not.toHaveBeenCalled();
-      expect(sendEmailVerificationUseCase.execute).not.toHaveBeenCalled();
-    });
-
-    it("returns 400 if password is missing", async () => {
-      const req = buildReq({ email: "juan@example.com", username: "juancho" });
-      await invoke(controller.create, req, res);
-
-      expect(res.status).toHaveBeenCalledWith(400);
-      expect(createUserUseCase.execute).not.toHaveBeenCalled();
-    });
-
-    it("returns 400 if password is shorter than 8 characters", async () => {
-      const req = buildReq({ email: "juan@example.com", username: "juancho", password: "123" });
-      await invoke(controller.create, req, res);
-
-      expect(res.status).toHaveBeenCalledWith(400);
-      expect(createUserUseCase.execute).not.toHaveBeenCalled();
     });
   });
 
@@ -140,16 +113,6 @@ describe("UserController", () => {
 
       expect(res.status).toHaveBeenCalledWith(200);
       expect(res.json).toHaveBeenCalledWith({ verified: true });
-    });
-  });
-
-  describe("verifyEmail — when the token body is missing", () => {
-    it("returns 400 without calling the use case", async () => {
-      const req = buildReq({});
-      await invoke(controller.verifyEmail, req, res);
-
-      expect(res.status).toHaveBeenCalledWith(400);
-      expect(verifyEmailUseCase.execute).not.toHaveBeenCalled();
     });
   });
 

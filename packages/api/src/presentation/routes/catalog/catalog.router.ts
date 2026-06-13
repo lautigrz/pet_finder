@@ -7,6 +7,8 @@ import { CatalogController } from "src/presentation/controller/catalog.controlle
 import { readAuthConfig } from "src/presentation/config/authConfig";
 import { JwtTokenSigner } from "@infrastructure/security/JwtTokenSigner";
 import { requireAuth } from "src/presentation/middleware/requireAuth.middleware";
+import { validateRequest } from "src/presentation/middleware/validate.request";
+import { getBreedsRequestSchema } from "src/presentation/schemas/catalog/catalog.schema";
 
 const router = Router();
 const { jwtSecret, accessTtl } = readAuthConfig();
@@ -17,7 +19,7 @@ const getBreedsUseCase = new GetBreedsUseCase(catalogRepository);
 const getColorsUseCase = new GetColorsUseCase(catalogRepository);
 const controller = new CatalogController(getBreedsUseCase, getColorsUseCase);
 
-router.get("/breeds", requireAuth(tokenSigner), controller.getBreeds);
+router.get("/breeds", requireAuth(tokenSigner), validateRequest(getBreedsRequestSchema), controller.getBreeds);
 router.get("/colors", requireAuth(tokenSigner), controller.getColors);
 
 export const catalogRouter = router;
