@@ -12,6 +12,7 @@ export class ReportQuery {
     readonly createdFrom?: Date;
     readonly createdTo?: Date;
     readonly userPublicId?: string;
+    readonly q?: string;
 
     constructor(dto: GetFilteredReportsDTO) {
 
@@ -31,6 +32,8 @@ export class ReportQuery {
         this.createdFrom = dto.createdFrom ? new Date(`${dto.createdFrom}T00:00:00.000Z`) : undefined;
         this.createdTo = dto.createdTo ? new Date(`${dto.createdTo}T23:59:59.999Z`) : undefined;
         this.userPublicId = dto.userPublicId;
+        const normalizedQuery = dto.q?.trim();
+        this.q = normalizedQuery || undefined;
     }
 
     get requiresPetJoin(): boolean {
