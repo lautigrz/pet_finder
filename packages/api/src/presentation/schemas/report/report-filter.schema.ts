@@ -24,6 +24,7 @@ export const getFilteredReportsSchema = z.object({
         lng: z.coerce.number().min(-180).max(180).optional(),
         radiusKm: z.coerce.number().positive().optional(),
         sort: z.enum(['recent']).optional(),
+        q: z.string().trim().min(2,{message: 'La busqueda debe tener al menos 2 caracteres'}).max(100,{message: 'La busqueda no puede superar los 100 caracteres'}).optional(),
     })
 });
 
