@@ -19,6 +19,7 @@ export const listUserReportsSchema = z.object({
         radiusKm: z.coerce.number().positive().optional(),
         createdFrom: z.string().date().optional(),
         createdTo: z.string().date().optional(),
+        q: z.string().trim().min(2,{message: 'La busqueda debe tener al menos 2 caracteres'}).max(100,{message: 'La busqueda no puede superar los 100 caracteres'}).optional(),
     })
 });
 
