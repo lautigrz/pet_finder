@@ -3,6 +3,7 @@ import { SendMessageUseCase } from "../send-message.usecase";
 import { UserNotFoundError } from "@domain/errors/UserNotFoundError";
 import { ConversationNotFoundError } from "@domain/errors/ConversationNotFoundError";
 import { UnauthorizedConversationError } from "@domain/errors/UnauthorizedConversationError";
+import { InvalidMessageTextError } from "@domain/errors/InvalidMessageTextError";
 import { Conversation } from "@domain/conversation/Conversation";
 import { User } from "@domain/entities/User";
 import type { ConversationRepository } from "@domain/conversation/repositories/conversation.repository";
@@ -91,7 +92,7 @@ describe("SendMessageUseCase", () => {
 
     await expect(
       useCase.execute({ publicUserId: "sender-uuid", publicConversationId: "conv-uuid", text: "Llamame al +54 11 1234 5678" })
-    ).rejects.toThrow("Message text cannot contain phone numbers");
+    ).rejects.toThrow(InvalidMessageTextError);
     expect(msgRepo.save).not.toHaveBeenCalled();
   });
 });

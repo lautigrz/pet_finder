@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { GetMyConversationUseCase } from "../get-my-conversation.usecase";
+import { ListMyConversationsUseCase } from "../list-my-conversations.usecase";
 import { UserNotFoundError } from "@domain/errors/UserNotFoundError";
 import { Conversation } from "@domain/conversation/Conversation";
 import { Message } from "@domain/message/aggregate/MessageAgregate";
@@ -20,17 +20,17 @@ const makeConv = (id: number, pub: string, u1: number, u2: number): Conversation
 const makeMsg = (conversationId: number): Message =>
   Message.create({ messageId: 1, publicId: "msg-uuid", senderUserId: 10, receiverId: 20, conversationId, text: MessageText.create("Hola"), isRead: false, createdAt: new Date() });
 
-describe("GetMyConversationUseCase", () => {
+describe("ListMyConversationsUseCase", () => {
   let userRepo: IUserRepository;
   let convRepo: ConversationRepository;
   let msgRepo: MessageRepository;
-  let useCase: GetMyConversationUseCase;
+  let useCase: ListMyConversationsUseCase;
 
   beforeEach(() => {
     userRepo = { save: vi.fn(), findByEmail: vi.fn(), markVerified: vi.fn(), findByPublicId: vi.fn(), findById: vi.fn(), findByIds: vi.fn(), updateProfile: vi.fn(), updatePassword: vi.fn() };
     convRepo = { findAllByUserId: vi.fn(), findByPublicId: vi.fn(), findByParticipants: vi.fn(), findById: vi.fn(), save: vi.fn(), delete: vi.fn() };
     msgRepo = { findById: vi.fn(), findByPublicId: vi.fn(), findByConversationId: vi.fn(), findLastMessageByConversationIds: vi.fn(), findUnreadByUserId: vi.fn(), countUnreadByConversationId: vi.fn(), save: vi.fn(), markAsRead: vi.fn(), delete: vi.fn() };
-    useCase = new GetMyConversationUseCase(userRepo, convRepo, msgRepo);
+    useCase = new ListMyConversationsUseCase(userRepo, convRepo, msgRepo);
   });
 
   it("lanza UserNotFoundError cuando el usuario no existe", async () => {
@@ -83,7 +83,7 @@ describe("GetMyConversationUseCase", () => {
     expect(result[0]?.lastMessage).toBeNull();
   });
 
-  it("lanza UserNotFoundError cuando el otro participante no existe", async () => {
+  it("retorna 'Usuario no encontrado' cuando el otro participante no existe", async () => {
     const user = makeUser(10, "user-uuid");
     const conv = makeConv(1, "conv-uuid", 10, 20);
 
@@ -92,6 +92,10 @@ describe("GetMyConversationUseCase", () => {
     vi.mocked(msgRepo.findLastMessageByConversationIds).mockResolvedValue([]);
     vi.mocked(userRepo.findByIds).mockResolvedValue([]);
 
-    await expect(useCase.execute("user-uuid")).rejects.toThrow(UserNotFoundError);
+    const result = await useCase.execute("user-uuid");
+
+    expect(result).toHaveLength(1);
+    expect(result[0]?.otherUser.username).toBe("Usuario no encontrado");
+    expect(result[0]?.otherUser.publicId).toBeNull();
   });
 });

@@ -1,3 +1,5 @@
+import { InvalidMessageTextError } from "@domain/errors/InvalidMessageTextError";
+
 export class MessageText {
     private constructor(
         private readonly value: string,
@@ -10,19 +12,19 @@ export class MessageText {
 
     private static validate(text: string): void {
         if (text.trim().length === 0) {
-            throw new Error('Message text cannot be empty');
+            throw new InvalidMessageTextError('Message text cannot be empty');
         }
 
         if (text.length > 1000) {
-            throw new Error('Message text cannot exceed 1000 characters');
+            throw new InvalidMessageTextError('Message text cannot exceed 1000 characters');
         }
 
         if (MessageText.containsPhone(text)) {
-            throw new Error('Message text cannot contain phone numbers');
+            throw new InvalidMessageTextError('Message text cannot contain phone numbers');
         }
 
         if (MessageText.containsEmail(text)) {
-            throw new Error('Message text cannot contain email addresses');
+            throw new InvalidMessageTextError('Message text cannot contain email addresses');
         }
     }
 

@@ -9,7 +9,7 @@ import { validateRequest } from "@presentation/middleware/validate.request";
 import { createConversationSchema, getConversationSchema } from "@presentation/schemas/conversation/conversation.schema";
 import { readAuthConfig } from "@presentation/config/authConfig";
 import { JwtTokenSigner } from "@infrastructure/security/JwtTokenSigner";
-import { GetMyConversationUseCase } from "@application/usecase/conversation-usecase/get-my-conversation.usecase";
+import { ListMyConversationsUseCase } from "@application/usecase/conversation-usecase/list-my-conversations.usecase";
 import { PrismaMessageRepository } from "@infrastructure/repository/message/message.repository";
 import { GetConversationUseCase } from "@application/usecase/conversation-usecase/get-conversation.usecase";
 
@@ -21,12 +21,12 @@ const userRepository = new PrismaUserRepository();
 const messageRepository = new PrismaMessageRepository(prisma);
 
 const createConversationUseCase = new CreateConversationUseCase(conversationRepository, userRepository);
-const getMyConversationUseCase = new GetMyConversationUseCase(userRepository, conversationRepository, messageRepository);
+const listMyConversationsUseCase = new ListMyConversationsUseCase(userRepository, conversationRepository, messageRepository);
 const getConversationUseCase = new GetConversationUseCase(conversationRepository, messageRepository, userRepository);
-const conversationController = new ConversationController(createConversationUseCase, getMyConversationUseCase, getConversationUseCase);
+const conversationController = new ConversationController(createConversationUseCase, listMyConversationsUseCase, getConversationUseCase);
 
 router.post('/', requireAuth(tokenSigner), validateRequest(createConversationSchema), conversationController.create);
-router.get('/my-conversations', requireAuth(tokenSigner), conversationController.getMyConversations);
+router.get('/', requireAuth(tokenSigner), conversationController.getMyConversations);
 router.get('/:publicConversationId', requireAuth(tokenSigner), validateRequest(getConversationSchema), conversationController.getConversation);
 
 export default router;

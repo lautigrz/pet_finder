@@ -44,6 +44,8 @@ export function errorToHttpStatus(error: Error): HttpError {
             case 'CONVERSATION_NOT_FOUND': return { statusCode: 404, code: error.code, message: error.message };
             case 'UNAUTHORIZED_CONVERSATION': return { statusCode: 403, code: error.code, message: error.message };
             case 'CONVERSATION_ALREADY_EXISTS': return { statusCode: 409, code: error.code, message: error.message };
+            case 'INVALID_CONVERSATION_WITH_ITSELF': return { statusCode: 400, code: error.code, message: error.message };
+            case 'INVALID_MESSAGE_TEXT': return { statusCode: 400, code: error.code, message: error.message };
         }
     }
 

@@ -4,7 +4,7 @@ import { IUserRepository } from "@domain/repositories/IUserRepository"
 import { ConversationSummaryOutput } from "./dto/get-my-conversartions"
 import { UserNotFoundError } from "@domain/errors/UserNotFoundError"
 
-export class GetMyConversationUseCase {
+export class ListMyConversationsUseCase {
     constructor(
         private userRepository: IUserRepository,
         private conversationRepository: ConversationRepository,
@@ -38,16 +38,24 @@ export class GetMyConversationUseCase {
 
             const otherUser = userMap.get(otherUserId);
 
-            if (!otherUser) throw new UserNotFoundError();
+            const otherUseData = otherUser ? {
+                publicId: otherUser.public_id,
+                username: otherUser.username,
+                photoUrl: otherUser.photoUrl,
+            } : {
+                publicId: null,
+                username: 'Usuario no encontrado',
+                photoUrl: null,
+            };
 
             const message = lastMessageMap.get(conversation.conversationId!);
 
             return {
                 publicId: conversation.publicId,
                 otherUser: {
-                    publicId: otherUser.public_id!,
-                    username: otherUser.username,
-                    photoUrl: otherUser.photoUrl,
+                    publicId: otherUseData.publicId,
+                    username: otherUseData.username,
+                    photoUrl: otherUseData.photoUrl,
                 },
                 lastMessage: message
                     ? {

@@ -4,6 +4,7 @@ import { CreateConversationOutput, CreateConversationRequest } from "./dto/creat
 import { UserNotFoundError } from "@domain/errors/UserNotFoundError";
 import { ConversationAlreadyExistsError } from "@domain/errors/ConversationAlreadyExistsError";
 import { Conversation } from "@domain/conversation/Conversation";
+import { InvalidConversationWithItself } from "@domain/errors/InvalidConversationWithItself";
 import { randomUUID } from "crypto";
 
 export class CreateConversationUseCase {
@@ -19,7 +20,9 @@ export class CreateConversationUseCase {
         const target = await this.userRepository.findByPublicId(request.publicTargetId);
         if (!target) throw new UserNotFoundError();
 
-        if (user.internalId === target.internalId) throw new Error("User cannot create a conversation with itself");
+        if (user.internalId === target.internalId) {
+            throw new InvalidConversationWithItself(request.publicRequesterId, request.publicTargetId);
+        }
 
         const conversation = await this.conversationRepository.findByParticipants(
             user.internalId!,
