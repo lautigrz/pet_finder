@@ -1,13 +1,14 @@
 import { Request, Response } from "express";
 import { CreateConversationUseCase } from "@application/usecase/conversation-usecase/create-conversation.usecase";
 import { asyncHandler } from "@presentation/handler/async-handler";
-import { GetMyConversationUseCase } from "@application/usecase/conversation-usecase/get-my-conversation.usecase";
+import { ListMyConversationsUseCase } from "@application/usecase/conversation-usecase/list-my-conversations.usecase";
 import { GetConversationUseCase } from "@application/usecase/conversation-usecase/get-conversation.usecase";
 
 export class ConversationController {
 
-    constructor(private createConversationUseCase: CreateConversationUseCase,
-        private getMyConversationUseCase: GetMyConversationUseCase,
+    constructor(
+        private createConversationUseCase: CreateConversationUseCase,
+        private listMyConversationsUseCase: ListMyConversationsUseCase,
         private getConversationUseCase: GetConversationUseCase
     ) { }
 
@@ -27,7 +28,7 @@ export class ConversationController {
 
     getMyConversations = asyncHandler(async (req: Request, res: Response) => {
         const publicUserId = req.auth?.sub
-        const conversations = await this.getMyConversationUseCase.execute(publicUserId!);
+        const conversations = await this.listMyConversationsUseCase.execute(publicUserId!);
         res.status(200).json(conversations);
     });
 

@@ -1,9 +1,9 @@
 export interface ConversationSummaryOutput {
     publicId: string;
     otherUser: {
-        publicId: string;
+        publicId: string | null;
         username: string;
-        photoUrl: string | null;  // ← agregar null
+        photoUrl: string | null;
     };
     lastMessage: {
         text: string;

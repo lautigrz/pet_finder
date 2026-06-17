@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { CreateConversationUseCase } from "../create-conversation.usecase";
 import { UserNotFoundError } from "@domain/errors/UserNotFoundError";
 import { ConversationAlreadyExistsError } from "@domain/errors/ConversationAlreadyExistsError";
+import { InvalidConversationWithItself } from "@domain/errors/InvalidConversationWithItself";
 import { Conversation } from "@domain/conversation/Conversation";
 import { User } from "@domain/entities/User";
 import type { ConversationRepository } from "@domain/conversation/repositories/conversation.repository";
@@ -109,7 +110,7 @@ describe("CreateConversationUseCase", () => {
         publicRequesterId: "same-uuid",
         publicTargetId: "same-uuid",
       })
-    ).rejects.toThrow("User cannot create a conversation with itself");
+    ).rejects.toThrow(InvalidConversationWithItself);
 
     expect(conversationRepository.save).not.toHaveBeenCalled();
   });

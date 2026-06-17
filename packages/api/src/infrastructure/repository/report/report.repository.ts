@@ -2,7 +2,7 @@ import { Report } from "@domain/report/aggregates/ReportAggregate";
 import { ReportRepository, ReportWithPet } from "@domain/report/repositories/report.repository";
 import { ReportMapper } from "./report.mapper";
 import { Prisma, PrismaClient } from "@prisma/client";
-import { ReportQuery } from "@application/usecase/report/report-query";
+import { ReportQuery } from "@application/usecase/report-usecase/report-query";
 import { PetMapper } from "../pet/pet.mapper";
 import { reportStatusMap } from "@domain/report/types/report.status";
 import { ReportType } from '@domain/report/types/report.type';
@@ -46,29 +46,29 @@ export class PrismaReportRepository implements ReportRepository {
 
 
     async save(report: Report, images?: SightingImage[]): Promise<void> {
-    let colorId: number | undefined;
-    let breedId: number | null | undefined;
-    if (report.reportType === ReportType.SIGHTING) {
-        const details = report.details as SightingReportDetails;
-        colorId = await this.catalog.colorId(details.color);
-        breedId = await this.catalog.breedId(details.breed, details.animalType);
-    }
-    const data = ReportMapper.toPersistence(report, colorId, breedId);
-
-    await this.prisma.$transaction(async (tx) => {
-        const created = await tx.report.create({ data });
-
-        if (images && images.length > 0) {
-            await tx.reportImage.createMany({
-                data: images.map(img => ({
-                    reportId: created.report_id,  
-                    cloudinaryId: img.cloudinaryId,
-                    photoUrl: img.photoUrl,
-                })),
-            });
+        let colorId: number | undefined;
+        let breedId: number | null | undefined;
+        if (report.reportType === ReportType.SIGHTING) {
+            const details = report.details as SightingReportDetails;
+            colorId = await this.catalog.colorId(details.color);
+            breedId = await this.catalog.breedId(details.breed, details.animalType);
         }
-    });
-}
+        const data = ReportMapper.toPersistence(report, colorId, breedId);
+
+        await this.prisma.$transaction(async (tx) => {
+            const created = await tx.report.create({ data });
+
+            if (images && images.length > 0) {
+                await tx.reportImage.createMany({
+                    data: images.map(img => ({
+                        reportId: created.report_id,
+                        cloudinaryId: img.cloudinaryId,
+                        photoUrl: img.photoUrl,
+                    })),
+                });
+            }
+        });
+    }
 
     async update(report: Report): Promise<void> {
         if (!report.idReport) {

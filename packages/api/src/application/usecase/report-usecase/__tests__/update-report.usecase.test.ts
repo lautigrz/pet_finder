@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { UpdateReportUseCase } from '@application/usecase/report/update-report.usecase';
+import { UpdateReportUseCase } from '@application/usecase/report-usecase/update-report.usecase';
 import { ReportRepository } from '@domain/report/repositories/report.repository';
 import { PetRepository } from '@domain/pet/repositories/pet.repository';
 import { StorageService } from '@application/ports/StorageService';
@@ -10,12 +10,12 @@ import { ReportType } from '@domain/report/types/report.type';
 import { SightingReportDetails } from '@domain/report/value-objects/sighting-report-details.vo';
 import { SightingImage } from '@domain/report/value-objects/sighting.images';
 import { AnimalType } from '@domain/shared/animal-type/animal-type';
-import { UpdateReportDTO } from '@application/usecase/report/dto/update-report.dto';
+import { UpdateReportDTO } from '@application/usecase/report-usecase/dto/update-report.dto';
 
 
-const OWNER_ID   = 'user-owner-uuid';
-const OTHER_ID   = 'user-other-uuid';
-const REPORT_ID  = 'report-uuid-1';
+const OWNER_ID = 'user-owner-uuid';
+const OTHER_ID = 'user-other-uuid';
+const REPORT_ID = 'report-uuid-1';
 const PET_PUB_ID = 'pet-uuid-1';
 
 const fakeImage = SightingImage.create({ cloudinaryId: 'reports/img1', photoUrl: 'https://img1.jpg' });
@@ -76,14 +76,14 @@ describe('UpdateReportUseCase', () => {
 
   beforeEach(() => {
     reportRepository = {
-      findByPublicId:      vi.fn(),
+      findByPublicId: vi.fn(),
       findImagesByReportId: vi.fn().mockResolvedValue([]),
-      updateFields:        vi.fn().mockResolvedValue(undefined),
+      updateFields: vi.fn().mockResolvedValue(undefined),
     } as unknown as ReportRepository;
 
     petRepository = {
       findByPublicId: vi.fn(),
-      update:         vi.fn().mockResolvedValue(undefined),
+      update: vi.fn().mockResolvedValue(undefined),
     } as unknown as PetRepository;
 
     storageService = {
@@ -167,7 +167,7 @@ describe('UpdateReportUseCase', () => {
 
       await useCase.execute(baseDTO({
         sightingDetails: { color: 'negro' },
-        keepImageIds: [], 
+        keepImageIds: [],
       }), OWNER_ID);
 
       expect(storageService.delete).toHaveBeenCalledWith('reports/img1');
@@ -188,7 +188,7 @@ describe('UpdateReportUseCase', () => {
 
       expect(storageService.upload).toHaveBeenCalledWith(buffer, 'reports');
       const images = vi.mocked(reportRepository.updateFields).mock.calls[0]?.[1] ?? [];
-      expect(images).toHaveLength(2); 
+      expect(images).toHaveLength(2);
     });
   });
 
@@ -196,7 +196,7 @@ describe('UpdateReportUseCase', () => {
   describe('LOST — actualización de campos', () => {
     it('renombra la mascota si viene name', async () => {
       const report = makeLostReport();
-      const pet    = makePet();
+      const pet = makePet();
       vi.mocked(reportRepository.findByPublicId).mockResolvedValue(report as any);
       vi.mocked(petRepository.findByPublicId).mockResolvedValue(pet as any);
 
@@ -211,7 +211,7 @@ describe('UpdateReportUseCase', () => {
 
     it('actualiza color, raza y collar de la mascota', async () => {
       const report = makeLostReport();
-      const pet    = makePet();
+      const pet = makePet();
       vi.mocked(reportRepository.findByPublicId).mockResolvedValue(report as any);
       vi.mocked(petRepository.findByPublicId).mockResolvedValue(pet as any);
 
@@ -238,15 +238,15 @@ describe('UpdateReportUseCase', () => {
 
   describe('LOST — gestión de imágenes', () => {
     it('lee imágenes del repositorio (no del aggregate) para LOST', async () => {
-      const report    = makeLostReport();
-      const pet       = makePet();
+      const report = makeLostReport();
+      const pet = makePet();
       const lostImage = SightingImage.create({ cloudinaryId: 'reports/lost1', photoUrl: 'https://lost1.jpg' });
       vi.mocked(reportRepository.findByPublicId).mockResolvedValue(report as any);
       vi.mocked(petRepository.findByPublicId).mockResolvedValue(pet as any);
       vi.mocked(reportRepository.findImagesByReportId).mockResolvedValue([lostImage]);
 
       await useCase.execute(baseDTO({
-        lostDetails:  { petPublicId: PET_PUB_ID },
+        lostDetails: { petPublicId: PET_PUB_ID },
         keepImageIds: ['reports/lost1'],
       }), OWNER_ID);
 
@@ -256,15 +256,15 @@ describe('UpdateReportUseCase', () => {
     });
 
     it('borra imágenes de LOST que no están en keepImageIds', async () => {
-      const report    = makeLostReport();
-      const pet       = makePet();
+      const report = makeLostReport();
+      const pet = makePet();
       const lostImage = SightingImage.create({ cloudinaryId: 'reports/lost1', photoUrl: 'https://lost1.jpg' });
       vi.mocked(reportRepository.findByPublicId).mockResolvedValue(report as any);
       vi.mocked(petRepository.findByPublicId).mockResolvedValue(pet as any);
       vi.mocked(reportRepository.findImagesByReportId).mockResolvedValue([lostImage]);
 
       await useCase.execute(baseDTO({
-        lostDetails:  { petPublicId: PET_PUB_ID },
+        lostDetails: { petPublicId: PET_PUB_ID },
         keepImageIds: [],
       }), OWNER_ID);
 
@@ -275,7 +275,7 @@ describe('UpdateReportUseCase', () => {
 
     it('sube imágenes nuevas para LOST', async () => {
       const report = makeLostReport();
-      const pet    = makePet();
+      const pet = makePet();
       vi.mocked(reportRepository.findByPublicId).mockResolvedValue(report as any);
       vi.mocked(petRepository.findByPublicId).mockResolvedValue(pet as any);
       vi.mocked(reportRepository.findImagesByReportId).mockResolvedValue([]);
@@ -283,7 +283,7 @@ describe('UpdateReportUseCase', () => {
       const buffer = Buffer.from('fake');
       await useCase.execute(baseDTO({
         lostDetails: { petPublicId: PET_PUB_ID },
-        newImages:   [buffer],
+        newImages: [buffer],
       }), OWNER_ID);
 
       expect(storageService.upload).toHaveBeenCalledWith(buffer, 'reports');
