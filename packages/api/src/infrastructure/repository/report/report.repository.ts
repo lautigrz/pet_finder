@@ -192,10 +192,23 @@ export class PrismaReportRepository implements ReportRepository {
     }
 
 
-    async findByUserPublicId(userPublicId: string, filters?: { reportType?: string; animalType?: string; createdFrom?: string; createdTo?: string }): Promise<Report[]> {
+    async findByUserPublicId(userPublicId: string, filters?: { reportType?: string; animalType?: string; createdFrom?: string; createdTo?: string; q?: string; }): Promise<Report[]> {
 
         const where: Prisma.ReportWhereInput = { user: { public_id: userPublicId } }
 
+        if (filters?.q) {
+            const matchingDescriptionIds =
+                await this.findIdsByDescriptionQuery(filters.q);
+
+            if (matchingDescriptionIds.length === 0) {
+                return [];
+            }
+
+            where.public_id = {
+                in: matchingDescriptionIds,
+            };
+        }
+        
         if (filters?.reportType) {
             where.reportType = { name: filters.reportType }
         }
@@ -227,6 +240,17 @@ export class PrismaReportRepository implements ReportRepository {
     async findIdsByQuery(query: ReportQuery): Promise<string[]> {
 
         const where: Prisma.ReportWhereInput = {}
+
+        if (query.q) {
+            const matchingDescriptionIds = await this.findIdsByDescriptionQuery(query.q);
+            if (matchingDescriptionIds.length === 0) {
+                return [];
+            }
+
+            where.public_id = {
+                in: matchingDescriptionIds
+            };
+        }
 
         if (query.status) {
             where.reportStatus = { name: query.status }
@@ -308,6 +332,30 @@ export class PrismaReportRepository implements ReportRepository {
                 : undefined
         }));
 
+    }
+
+    private async findIdsByDescriptionQuery(queryText: string,): Promise<string[]> {
+        const searchText = queryText.trim();
+
+        const rows = await this.prisma.$queryRaw<Array<{ public_id: string }>>(
+            Prisma.sql`
+                SELECT
+                    r."public_id"::text AS "public_id"
+                FROM "reports" r
+                WHERE
+                    r."description" IS NOT NULL
+                    AND (
+                    r."description" ILIKE ${`%${searchText}%`}
+                    OR word_similarity(${searchText}, r."description") >= 0.3
+                    )
+                ORDER BY GREATEST(
+                    similarity(r."description", ${searchText}),
+                    word_similarity(${searchText}, r."description")
+                ) DESC
+            `,
+        );
+
+        return rows.map((row) => row.public_id);
     }
 
 }

@@ -316,21 +316,35 @@ describe("CreateReportController", () => {
       );
     });
 
-    it("pasa los filtros al use case", async () => {
+    it("pasa los filtros y la búsqueda al use case", async () => {
+      // Given
       const req = buildListReq({
         page: 1,
         limit: 10,
         reportType: "LOST",
         animalType: "DOG",
         radiusKm: 5,
+        q: "  collar rojo  ",
       });
+
       const res = buildRes();
+
+      // When
       await invoke(controller.list, req, res);
 
+      // Then
       expect(listUserReportsUseCase.execute).toHaveBeenCalledWith(
         "user-public-id",
-        { page: 1, limit: 10 },
-        expect.objectContaining({ reportType: "LOST", animalType: "DOG", radiusKm: 5 }),
+        {
+          page: 1,
+          limit: 10,
+        },
+        expect.objectContaining({
+          reportType: "LOST",
+          animalType: "DOG",
+          radiusKm: 5,
+          q: "  collar rojo  ",
+        }),
       );
     });
 
@@ -381,6 +395,24 @@ describe("CreateReportController", () => {
         method: "GET",
       });
 
+      it("pasa q al caso de uso de reportes filtrados", async () => {
+        // Given
+        const req = buildFilterReq({
+          q: "perrro marron",
+        });
+
+        const res = buildRes();
+
+        // When
+        await invoke(controller.getFilteres, req, res);
+
+        // Then
+        expect(filteresUseCase.execute).toHaveBeenCalledWith({
+          q: "perrro marron",
+        });
+
+        expect(res.status).toHaveBeenCalledWith(200);
+      });
       it("retorna 200 con la lista de reportes filtrados", async () => {
         vi.mocked(filteresUseCase.execute).mockResolvedValue([fakeReportOutput]);
 

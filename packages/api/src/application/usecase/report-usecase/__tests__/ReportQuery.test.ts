@@ -12,6 +12,7 @@ describe("ReportQuery", () => {
       status: ReportStatus.ACTIVE,
       createdFrom: "2024-05-01",
       createdTo: "2024-05-10",
+      q: "  perro marrón  ",
     };
 
     const query = new ReportQuery(dto);
@@ -19,8 +20,13 @@ describe("ReportQuery", () => {
     expect(query.reportType).toBe(ReportType.LOST);
     expect(query.animalType).toBe(AnimalType.DOG);
     expect(query.status).toBe(ReportStatus.ACTIVE);
-    expect(query.createdFrom).toEqual(new Date("2024-05-01T00:00:00.000Z"));
-    expect(query.createdTo).toEqual(new Date("2024-05-10T23:59:59.999Z"));
+    expect(query.createdFrom).toEqual(
+      new Date("2024-05-01T00:00:00.000Z"),
+    );
+    expect(query.createdTo).toEqual(
+      new Date("2024-05-10T23:59:59.999Z"),
+    );
+    expect(query.q).toBe("perro marrón");
   });
 
   it("debería dejar campos como undefined si no se proveen en el DTO", () => {
@@ -32,6 +38,15 @@ describe("ReportQuery", () => {
     expect(query.status).toBeUndefined();
     expect(query.createdFrom).toBeUndefined();
     expect(query.createdTo).toBeUndefined();
+    expect(query.q).toBeUndefined();
+  });
+
+  it("debería convertir una búsqueda vacía o con espacios en undefined", () => {
+    const query = new ReportQuery({
+      q: "   ",
+    });
+
+    expect(query.q).toBeUndefined();
   });
 
   it("debería normalizar correctamente las fechas createdFrom y createdTo", () => {

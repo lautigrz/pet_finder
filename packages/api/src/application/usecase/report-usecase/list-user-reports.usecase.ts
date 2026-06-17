@@ -23,6 +23,7 @@ export class ListUserReportsUseCase {
       animalType: filters.animalType,
       createdFrom: filters.createdFrom,
       createdTo: filters.createdTo,
+      q: filters.q,
     });
 
     const withinRadius = this.filterByRadius(reports, filters);
