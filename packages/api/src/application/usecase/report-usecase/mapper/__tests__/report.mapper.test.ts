@@ -75,6 +75,27 @@ const sightingReport = Report.restore({
   updatedAt: null,
 });
 
+const resolvedReport = Report.restore({
+  idReport: 3,
+  publicId: "report-resolved-uuid",
+  userId: 5,
+  userPublicId: "user-pub-id",
+  type: ReportType.SIGHTING,
+  currentStatus: ReportStatus.RESOLVED,
+  description: null,
+  details: SightingReportDetails.create({
+    animalType: AnimalType.CAT,
+    hasIdCollar: false,
+    color: "orange",
+    isInTransit: false,
+    images: [],
+  }),
+  location: validLocation,
+  occurredAt: new Date("2024-05-01"),
+  createdAt: new Date("2024-05-01"),
+  updatedAt: new Date("2024-06-15T12:00:00.000Z"),
+});
+
 describe("ReportMapper.toOutput (application)", () => {
   describe("reporte SIGHTING", () => {
     it("mapea correctamente un reporte de avistamiento sin mascota", () => {
@@ -88,6 +109,12 @@ describe("ReportMapper.toOutput (application)", () => {
       expect(output.location.latitude).toBe(-34.603722);
       expect(output.location.longitude).toBe(-58.381592);
       expect(output.user.publicId).toBe("user-pub-id");
+    });
+
+    it("mapea updatedAt desde el reporte", () => {
+      const output = ReportOutputMapper.toOutput(resolvedReport);
+
+      expect(output.updatedAt).toEqual(new Date("2024-06-15T12:00:00.000Z"));
     });
 
     it("mapea los details de SIGHTING con animalType, hasIdCollar y color", () => {

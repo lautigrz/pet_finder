@@ -67,6 +67,7 @@ export class ReportMapper {
       location_lat: report.location.latitude,
       location_lng: report.location.longitude,
       created_at: report.createdAt,
+      updated_at: report.updatedAt,
       ...ReportMapper.buildDetailsInput(report, colorId, breedId),
     }
   }
