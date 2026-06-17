@@ -2,7 +2,7 @@ import { Report } from "@domain/report/aggregates/ReportAggregate";
 import { ReportRepository, ReportWithPet } from "@domain/report/repositories/report.repository";
 import { ReportMapper } from "./report.mapper";
 import { Prisma, PrismaClient } from "@prisma/client";
-import { ReportQuery } from "@application/usecase/report/report-query";
+import { ReportQuery } from "@application/usecase/report-usecase/report-query";
 import { PetMapper } from "../pet/pet.mapper";
 import { reportStatusMap } from "@domain/report/types/report.status";
 import { ReportType } from '@domain/report/types/report.type';

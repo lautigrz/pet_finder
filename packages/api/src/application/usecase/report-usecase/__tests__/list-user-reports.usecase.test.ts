@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { ListUserReportsUseCase } from "@application/usecase/report/list-user-reports.usecase";
+import { ListUserReportsUseCase } from "@application/usecase/report-usecase/list-user-reports.usecase";
 import { ReportRepository } from "@domain/report/repositories/report.repository";
 import { PetRepository } from "@domain/pet/repositories/pet.repository";
 import { Report } from "@domain/report/aggregates/ReportAggregate";

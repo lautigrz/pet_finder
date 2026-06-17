@@ -1,12 +1,12 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { Request, Response } from 'express';
 import { CreateReportController } from '../report.controller';
-import { CreateReportUseCase } from '@application/usecase/report/create-report.usecase';
-import { GetReportUseCase } from '@application/usecase/report/get-report-usecase';
-import { ListUserReportsUseCase } from '@application/usecase/report/list-user-reports.usecase';
-import { GetFilteredReportsUseCase } from '@application/usecase/report/get-filter-reports.usecase';
-import { UpdateStatus } from '@application/usecase/report/update-status-report';
-import { UpdateReportUseCase } from '@application/usecase/report/update-report.usecase';
+import { CreateReportUseCase } from '@application/usecase/report-usecase/create-report.usecase';
+import { GetReportUseCase } from '@application/usecase/report-usecase/get-report-usecase';
+import { ListUserReportsUseCase } from '@application/usecase/report-usecase/list-user-reports.usecase';
+import { GetFilteredReportsUseCase } from '@application/usecase/report-usecase/get-filter-reports.usecase';
+import { UpdateStatus } from '@application/usecase/report-usecase/update-status-report';
+import { UpdateReportUseCase } from '@application/usecase/report-usecase/update-report.usecase';
 import { ReportNotFoundError } from '@domain/errors/ReportNotFoundError';
 import { UnauthorizedReportEditError } from '@domain/errors/UnauthorizedReportEditError';
 import { InvalidFieldError } from '@application/errors/errors';
@@ -14,7 +14,7 @@ import { invoke } from './test-helpers';
 
 const buildRes = (): Partial<Response> => ({
   status: vi.fn().mockReturnThis(),
-  json:   vi.fn().mockReturnThis(),
+  json: vi.fn().mockReturnThis(),
   sendStatus: vi.fn().mockReturnThis(),
 });
 
