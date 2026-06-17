@@ -43,4 +43,5 @@ export interface ReportOutput {
     details: SightingReportOutput | LostReportOutput;
     occurredAt: Date;
     createdAt: Date;
+    updatedAt: Date | null;
 }

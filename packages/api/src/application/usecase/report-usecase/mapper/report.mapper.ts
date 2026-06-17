@@ -28,7 +28,8 @@ export class ReportOutputMapper {
             },
             details: this.buildDetails(report, pet, reportImages),
             occurredAt: report.occurredAt,
-            createdAt: report.createdAt
+            createdAt: report.createdAt,
+            updatedAt: report.updatedAt
         }
     }
 
