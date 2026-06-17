@@ -1,11 +1,11 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { Request, Response } from "express";
 import { CreateReportController } from "../report.controller";
-import { CreateReportUseCase } from "@application/usecase/report/create-report.usecase";
-import { GetReportUseCase } from "@application/usecase/report/get-report-usecase";
-import { ListUserReportsUseCase } from "@application/usecase/report/list-user-reports.usecase";
-import { GetFilteredReportsUseCase } from "@application/usecase/report/get-filter-reports.usecase";
-import { UpdateStatus } from "@application/usecase/report/update-status-report";
+import { CreateReportUseCase } from "@application/usecase/report-usecase/create-report.usecase";
+import { GetReportUseCase } from "@application/usecase/report-usecase/get-report-usecase";
+import { ListUserReportsUseCase } from "@application/usecase/report-usecase/list-user-reports.usecase";
+import { GetFilteredReportsUseCase } from "@application/usecase/report-usecase/get-filter-reports.usecase";
+import { UpdateStatus } from "@application/usecase/report-usecase/update-status-report";
 import { ValidationError } from "../../errors/ValidationError";
 import { ReportType } from "@domain/report/types/report.type";
 import { ReportStatus } from "@domain/report/types/report.status";

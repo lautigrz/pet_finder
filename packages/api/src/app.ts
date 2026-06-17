@@ -2,6 +2,7 @@ import express, { Application } from 'express';
 import router from './presentation/routes';
 import cors from 'cors';
 import { errorHandler } from '@presentation/handler/error-handler';
+
 const app: Application = express();
 
 

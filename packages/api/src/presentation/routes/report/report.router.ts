@@ -1,10 +1,10 @@
 import { Router } from "express";
 import prisma from "@infrastructure/prisma/prisma.client";
 import { CreateReportController } from "../../controller/report.controller";
-import { CreateReportUseCase } from "@application/usecase/report/create-report.usecase";
+import { CreateReportUseCase } from "@application/usecase/report-usecase/create-report.usecase";
 import { PrismaReportRepository } from "@infrastructure/repository/report/report.repository";
-import { GetReportUseCase } from "@application/usecase/report/get-report-usecase";
-import { ListUserReportsUseCase } from "@application/usecase/report/list-user-reports.usecase";
+import { GetReportUseCase } from "@application/usecase/report-usecase/get-report-usecase";
+import { ListUserReportsUseCase } from "@application/usecase/report-usecase/list-user-reports.usecase";
 import { PrismaPetRepository } from "@infrastructure/repository/pet/pet.repository";
 import { PrismaUserRepository } from "@infrastructure/repository/PrismaUserRepository";
 import { requireAuth } from "src/presentation/middleware/requireAuth.middleware";
@@ -12,14 +12,14 @@ import { readAuthConfig } from "src/presentation/config/authConfig";
 import { JwtTokenSigner } from "src/infrastructure/security/JwtTokenSigner";
 import upload from "@infrastructure/storage/CloudinaryMulterUpload";
 import { ClaudinaryService } from "@infrastructure/storage/CloudinaryService";
-import { GetFilteredReportsUseCase } from "@application/usecase/report/get-filter-reports.usecase";
+import { GetFilteredReportsUseCase } from "@application/usecase/report-usecase/get-filter-reports.usecase";
 import { validateRequest } from "src/presentation/middleware/validate.request";
 import { getFilteredReportsSchema } from "src/presentation/schemas/report/report-filter.schema";
 import { listUserReportsSchema } from "src/presentation/schemas/report/list-user-reports.schema";
 import { updateStatusReportSchema } from "src/presentation/schemas/report/update-status-report.schema";
-import { UpdateStatus } from "@application/usecase/report/update-status-report";
+import { UpdateStatus } from "@application/usecase/report-usecase/update-status-report";
 import { createReportRequestSchema } from "src/presentation/schemas/report/create-report.schema";
-import { UpdateReportUseCase } from '@application/usecase/report/update-report.usecase';
+import { UpdateReportUseCase } from '@application/usecase/report-usecase/update-report.usecase';
 import { updateReportSchema } from 'src/presentation/schemas/report/update-report.schema';
 
 
