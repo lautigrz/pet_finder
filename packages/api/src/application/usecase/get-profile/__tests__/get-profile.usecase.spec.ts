@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { GetProfileUseCase } from "../get-profile.usecase";
 import { IUserRepository } from "../../../../domain/repositories/IUserRepository";
 import { UserNotFoundError } from "../../../../domain/errors/UserNotFoundError";
+import { User } from "../../../../domain/entities/User";
 
 describe("GetProfileUseCase", () => {
   let userRepository: IUserRepository;
@@ -18,18 +19,9 @@ describe("GetProfileUseCase", () => {
   describe("when the user exists", () => {
     it("returns the user profile", async () => {
       // Given un usuario existente
-      vi.mocked(userRepository.findByPublicId).mockResolvedValue({
-        internalId: 1,
-        id: "user-123",
-        email: "facu@test.com",
-        username: "facu_updated",
-        passwordHash: "hashed-password",
-        isVerified: true,
-        name: "Facundo",
-        lastname: "Pereira",
-        photoUrl: null,
-        createdAt: new Date(),
-});
+      vi.mocked(userRepository.findByPublicId).mockResolvedValue(
+        User.reconstruct(1, "user-123", "facu@test.com", "facu_updated", "hashed-password", true, new Date(), "Facundo", "Pereira", null),
+      );
 
       // When ejecuto el use case
       const result = await useCase.execute("user-123");

@@ -14,7 +14,7 @@ export interface ReportRepository {
 
   findDetailByPublicId(publicId: string): Promise<ReportWithPet | null>
 
-  findByUserPublicId(userPublicId: string, filters?: { reportType?: string; animalType?: string; createdFrom?: string; createdTo?: string }): Promise<Report[]>
+  findByUserPublicId(userPublicId: string, filters?: { reportType?: string; animalType?: string; createdFrom?: string; createdTo?: string; q?:string; }): Promise<Report[]>
 
   findIdsByQuery(query: ReportQuery): Promise<string[]>
 

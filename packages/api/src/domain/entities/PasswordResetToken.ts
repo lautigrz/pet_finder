@@ -1,3 +1,6 @@
+import { InvalidPasswordResetTokenError } from "../errors/InvalidPasswordResetTokenError";
+import { assertExpirationInFuture, assertTokenValue } from "../shared/token/token-invariants";
+
 export class PasswordResetToken {
   private constructor(
     public readonly id: number | null,
@@ -9,8 +12,8 @@ export class PasswordResetToken {
   ) {}
 
   static create(userId: number, value: string, expiresAt: Date): PasswordResetToken {
-    PasswordResetToken.assertValidValue(value);
-    PasswordResetToken.assertExpirationInFuture(expiresAt);
+    assertTokenValue(value, "Password reset token value too short");
+    assertExpirationInFuture(expiresAt);
     return new PasswordResetToken(null, userId, value, expiresAt, null, new Date());
   }
 
@@ -33,11 +36,13 @@ export class PasswordResetToken {
     return this.usedAt !== null;
   }
 
-  private static assertValidValue(value: string): void {
-    if (value.length < 32) throw new Error("Password reset token value too short");
+  ensureUsable(): void {
+    if (this.isUsed()) throw new InvalidPasswordResetTokenError("already_used");
+    if (this.isExpired()) throw new InvalidPasswordResetTokenError("expired");
   }
 
-  private static assertExpirationInFuture(expiresAt: Date): void {
-    if (expiresAt <= new Date()) throw new Error("Expiration must be in the future");
+  requireId(): number {
+    if (this.id === null) throw new Error("Password reset token is not persisted");
+    return this.id;
   }
 }

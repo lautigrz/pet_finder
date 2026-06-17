@@ -59,6 +59,7 @@ export class CreateReportController {
             radiusKm: query.radiusKm,
             createdFrom: query.createdFrom,
             createdTo: query.createdTo,
+            q: query.q,
         };
 
         const result = await this.listUserReportsUseCase.execute(userId, pagination, filters);

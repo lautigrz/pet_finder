@@ -7,6 +7,6 @@ export class LogoutUserUseCase {
   async execute(input: LogoutUserInput): Promise<void> {
     const token = await this.refreshTokenRepository.findByValue(input.refreshToken);
     if (!token || token.isRevoked()) return;
-    await this.refreshTokenRepository.revoke(token.id!, new Date());
+    await this.refreshTokenRepository.revoke(token.requireId(), new Date());
   }
 }

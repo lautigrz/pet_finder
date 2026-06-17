@@ -116,18 +116,45 @@ describe("ListUserReportsUseCase", () => {
   });
 
   it("pasa el id del usuario y los filtros al repositorio", async () => {
-    await useCase.execute(USER_PUBLIC_ID, { page: 2, limit: 10 }, {
-      reportType: "LOST",
-      createdFrom: "2026-06-01",
-      createdTo: "2026-06-10",
-    });
+    await useCase.execute(
+      USER_PUBLIC_ID,
+      { page: 2, limit: 10 },
+      {
+        reportType: "LOST",
+        createdFrom: "2026-06-01",
+        createdTo: "2026-06-10",
+        q: "collar rojo",
+      },
+    );
 
-    expect(reportRepository.findByUserPublicId).toHaveBeenCalledWith(USER_PUBLIC_ID, {
-      reportType: "LOST",
-      animalType: undefined,
-      createdFrom: "2026-06-01",
-      createdTo: "2026-06-10",
-    });
+    expect(reportRepository.findByUserPublicId).toHaveBeenCalledWith(
+      USER_PUBLIC_ID,
+      {
+        reportType: "LOST",
+        animalType: undefined,
+        createdFrom: "2026-06-01",
+        createdTo: "2026-06-10",
+        q: "collar rojo",
+      },
+    );
+  });
+
+  it("pasa q como undefined cuando no se proporciona una búsqueda", async () => {
+    await useCase.execute(
+      USER_PUBLIC_ID,
+      { page: 1, limit: 10 },
+    );
+
+    expect(reportRepository.findByUserPublicId).toHaveBeenCalledWith(
+      USER_PUBLIC_ID,
+      {
+        reportType: undefined,
+        animalType: undefined,
+        createdFrom: undefined,
+        createdTo: undefined,
+        q: undefined,
+      },
+    );
   });
 
   it("devuelve los reportes paginados con la metadata", async () => {
