@@ -3,8 +3,8 @@
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
-  "private": true,  
-"scripts": {
+  "private": true,
+  "scripts": {
     "test": "vitest run --passWithNoTests",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage --passWithNoTests",
@@ -12,16 +12,18 @@
     "build": "npx prisma generate --schema=../shared/prisma/schema.prisma && tsc",
     "dev": "tsx watch src/worker.ts",
     "start": "node dist/worker.js"
-},
+  },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@huggingface/tokenizers": "^0.1.3",
     "@pet-alert/shared": "*",
     "@prisma/client": "^6.19.3",
-    "bullmq": "^5.76.6",
     "dotenv": "^17.4.2",
     "ioredis": "^5.10.1",
+    "onnxruntime-node": "^1.26.0",
+    "sharp": "^0.34.5",
     "winston": "^3.19.0"
   },
   "devDependencies": {

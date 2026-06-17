@@ -4,7 +4,7 @@ import { Pet } from "@domain/pet/aggregates/PetAggregate";
 import { Report } from "@domain/report/aggregates/ReportAggregate";
 import { ReportRepository } from "@domain/report/repositories/report.repository";
 import { ReportDetails } from "@domain/report/types/report-details.type";
-import { ReportType } from "@domain/report/types/report.type";
+import { ReportType, ReportTypeToNumber } from "@domain/report/types/report.type";
 import { ReportDescription } from "@domain/report/value-objects/description.vo";
 import { Location } from "@domain/report/value-objects/location.vo";
 import { LostReportDetails } from "@domain/report/value-objects/lost-report-details.vo";
@@ -14,6 +14,7 @@ import { IUserRepository } from "@domain/repositories/IUserRepository";
 import { StorageService } from "@application/ports/StorageService";
 import { SightingImage } from "@domain/report/value-objects/sighting.images";
 import { CreateReportDTO, LocationDTO } from "./dto/create-report.dto";
+import { enqueueMatchingJob } from "@infrastructure/queue/embedding.queue";
 
 export type { CreateReportDTO, LocationDTO };
 
@@ -48,7 +49,11 @@ export class CreateReportUseCase {
             images = await this.buildImages(dto.images);
         }
 
-        await this.reportRepository.save(report, images);
+        const reportId = await this.reportRepository.save(report);
+
+        if (reportId) {
+            await enqueueMatchingJob({ type: 'run_matching', reportId: reportId, reportType: ReportTypeToNumber[dto.type], reportTypeName: dto.type })
+        }
 
         return { publicId: report.publicId };
     }

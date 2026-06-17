@@ -2,11 +2,15 @@
   "compilerOptions": {
     "rootDir": "./src",
     "outDir": "./dist",
-    "module": "node16",
+    "module": "commonjs",
     "target": "es2020",
-    "lib": ["es2020"],
-    "types": ["node"],
-    "moduleResolution": "node16",
+    "lib": [
+      "es2020"
+    ],
+    "types": [
+      "node"
+    ],
+    "moduleResolution": "node",
     "esModuleInterop": true,
     "sourceMap": true,
     "declaration": true,
@@ -14,8 +18,31 @@
     "noUncheckedIndexedAccess": true,
     "strict": true,
     "isolatedModules": true,
-    "skipLibCheck": true
+    "skipLibCheck": true,
+    "paths": {
+      "@infrastructure/*": [
+        "./src/infrastructure/*"
+      ],
+      "@domain/*": [
+        "./src/domain/*"
+      ],
+      "@services/*": [
+        "./src/services/*"
+      ],
+      "@application/*": [
+        "./src/application/*"
+      ],
+      "src/*": [
+        "./src/*"
+      ]
+    }
   },
-  "include": ["src/**/*"],
-  "exclude": ["node_modules", "dist"]
+  "extends": "../../tsconfig.base.json",
+  "include": [
+    "src/**/*"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist"
+  ]
 }

@@ -1,0 +1,202 @@
+import prisma from '@infrastructure/prisma/prisma.client';
+import { IReportRepository } from '../../domain/repositories/report.repository';
+import { DetailsReport, LocationReport, ReportEntity } from '../../domain/entities/report.entity';
+import { MatchResult } from '../../domain/entities/match-result.entity';
+import { Prisma } from '@prisma/client';
+import {
+  fetchReportDescriptions,
+  fetchReportImages,
+  fetchPetImages,
+  groupImagesByReport,
+  groupImagesByPet,
+  findReportIdsWithinRadius,
+} from './queries/embedding.queries';
+import { toReportEntity, REPORT_INCLUDE } from './mappers/report.mapper';
+import { RawPetImageEmb } from './types/raw-embedding.types';
+import { toVectorLiteral } from './utils/vector.utils';
+import { logger } from '@pet-alert/shared';
+
+function withDbTimeout<T>(promise: Promise<T>, ms: number, context: string): Promise<T> {
+  return Promise.race([
+    promise,
+    new Promise<T>((_, reject) =>
+      setTimeout(() => reject(new Error(`[DB timeout] ${context} exceeded ${ms}ms`)), ms),
+    ),
+  ]);
+}
+
+const DB_TIMEOUT_MS = 10_000;
+const SEARCH_RADIUS_METERS = 5000;
+
+export class PrismaReportRepository implements IReportRepository {
+
+  async findById(id: number): Promise<ReportEntity | null> {
+
+    const row = await prisma.report.findUnique({
+      where: { report_id: id },
+      include: REPORT_INCLUDE,
+    });
+
+    if (!row) return null;
+
+    const petId = row.lost_report_detail?.pet?.pet_id ?? null;
+
+    const [descEmbs, imgEmbs, petImgEmbs] = await Promise.all([
+      fetchReportDescriptions([row.report_id]),
+      fetchReportImages([row.report_id]),
+      petId ? fetchPetImages([petId]) : Promise.resolve([] as RawPetImageEmb[]),
+    ]);
+
+    return toReportEntity(
+      row,
+      descEmbs[0] ?? null,
+      groupImagesByReport(imgEmbs).get(row.report_id) ?? [],
+      petId ? (groupImagesByPet(petImgEmbs).get(petId) ?? []) : [],
+    );
+  }
+
+  async findCandidatesReportsActives(reportId: number, details: DetailsReport, location: LocationReport): Promise<ReportEntity[]> {
+
+    const nearbyIds = await findReportIdsWithinRadius(
+      location.locationLat,
+      location.locationLng,
+      SEARCH_RADIUS_METERS
+    );
+
+    if (nearbyIds.length === 0) return [];
+
+    const rows = await prisma.report.findMany({
+      where: {
+        OR: [buildSightingFilter(details), buildLostFilter(details)],
+        AND: {
+          report_id: {
+            not: reportId,
+            in: nearbyIds,
+          },
+        }
+      },
+      include: REPORT_INCLUDE,
+    });
+
+    const reportIds = rows.map(r => r.report_id);
+
+    const petIds = [...new Set(
+      rows
+        .map(r => r.lost_report_detail?.pet?.pet_id)
+        .filter((id): id is number => id != null)
+    )];
+
+    const [descEmbs, imgEmbs, petImgEmbs] = await Promise.all([
+      fetchReportDescriptions(reportIds),
+      fetchReportImages(reportIds),
+      petIds.length > 0
+        ? fetchPetImages(petIds)
+        : Promise.resolve([] as RawPetImageEmb[]),
+    ]);
+
+    const descEmbByReport = new Map(descEmbs.map(e => [e.report_id, e]));
+    const imgEmbByReport = groupImagesByReport(imgEmbs);
+    const imgEmbByPet = groupImagesByPet(petImgEmbs);
+
+    return rows.map(row => {
+      const petId = row.lost_report_detail?.pet?.pet_id ?? null;
+      return toReportEntity(
+        row,
+        descEmbByReport.get(row.report_id) ?? null,
+        imgEmbByReport.get(row.report_id) ?? [],
+        petId != null ? (imgEmbByPet.get(petId) ?? []) : [],
+      );
+    });
+  }
+
+  async updateDescriptionEmbedding(reportId: number, embedding: number[]): Promise<void> {
+    const vector = toVectorLiteral(embedding);
+    await withDbTimeout(
+      prisma.$executeRaw`
+        UPDATE reports
+        SET    embedding_description = ${vector}::vector
+        WHERE  report_id = ${reportId}
+      `,
+      DB_TIMEOUT_MS,
+      `updateDescriptionEmbedding(reportId=${reportId})`,
+    );
+  }
+
+  async updateImageEmbedding(imageId: number, embedding: number[]): Promise<void> {
+    const vector = toVectorLiteral(embedding);
+    await withDbTimeout(
+      prisma.$executeRaw`
+        UPDATE report_images
+        SET    embedding_photo = ${vector}::vector
+        WHERE  image_id = ${imageId}
+      `,
+      DB_TIMEOUT_MS,
+      `updateImageEmbedding(imageId=${imageId})`,
+    );
+  }
+
+  async saveMatchResults(sourceReportId: number, results: MatchResult[]): Promise<void> {
+    if (results.length === 0) return;
+
+    const resultsUpsert = await Promise.allSettled(
+      results.map(r => buildMatchResultUpsert(prisma, sourceReportId, r)),
+    );
+
+    const failed = resultsUpsert.filter(r => r.status === 'rejected');
+    if (failed.length > 0) {
+      logger.error(`[PrismaReportRepository] Failed to save ${failed.length} match results for report ${sourceReportId}`);
+    }
+  }
+}
+
+
+function buildSightingFilter(details: DetailsReport): Prisma.ReportWhereInput {
+  return {
+    report_type_id: 2,
+    report_status_id: 1,
+    ...(details.animalType && {
+      sighting_report_detail: { animal_type: { name: details.animalType } },
+    }),
+  };
+}
+
+function buildLostFilter(details: DetailsReport): Prisma.ReportWhereInput {
+  return {
+    report_type_id: 1,
+    report_status_id: 1,
+    ...(details.animalType && {
+      lost_report_detail: { pet: { animal_type: { name: details.animalType } } },
+    }),
+  };
+}
+
+function buildMatchResultUpsert(
+  tx: typeof prisma,
+  sourceReportId: number,
+  result: MatchResult,
+) {
+  return tx.matchResult.upsert({
+    where: {
+      source_report_id_candidate_report_id: {
+        source_report_id: sourceReportId,
+        candidate_report_id: result.reportId,
+      },
+    },
+    update: {
+      score: result.score,
+      image_score: result.imageScore,
+      description_score: result.descriptionScore,
+      shared_fields: result.sharedFields,
+      structured_score: result.structuredScore,
+    },
+    create: {
+      source_report_id: sourceReportId,
+      candidate_report_id: result.reportId,
+      score: result.score,
+      image_score: result.imageScore,
+      description_score: result.descriptionScore,
+      shared_fields: result.sharedFields,
+      structured_score: result.structuredScore,
+    },
+  });
+}
