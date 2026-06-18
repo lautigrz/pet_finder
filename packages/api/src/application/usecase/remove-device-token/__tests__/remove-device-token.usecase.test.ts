@@ -11,6 +11,7 @@ describe("RemoveDeviceTokenUseCase", () => {
     deviceTokenRepository = {
       registerForUser: vi.fn(),
       removeForUser: vi.fn(),
+      findTokensByUser: vi.fn(),
     };
 
     useCase = new RemoveDeviceTokenUseCase(deviceTokenRepository);
