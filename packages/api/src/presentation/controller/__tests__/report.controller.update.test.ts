@@ -55,6 +55,7 @@ describe('CreateReportController — update', () => {
       { execute: vi.fn() } as unknown as GetFilteredReportsUseCase,
       { execute: vi.fn() } as unknown as UpdateStatus,
       updateReportUseCase,
+      { execute: vi.fn().mockResolvedValue(undefined) } as any,
     );
   });
 

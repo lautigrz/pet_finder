@@ -21,6 +21,10 @@ import { UpdateStatus } from "@application/usecase/report-usecase/update-status-
 import { createReportRequestSchema } from "src/presentation/schemas/report/create-report.schema";
 import { UpdateReportUseCase } from '@application/usecase/report-usecase/update-report.usecase';
 import { updateReportSchema } from 'src/presentation/schemas/report/update-report.schema';
+import { NotifyNearbyLostOwnersUseCase } from '@application/usecase/notify-nearby-lost-owners/notify-nearby-lost-owners.usecase';
+import { PrismaNotificationPreferencesRepository } from '@infrastructure/repository/PrismaNotificationPreferencesRepository';
+import { PrismaDeviceTokenRepository } from '@infrastructure/repository/PrismaDeviceTokenRepository';
+import { createPushSender } from '@infrastructure/push/push-sender.factory';
 
 
 const router = Router();
@@ -36,7 +40,11 @@ const filteresReportsUseCase = new GetFilteredReportsUseCase(repository);
 const listUserReportsUseCase = new ListUserReportsUseCase(repository, petRepository);
 const updateStatusUseCase = new UpdateStatus(repository);
 const updateReportUseCase = new UpdateReportUseCase(repository, petRepository, storageService);
-const createReportController = new CreateReportController(createReportUseCase, getReportUseCase, listUserReportsUseCase, filteresReportsUseCase, updateStatusUseCase, updateReportUseCase);
+const notificationPreferencesRepository = new PrismaNotificationPreferencesRepository();
+const deviceTokenRepository = new PrismaDeviceTokenRepository();
+const pushSender = createPushSender();
+const notifyNearbyLostOwnersUseCase = new NotifyNearbyLostOwnersUseCase(repository, notificationPreferencesRepository, deviceTokenRepository, pushSender);
+const createReportController = new CreateReportController(createReportUseCase, getReportUseCase, listUserReportsUseCase, filteresReportsUseCase, updateStatusUseCase, updateReportUseCase, notifyNearbyLostOwnersUseCase);
 
 
 

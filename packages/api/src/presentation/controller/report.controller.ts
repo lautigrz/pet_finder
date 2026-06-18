@@ -12,6 +12,7 @@ import { UpdateStatus } from "@application/usecase/report-usecase/update-status-
 import { UpdateStatusDTO } from "@application/usecase/report-usecase/dto/update-status.dto";
 import { UpdateReportUseCase } from "@application/usecase/report-usecase/update-report.usecase";
 import { UpdateReportInput } from "../schemas/report/update-report.schema";
+import { NotifyNearbyLostOwnersUseCase } from "@application/usecase/notify-nearby-lost-owners/notify-nearby-lost-owners.usecase";
 import { asyncHandler } from "@presentation/handler/async-handler";
 import { UserNotFoundError } from "@domain/errors/UserNotFoundError";
 import logger from "@infrastructure/logger";
@@ -23,7 +24,8 @@ export class CreateReportController {
         private listUserReportsUseCase: ListUserReportsUseCase,
         private filteresUseCase: GetFilteredReportsUseCase,
         private updateStatusUseCase: UpdateStatus,
-        private updateReportUseCase: UpdateReportUseCase
+        private updateReportUseCase: UpdateReportUseCase,
+        private notifyNearbyLostOwnersUseCase: NotifyNearbyLostOwnersUseCase
     ) { }
 
     create = asyncHandler(async (req: Request, res: Response): Promise<void> => {
@@ -38,6 +40,7 @@ export class CreateReportController {
         const dto = this.buildCreateDTO(parsed, files);
         const result = await this.useCase.execute(dto, userPublicId);
         logger.info("Report created successfully", { type: parsed.type });
+        this.notifyNearbyOnSighting(parsed.type, result.publicId);
         res.status(201).json({ message: "Report created successfully", publicId: result.publicId });
     });
 
@@ -92,6 +95,13 @@ export class CreateReportController {
         logger.info("Fetched report successfully", { publicId });
         res.status(200).json(report);
     });
+
+    private notifyNearbyOnSighting(type: string, sightingPublicId: string): void {
+        if (type !== ReportType.SIGHTING) return;
+        void this.notifyNearbyLostOwnersUseCase
+            .execute(sightingPublicId)
+            .catch((error) => logger.error("Failed to notify nearby lost owners", { error }));
+    }
 
     private buildCreateDTO(parsed: CreateReportInput, files: Express.Multer.File[]): CreateReportDTO {
         if (parsed.type === ReportType.LOST) {

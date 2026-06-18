@@ -139,7 +139,8 @@ describe("CreateReportController", () => {
       listUserReportsUseCase,
       filteresUseCase,
       updateStatusUseCase,
-      updateReportUseCase
+      updateReportUseCase,
+      { execute: vi.fn().mockResolvedValue(undefined) } as any
     );
   });
 
