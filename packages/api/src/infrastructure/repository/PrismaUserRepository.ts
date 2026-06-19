@@ -72,4 +72,11 @@ export class PrismaUserRepository implements IUserRepository {
       data: { password: passwordHash },
     });
   }
+
+  async deleteById(internalUserId: number): Promise<void> {
+    await prisma.$transaction([
+      prisma.emailVerificationToken.deleteMany({ where: { user_id: internalUserId } }),
+      prisma.user.delete({ where: { user_id: internalUserId } }),
+    ]);
+  }
 }

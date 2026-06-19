@@ -1,9 +1,8 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { Request, Response } from "express";
 import { UserController } from "../UserController";
-import { CreateUserUseCase } from "../../../application/usecase/create-user/create-user.usecase";
-import { CreateUserOutput } from "../../../application/usecase/create-user/create-user.output";
-import { SendEmailVerificationUseCase } from "../../../application/usecase/send-email-verification/send-email-verification.usecase";
+import { RegisterUserUseCase } from "../../../application/usecase/register-user/register-user.usecase";
+import { RegisterUserOutput } from "../../../application/usecase/register-user/register-user.output";
 import { VerifyEmailUseCase } from "../../../application/usecase/verify-email/verify-email.usecase";
 import { EmailAlreadyExistsError } from "../../../domain/errors/EmailAlreadyExistsError";
 import { InvalidEmailError } from "../../../domain/errors/InvalidEmailError";
@@ -19,8 +18,7 @@ import { InvalidMutedUntilError } from "../../../domain/errors/InvalidMutedUntil
 import { invoke } from "./test-helpers";
 
 describe("UserController", () => {
-  let createUserUseCase: CreateUserUseCase;
-  let sendEmailVerificationUseCase: SendEmailVerificationUseCase;
+  let registerUserUseCase: RegisterUserUseCase;
   let verifyEmailUseCase: VerifyEmailUseCase;
   let updateProfileUseCase: UpdateProfileUseCase;
   let getProfileUseCase: GetProfileUseCase;
@@ -32,8 +30,7 @@ describe("UserController", () => {
   let res: Partial<Response>;
 
   beforeEach(() => {
-    createUserUseCase = { execute: vi.fn() } as unknown as CreateUserUseCase;
-    sendEmailVerificationUseCase = { execute: vi.fn() } as unknown as SendEmailVerificationUseCase;
+    registerUserUseCase = { execute: vi.fn() } as unknown as RegisterUserUseCase;
     verifyEmailUseCase = { execute: vi.fn() } as unknown as VerifyEmailUseCase;
     updateProfileUseCase = { execute: vi.fn() } as unknown as UpdateProfileUseCase;
     getProfileUseCase = { execute: vi.fn(), } as unknown as GetProfileUseCase;
@@ -46,7 +43,7 @@ describe("UserController", () => {
       execute: vi.fn(),
     } as unknown as UpdateNotificationPreferencesUseCase;
 
-    controller = new UserController(createUserUseCase, sendEmailVerificationUseCase, verifyEmailUseCase, updateProfileUseCase, getProfileUseCase, cloudinaryService, updateNotificationPreferencesUseCase, getNotificationPreferencesUseCase);
+    controller = new UserController(registerUserUseCase, verifyEmailUseCase, updateProfileUseCase, getProfileUseCase, cloudinaryService, updateNotificationPreferencesUseCase, getNotificationPreferencesUseCase);
     res = {
       status: vi.fn().mockReturnThis(),
       json: vi.fn().mockReturnThis(),
@@ -54,24 +51,24 @@ describe("UserController", () => {
   });
 
   const buildReq = (body: unknown): Partial<Request> => ({ body, validated: { body } });
-  const validCreateOutput = new CreateUserOutput("user-abc", 42, "juan@example.com");
+  const validCreateOutput = new RegisterUserOutput("user-abc");
 
   describe("create — when the use case succeeds", () => {
-    it("returns 201 with the user id and triggers email verification", async () => {
-      vi.mocked(createUserUseCase.execute).mockResolvedValue(validCreateOutput);
+    it("returns 201 with the user id", async () => {
+      vi.mocked(registerUserUseCase.execute).mockResolvedValue(validCreateOutput);
 
       const req = buildReq({ email: "juan@example.com", username: "juancho", password: "miPass123" });
       await invoke(controller.create, req, res);
 
       expect(res.status).toHaveBeenCalledWith(201);
       expect(res.json).toHaveBeenCalledWith({ id: "user-abc" });
-      expect(sendEmailVerificationUseCase.execute).toHaveBeenCalledOnce();
+      expect(registerUserUseCase.execute).toHaveBeenCalledOnce();
     });
   });
 
   describe("create — when the email format is invalid", () => {
     it("returns 400 when the use case throws InvalidEmailError", async () => {
-      vi.mocked(createUserUseCase.execute).mockRejectedValue(new InvalidEmailError("no-es-email"));
+      vi.mocked(registerUserUseCase.execute).mockRejectedValue(new InvalidEmailError("no-es-email"));
 
       const req = buildReq({ email: "no-es-email", username: "juancho", password: "miPass123" });
       await invoke(controller.create, req, res);
@@ -82,7 +79,7 @@ describe("UserController", () => {
 
   describe("create — when the email is already registered", () => {
     it("returns 409 with the domain error message", async () => {
-      vi.mocked(createUserUseCase.execute).mockRejectedValue(
+      vi.mocked(registerUserUseCase.execute).mockRejectedValue(
         new EmailAlreadyExistsError("juan@example.com"),
       );
 
@@ -95,7 +92,7 @@ describe("UserController", () => {
 
   describe("create — when an unexpected error happens", () => {
     it("returns 500 with a generic error message", async () => {
-      vi.mocked(createUserUseCase.execute).mockRejectedValue(new Error("db is down"));
+      vi.mocked(registerUserUseCase.execute).mockRejectedValue(new Error("db is down"));
 
       const req = buildReq({ email: "juan@example.com", username: "juancho", password: "miPass123" });
       await invoke(controller.create, req, res);

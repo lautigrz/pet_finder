@@ -15,4 +15,5 @@ export interface IUserRepository {
       photoUrl?: string;
     },): Promise<User>;
   updatePassword(internalUserId: number, passwordHash: string): Promise<void>;
+  deleteById(internalUserId: number): Promise<void>;
 }

@@ -1,8 +1,6 @@
 import { Request, Response } from "express";
-import { CreateUserUseCase } from "../../application/usecase/create-user/create-user.usecase";
-import { CreateUserInput } from "../../application/usecase/create-user/create-user.input";
-import { SendEmailVerificationUseCase } from "../../application/usecase/send-email-verification/send-email-verification.usecase";
-import { SendEmailVerificationInput } from "../../application/usecase/send-email-verification/send-email-verification.input";
+import { RegisterUserUseCase } from "../../application/usecase/register-user/register-user.usecase";
+import { RegisterUserInput } from "../../application/usecase/register-user/register-user.input";
 import { VerifyEmailUseCase } from "../../application/usecase/verify-email/verify-email.usecase";
 import { VerifyEmailInput } from "../../application/usecase/verify-email/verify-email.input";
 import { ValidationError } from "../errors/ValidationError";
@@ -20,8 +18,7 @@ import { asyncHandler } from "@presentation/handler/async-handler";
 
 export class UserController {
   constructor(
-    private readonly createUserUseCase: CreateUserUseCase,
-    private readonly sendEmailVerificationUseCase: SendEmailVerificationUseCase,
+    private readonly registerUserUseCase: RegisterUserUseCase,
     private readonly verifyEmailUseCase: VerifyEmailUseCase,
     private readonly updateProfileUseCase: UpdateProfileUseCase,
     private readonly getProfileUseCase: GetProfileUseCase,
@@ -32,11 +29,8 @@ export class UserController {
 
   create = asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const body = req.validated?.body as CreateUserBody;
-    const created = await this.createUserUseCase.execute(
-      new CreateUserInput(body.email, body.username, body.password),
-    );
-    await this.sendEmailVerificationUseCase.execute(
-      new SendEmailVerificationInput(created.internalUserId, created.email),
+    const created = await this.registerUserUseCase.execute(
+      new RegisterUserInput(body.email, body.username, body.password),
     );
     res.status(201).json({ id: created.userId });
   });
