@@ -25,4 +25,16 @@ export class PrismaDeviceTokenRepository implements IDeviceTokenRepository {
             where: { token, user_id: user.user_id },
         });
     }
+
+    async findTokensByUser(userPublicId: string): Promise<string[]> {
+        const records = await prisma.deviceToken.findMany({
+            where: { user: { public_id: userPublicId } },
+            select: { token: true },
+        });
+        return records.map((record) => record.token);
+    }
+
+    async deleteByTokens(tokens: string[]): Promise<void> {
+        await prisma.deviceToken.deleteMany({ where: { token: { in: tokens } } });
+    }
 }
