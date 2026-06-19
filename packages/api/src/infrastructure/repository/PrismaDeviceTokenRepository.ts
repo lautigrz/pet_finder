@@ -33,4 +33,8 @@ export class PrismaDeviceTokenRepository implements IDeviceTokenRepository {
         });
         return records.map((record) => record.token);
     }
+
+    async deleteByTokens(tokens: string[]): Promise<void> {
+        await prisma.deviceToken.deleteMany({ where: { token: { in: tokens } } });
+    }
 }

@@ -5,5 +5,5 @@ export interface PushNotification {
 }
 
 export interface IPushSender {
-  send(tokens: string[], notification: PushNotification): Promise<void>;
+  send(tokens: string[], notification: PushNotification): Promise<string[]>;
 }

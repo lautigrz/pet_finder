@@ -43,7 +43,7 @@ function makePrefs(opts: { radius?: number; sighting?: boolean; mutedUntil?: Dat
 describe("NotifyNearbyLostOwnersUseCase", () => {
   let reportRepository: { findByPublicId: ReturnType<typeof vi.fn>; findIdsByQuery: ReturnType<typeof vi.fn>; findByIds: ReturnType<typeof vi.fn> };
   let notificationPreferencesRepository: { getOrCreateByUserPublicId: ReturnType<typeof vi.fn>; updateByUserPublicId: ReturnType<typeof vi.fn> };
-  let deviceTokenRepository: { registerForUser: ReturnType<typeof vi.fn>; removeForUser: ReturnType<typeof vi.fn>; findTokensByUser: ReturnType<typeof vi.fn> };
+  let deviceTokenRepository: { registerForUser: ReturnType<typeof vi.fn>; removeForUser: ReturnType<typeof vi.fn>; findTokensByUser: ReturnType<typeof vi.fn>; deleteByTokens: ReturnType<typeof vi.fn> };
   let pushSender: { send: ReturnType<typeof vi.fn> };
   let useCase: NotifyNearbyLostOwnersUseCase;
 
@@ -52,8 +52,8 @@ describe("NotifyNearbyLostOwnersUseCase", () => {
   beforeEach(() => {
     reportRepository = { findByPublicId: vi.fn(), findIdsByQuery: vi.fn().mockResolvedValue(["lost-1"]), findByIds: vi.fn() };
     notificationPreferencesRepository = { getOrCreateByUserPublicId: vi.fn(), updateByUserPublicId: vi.fn() };
-    deviceTokenRepository = { registerForUser: vi.fn(), removeForUser: vi.fn(), findTokensByUser: vi.fn() };
-    pushSender = { send: vi.fn() };
+    deviceTokenRepository = { registerForUser: vi.fn(), removeForUser: vi.fn(), findTokensByUser: vi.fn(), deleteByTokens: vi.fn() };
+    pushSender = { send: vi.fn().mockResolvedValue([]) };
     useCase = new NotifyNearbyLostOwnersUseCase(
       reportRepository as unknown as ReportRepository,
       notificationPreferencesRepository as unknown as INotificationPreferencesRepository,
@@ -79,6 +79,20 @@ describe("NotifyNearbyLostOwnersUseCase", () => {
     // Then se le manda push a sus tokens
     expect(pushSender.send).toHaveBeenCalledOnce();
     expect(pushSender.send).toHaveBeenCalledWith(["tok-1"], expect.anything());
+  });
+
+  it("prunes the tokens that FCM reports as dead", async () => {
+    // Given un dueño en rango y FCM devuelve uno de sus tokens como muerto
+    withLostReport(makeReport({ type: ReportType.LOST, userPublicId: "owner-1", lat: 0, lng: 0.01 }));
+    notificationPreferencesRepository.getOrCreateByUserPublicId.mockResolvedValue(makePrefs({}));
+    deviceTokenRepository.findTokensByUser.mockResolvedValue(["tok-vivo", "tok-muerto"]);
+    pushSender.send.mockResolvedValue(["tok-muerto"]);
+
+    // When
+    await useCase.execute("sighting-1");
+
+    // Then se borra el token muerto de la base
+    expect(deviceTokenRepository.deleteByTokens).toHaveBeenCalledWith(["tok-muerto"]);
   });
 
   it("does not notify when the lost report is outside the radius", async () => {

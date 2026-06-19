@@ -55,7 +55,13 @@ export class NotifyNearbyLostOwnersUseCase {
     private async notifyOwners(owners: string[], sightingPublicId: string): Promise<void> {
         const tokens = await this.collectTokens(owners);
         if (tokens.length === 0) return;
-        await this.pushSender.send(tokens, this.buildNotification(sightingPublicId));
+        const deadTokens = await this.pushSender.send(tokens, this.buildNotification(sightingPublicId));
+        await this.pruneDeadTokens(deadTokens);
+    }
+
+    private async pruneDeadTokens(tokens: string[]): Promise<void> {
+        if (tokens.length === 0) return;
+        await this.deviceTokenRepository.deleteByTokens(tokens);
     }
 
     private async collectTokens(owners: string[]): Promise<string[]> {
@@ -74,8 +80,8 @@ export class NotifyNearbyLostOwnersUseCase {
 
     private buildNotification(sightingPublicId: string): PushNotification {
         return {
-            title: "PetFinder",
-            body: "Se reportó un avistamiento cerca de tu mascota perdida 🐾",
+            title: "Avistamiento cerca de tu mascota 🐾",
+            body: "Alguien vio una mascota cerca de donde perdiste la tuya. Tocá para verla.",
             data: { reportId: sightingPublicId },
         };
     }

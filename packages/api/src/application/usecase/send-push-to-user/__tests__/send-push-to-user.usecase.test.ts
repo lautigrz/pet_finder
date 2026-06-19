@@ -14,6 +14,7 @@ describe("SendPushToUserUseCase", () => {
       registerForUser: vi.fn(),
       removeForUser: vi.fn(),
       findTokensByUser: vi.fn(),
+      deleteByTokens: vi.fn(),
     };
     pushSender = { send: vi.fn() };
     useCase = new SendPushToUserUseCase(deviceTokenRepository, pushSender);

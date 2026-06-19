@@ -24,12 +24,29 @@ describe("FirebaseAdminPushSender", () => {
     // When envío a dos tokens
     await sender.send(["t1", "t2"], { title: "PetFinder", body: "Hola" });
 
-    // Then arma el mensaje multicast con esos tokens
+    // Then arma el mensaje multicast data-only con esos tokens
     expect(sendEachForMulticast).toHaveBeenCalledWith({
       tokens: ["t1", "t2"],
-      notification: { title: "PetFinder", body: "Hola" },
-      data: undefined,
+      data: { title: "PetFinder", body: "Hola" },
     });
+  });
+
+  it("returns the tokens that FCM reports as not registered", async () => {
+    // Given FCM rechaza el segundo token como no registrado (muerto)
+    sendEachForMulticast.mockResolvedValue({
+      failureCount: 1,
+      successCount: 1,
+      responses: [
+        { success: true },
+        { success: false, error: { code: "messaging/registration-token-not-registered" } },
+      ],
+    });
+
+    // When envío a dos tokens
+    const dead = await sender.send(["t1", "t2"], { title: "x", body: "y" });
+
+    // Then devuelve el muerto para que el caller lo borre
+    expect(dead).toEqual(["t2"]);
   });
 
   it("does not call FCM when there are no tokens", async () => {
