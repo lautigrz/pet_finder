@@ -1,7 +1,6 @@
 import { Router } from "express";
 import { UserController } from "../../controller/UserController";
-import { CreateUserUseCase } from "../../../application/usecase/create-user/create-user.usecase";
-import { SendEmailVerificationUseCase } from "../../../application/usecase/send-email-verification/send-email-verification.usecase";
+import { RegisterUserUseCase } from "../../../application/usecase/register-user/register-user.usecase";
 import { VerifyEmailUseCase } from "../../../application/usecase/verify-email/verify-email.usecase";
 import { PrismaUserRepository } from "../../../infrastructure/repository/PrismaUserRepository";
 import { PrismaEmailVerificationTokenRepository } from "../../../infrastructure/repository/PrismaEmailVerificationTokenRepository";
@@ -40,8 +39,9 @@ const notificationPreferencesRepository = new PrismaNotificationPreferencesRepos
 const updateNotificationsPreferenceUseCase = new UpdateNotificationPreferencesUseCase(notificationPreferencesRepository);
 const getNotificationPreferencesUseCase = new GetNotificationPreferencesUseCase(notificationPreferencesRepository);
 
-const createUserUseCase = new CreateUserUseCase(userRepository, passwordHasher);
-const sendEmailVerificationUseCase = new SendEmailVerificationUseCase(
+const registerUserUseCase = new RegisterUserUseCase(
+  userRepository,
+  passwordHasher,
   tokenRepository,
   tokenGenerator,
   emailService,
@@ -49,8 +49,7 @@ const sendEmailVerificationUseCase = new SendEmailVerificationUseCase(
 const verifyEmailUseCase = new VerifyEmailUseCase(userRepository, tokenRepository);
 
 const userController = new UserController(
-  createUserUseCase,
-  sendEmailVerificationUseCase,
+  registerUserUseCase,
   verifyEmailUseCase,
   updateProfileUseCase,
   getProfileUseCase,

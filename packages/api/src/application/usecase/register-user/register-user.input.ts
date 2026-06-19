@@ -1,4 +1,4 @@
-export class CreateUserInput {
+export class RegisterUserInput {
   constructor(
     public readonly email: string,
     public readonly username: string,
