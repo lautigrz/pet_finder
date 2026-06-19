@@ -7,3 +7,5 @@ packages/pet-matcher/.env
 
 dist/
 coverage
+
+packages/pet-matcher/src/models/*

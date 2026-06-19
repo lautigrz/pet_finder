@@ -136,6 +136,23 @@ describe("CreateReportUseCase", () => {
         InvalidFieldError
       );
     });
+
+    it("sube imágenes al storage y las pasa a save cuando el LOST incluye imágenes", async () => {
+      const dtoWithImages = {
+        ...lostDto,
+        images: [Buffer.from("img1"), Buffer.from("img2")],
+      };
+
+      await useCase.execute(dtoWithImages, TEST_EMAIL);
+
+      expect(storageService.upload).toHaveBeenCalledTimes(2);
+      expect(reportRepository.save).toHaveBeenCalledWith(
+        expect.any(Object),
+        expect.arrayContaining([
+          expect.objectContaining({ cloudinaryId: "image1", photoUrl: "https://image1.com" })
+        ])
+      );
+    });
   });
 
   describe("reporte SIGHTING", () => {

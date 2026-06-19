@@ -55,6 +55,7 @@
         "CORS_ORIGIN",
         "REDIS_HOST",
         "REDIS_PORT",
+        "REDIS_PASSWORD",
         "DATABASE_URL",
         "REDIS_URL",
         "CLOUDINARY_NAME",

@@ -4,8 +4,12 @@
     "outDir": "./dist",
     "module": "node16",
     "target": "es2020",
-    "lib": ["es2020"],
-    "types": ["node"],
+    "lib": [
+      "es2020"
+    ],
+    "types": [
+      "node"
+    ],
     "moduleResolution": "node16",
     "esModuleInterop": true,
     "sourceMap": true,
@@ -16,6 +20,12 @@
     "isolatedModules": true,
     "skipLibCheck": true
   },
-  "include": ["src/**/*"],
-  "exclude": ["node_modules", "dist"]
+  "extends": "../../tsconfig.base.json",
+  "include": [
+    "src/**/*"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist"
+  ]
 }

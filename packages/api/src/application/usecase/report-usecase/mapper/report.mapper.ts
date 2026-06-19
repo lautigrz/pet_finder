@@ -51,6 +51,9 @@ export class ReportOutputMapper {
             if (!pet) {
                 throw new MappingError("Pet details are required for a lost report");
             }
+            const imagesToUse = (reportImages && reportImages.length > 0)
+                ? reportImages
+                : (pet.images || []);
             return {
                 publicId: pet.publicId,
                 name: pet.name,
@@ -60,7 +63,7 @@ export class ReportOutputMapper {
                 color: pet.color,
                 hasIdCollar: pet.hasIdCollar,
                 breed: pet.breed,
-                images: (reportImages || []).map(img => ({ url: img.photoUrl }))
+                images: imagesToUse.map(img => ({ url: img.photoUrl }))
             }
         }
     }
