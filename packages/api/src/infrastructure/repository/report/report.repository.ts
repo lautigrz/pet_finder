@@ -1,5 +1,5 @@
 import { Report } from "@domain/report/aggregates/ReportAggregate";
-import { ReportRepository, ReportWithPet } from "@domain/report/repositories/report.repository";
+import { ReportRepository, ReportWithPet, ReportWithPetDetail } from "@domain/report/repositories/report.repository";
 import { ReportMapper } from "./report.mapper";
 import { Prisma, PrismaClient } from "@prisma/client";
 import { ReportQuery } from "@application/usecase/report-usecase/report-query";
@@ -28,6 +28,40 @@ export class PrismaReportRepository implements ReportRepository {
 
     constructor(private readonly prisma: PrismaClient) {
         this.catalog = new CatalogResolver(prisma);
+    }
+    async findDetailsByIds(ids: number[]): Promise<ReportWithPetDetail[]> {
+        const raw = await this.prisma.report.findMany(
+            {
+                where: { report_id: { in: ids } },
+                include: {
+                    user: {
+                        select: { user_id: true, public_id: true }
+                    },
+                    sighting_report_detail: { include: { color: true, breed: true } },
+                    lost_report_detail: {
+                        include: {
+                            pet: {
+                                include: { animal_type: true, gender: true, size: true, petImages: true, color: true, breed: true }
+                            }
+                        }
+                    },
+                    reportImages: true
+                }
+            })
+
+        if (!raw) {
+            return [];
+        }
+
+        return raw.map(r => {
+            return {
+                report: ReportMapper.toDomain(r),
+                pet: r.lost_report_detail?.pet
+                    ? PetMapper.toDomain(r.lost_report_detail.pet)
+                    : undefined,
+            }
+        }) as ReportWithPetDetail[];
+
     }
 
     async findByPublicId(publicId: string): Promise<Report | null> {

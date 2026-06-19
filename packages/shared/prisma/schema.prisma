@@ -121,19 +121,17 @@ model Report {
   sighting_report_detail SightingReportDetail?
   reportImages           ReportImage[]
 
-  // Resultados de matching donde este reporte es el origen de la búsqueda
-  matchResults       MatchResult[] @relation("SourceReport")
-  // Resultados de matching donde este reporte aparece como candidato
+  matchResults MatchResult[] @relation("SourceReport")
+
   matchedAsCandidate MatchResult[] @relation("CandidateReport")
 
   @@map("reports")
 }
 
 model MatchResult {
-  match_result_id Int @id @default(autoincrement())
-
-  source_report_id Int
-
+  match_result_id     Int    @id @default(autoincrement())
+  public_id           String @unique @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  source_report_id    Int
   candidate_report_id Int
 
   score             Float

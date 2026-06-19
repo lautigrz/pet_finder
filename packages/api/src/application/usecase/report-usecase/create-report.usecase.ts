@@ -49,7 +49,7 @@ export class CreateReportUseCase {
             images = await this.buildImages(dto.images);
         }
 
-        const reportId = await this.reportRepository.save(report);
+        const reportId = await this.reportRepository.save(report, images);
 
         if (reportId) {
             await enqueueMatchingJob({ type: 'run_matching', reportId: reportId, reportType: ReportTypeToNumber[dto.type], reportTypeName: dto.type })

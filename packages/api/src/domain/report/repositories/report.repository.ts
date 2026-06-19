@@ -4,7 +4,7 @@ import { Pet } from "@domain/pet/aggregates/PetAggregate";
 import { SightingImage } from "../value-objects/sighting.images";
 
 export type ReportWithPet = { report: Report; pet?: Pet }
-
+export type ReportWithPetDetail = { report: Report; pet: Pet }
 export interface ReportRepository {
 
   save(report: Report, images?: SightingImage[]): Promise<number>;
@@ -18,6 +18,8 @@ export interface ReportRepository {
   findIdsByQuery(query: ReportQuery): Promise<string[]>
 
   findByIds(ids: string[]): Promise<ReportWithPet[]>;
+
+  findDetailsByIds(ids: number[]): Promise<ReportWithPetDetail[]>;
 
   update(report: Report): Promise<void>;
 

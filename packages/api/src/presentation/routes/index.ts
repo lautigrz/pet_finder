@@ -6,6 +6,7 @@ import { createPetRoute } from "./pet/pet.router";
 import authRouter from "./auth/auth.router";
 import { catalogRouter } from "./catalog/catalog.router";
 import conversationRouter from "./conversation/conversation.router";
+import { matchRouter } from "./match/match.router";
 
 const router = Router();
 
@@ -15,6 +16,7 @@ router.use('/reports', createReportRoute);
 router.use('/pets', createPetRoute);
 router.use('/catalog', catalogRouter);
 router.use('/conversations', conversationRouter);
+router.use("/match", matchRouter)
 router.use('/auth', authRouter);
 
 export default router;

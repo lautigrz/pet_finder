@@ -11,6 +11,7 @@
       "node"
     ],
     "moduleResolution": "node",
+    "ignoreDeprecations": "6.0",
     "esModuleInterop": true,
     "sourceMap": true,
     "declaration": true,

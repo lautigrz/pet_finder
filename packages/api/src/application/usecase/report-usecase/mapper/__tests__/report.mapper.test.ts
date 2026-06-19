@@ -13,6 +13,7 @@ import { GenderType } from "@domain/shared/gender-type/gender.type";
 import { SizeType } from "@domain/shared/size-type/size.type";
 import { MappingError } from "../../../../errors/errors";
 import { PetImage } from "@domain/pet/value-objects/image.vo";
+import { SightingImage } from "@domain/report/value-objects/sighting.images";
 
 const validLocation = Location.create({
   address: "Av. Corrientes 1234",
@@ -118,6 +119,23 @@ describe("ReportMapper.toOutput (application)", () => {
       expect(details.name).toBe("Firulais");
       expect(details.animalType).toBe(AnimalType.DOG);
       expect(details.breed).toBe("Labrador");
+    });
+
+    it("mapea la mascota de LOST usando las fotos de la mascota si no hay fotos específicas del reporte", () => {
+      const output = ReportOutputMapper.toOutput(lostReport, fakePet);
+      const details = output.details as { images: { url: string }[] };
+      expect(details.images).toHaveLength(1);
+      expect(details.images[0]!.url).toBe("https://fake.com/img.jpg");
+    });
+
+    it("mapea la mascota de LOST usando las fotos del reporte si se proveen fotos específicas", () => {
+      const specificImages = [
+        SightingImage.create({ cloudinaryId: "specific-1", photoUrl: "https://fake.com/specific-1.jpg" })
+      ];
+      const output = ReportOutputMapper.toOutput(lostReport, fakePet, undefined, specificImages);
+      const details = output.details as { images: { url: string }[] };
+      expect(details.images).toHaveLength(1);
+      expect(details.images[0]!.url).toBe("https://fake.com/specific-1.jpg");
     });
 
     it("lanza MappingError si no se proporciona mascota en reporte LOST", () => {
