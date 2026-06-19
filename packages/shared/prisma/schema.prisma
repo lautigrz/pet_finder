@@ -107,6 +107,9 @@ model Report {
   location_lat     Decimal
   location_lng     Decimal
 
+  suspicious         Boolean  @default(false)
+  suspicious_reasons String[] @default([])
+
   created_at DateTime  @db.Timestamp(6)
   updated_at DateTime? @updatedAt
 
@@ -180,6 +183,10 @@ model Pet {
   has_id_collar  Boolean   @default(false)
   is_vaccinated  Boolean   @default(false)
   breed_id       Int?      @db.SmallInt
+
+  suspicious         Boolean  @default(false)
+  suspicious_reasons String[] @default([])
+
   created_at     DateTime  @db.Timestamp(6)
   updated_at     DateTime? @updatedAt
 

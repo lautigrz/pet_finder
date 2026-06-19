@@ -4,6 +4,7 @@ import { GenderType } from "../../shared/gender-type/gender.type";
 import { InvalidPetNameError } from "../../errors/InvalidPetNameError";
 import { PetImage } from "../value-objects/image.vo";
 import { InvalidImageError } from "@domain/errors/InvalidImageError";
+import { ExifAnalysis } from "@domain/shared/exif/exif-suspicion.analyzer";
 
 
 export interface CreatePetParams {
@@ -35,6 +36,8 @@ export interface RestorePetParams {
     petImage: PetImage[];
     createdAt: Date;
     updatedAt?: Date | null;
+    suspicious?: boolean;
+    suspiciousReasons?: string[];
 }
 
 
@@ -54,7 +57,9 @@ export class Pet {
         private _breed: string,
         private readonly _images: PetImage[],
         private readonly _createdAt: Date,
-        private _updatedAt?: Date
+        private _updatedAt?: Date,
+        private _suspicious: boolean = false,
+        private _suspiciousReasons: string[] = []
     ) { this.validateName(); this.validateLenghtImage(); }
 
 
@@ -92,7 +97,9 @@ export class Pet {
             params.breed,
             params.petImage,
             params.createdAt,
-            params.updatedAt ?? undefined
+            params.updatedAt ?? undefined,
+            params.suspicious ?? false,
+            params.suspiciousReasons ?? []
         );
     }
 
@@ -151,6 +158,20 @@ export class Pet {
 
     get isVaccinated(): boolean {
         return this._isVaccinated;
+    }
+
+    get suspicious(): boolean {
+        return this._suspicious;
+    }
+
+    get suspiciousReasons(): string[] {
+        return this._suspiciousReasons;
+    }
+
+
+    applyExifAnalysis(analysis: ExifAnalysis): void {
+        this._suspicious = analysis.isSuspicious;
+        this._suspiciousReasons = analysis.reasons;
     }
 
 

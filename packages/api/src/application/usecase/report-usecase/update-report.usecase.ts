@@ -10,6 +10,8 @@ import { ReportType } from '@domain/report/types/report.type';
 import { SightingReportDetails } from '@domain/report/value-objects/sighting-report-details.vo';
 import { SightingImage } from '@domain/report/value-objects/sighting.images';
 import { StorageService } from '@application/ports/StorageService';
+import { ExifReader } from '@application/ports/ExifReader';
+import { ExifSuspicionAnalyzer } from '@domain/shared/exif/exif-suspicion.analyzer';
 import { UpdateReportDTO } from './dto/update-report.dto';
 
 export class UpdateReportUseCase {
@@ -17,6 +19,7 @@ export class UpdateReportUseCase {
     private readonly reportRepository: ReportRepository,
     private readonly petRepository: PetRepository,
     private readonly storageService: StorageService,
+    private readonly exifReader: ExifReader,
   ) { }
 
   async execute(dto: UpdateReportDTO, userPublicId: string): Promise<void> {
@@ -45,6 +48,11 @@ export class UpdateReportUseCase {
     );
     const newImages = uploaded.map(r => SightingImage.create({ cloudinaryId: r.publicId, photoUrl: r.url }));
     const allImages = [...keptImages, ...newImages];
+
+    if ((dto.newImages ?? []).length > 0) {
+      const exifResults = await Promise.all((dto.newImages ?? []).map(buf => this.exifReader.read(buf)));
+      report.applyExifAnalysis(ExifSuspicionAnalyzer.analyzeMany(exifResults));
+    }
 
     const updatePayload: Parameters<typeof report.updateFields>[0] = {
       description: dto.description !== undefined

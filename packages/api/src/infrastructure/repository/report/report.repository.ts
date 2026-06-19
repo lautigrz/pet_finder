@@ -106,6 +106,8 @@ export class PrismaReportRepository implements ReportRepository {
                     location_address: report.location.address,
                     location_lat: report.location.latitude,
                     location_lng: report.location.longitude,
+                    suspicious: report.suspicious,
+                    suspicious_reasons: report.suspiciousReasons,
                     updated_at: report.updatedAt,
                     ...(isSighting && details ? {
                         sighting_report_detail: {

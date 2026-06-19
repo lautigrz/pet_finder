@@ -7,6 +7,7 @@ import { LostReportDetails } from "../value-objects/lost-report-details.vo"
 import { SightingReportDetails } from "../value-objects/sighting-report-details.vo"
 import { InvalidStatusTransitionError } from "../../errors/InvalidStatusTransitionError"
 import { InvalidReportDetailsError } from "../../errors/InvalidReportDetailsError"
+import { ExifAnalysis } from "@domain/shared/exif/exif-suspicion.analyzer"
 
 
 export interface CreateReportParams {
@@ -32,6 +33,8 @@ interface RestoreReportParams {
     occurredAt: Date
     createdAt: Date
     updatedAt: Date | null
+    suspicious?: boolean
+    suspiciousReasons?: string[]
 }
 
 
@@ -50,6 +53,8 @@ export class Report {
         private _occurredAt: Date,
         private readonly _createdAt: Date,
         private _updatedAt: Date | null = null,
+        private _suspicious: boolean = false,
+        private _suspiciousReasons: string[] = [],
     ) { }
 
 
@@ -85,7 +90,9 @@ export class Report {
             params.details,
             params.occurredAt,
             params.createdAt,
-            params.updatedAt
+            params.updatedAt,
+            params.suspicious ?? false,
+            params.suspiciousReasons ?? []
         )
     }
 
@@ -106,8 +113,21 @@ export class Report {
         if (params.description !== undefined) this._description = params.description;
         if (params.occurredAt  !== undefined) this._occurredAt  = params.occurredAt;
         if (params.location    !== undefined) this._location    = params.location;
-        if (params.details     !== undefined) this._details     = params.details;  
+        if (params.details     !== undefined) this._details     = params.details;
         this._updatedAt = new Date();
+    }
+
+    applyExifAnalysis(analysis: ExifAnalysis): void {
+        this._suspicious = analysis.isSuspicious;
+        this._suspiciousReasons = analysis.reasons;
+    }
+
+    get suspicious(): boolean {
+        return this._suspicious
+    }
+
+    get suspiciousReasons(): string[] {
+        return this._suspiciousReasons
     }
 
     get idReport(): number | null {

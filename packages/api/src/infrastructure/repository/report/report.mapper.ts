@@ -66,6 +66,8 @@ export class ReportMapper {
       location_address: report.location.address,
       location_lat: report.location.latitude,
       location_lng: report.location.longitude,
+      suspicious: report.suspicious,
+      suspicious_reasons: report.suspiciousReasons,
       created_at: report.createdAt,
       updated_at: report.updatedAt,
       ...ReportMapper.buildDetailsInput(report, colorId, breedId),
@@ -88,6 +90,8 @@ export class ReportMapper {
       occurredAt: raw.occurred_at,
       createdAt: raw.created_at,
       updatedAt: raw.updated_at,
+      suspicious: raw.suspicious,
+      suspiciousReasons: raw.suspicious_reasons,
 
     })
 

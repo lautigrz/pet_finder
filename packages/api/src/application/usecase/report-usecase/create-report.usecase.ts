@@ -12,6 +12,8 @@ import { SightingReportDetails } from "@domain/report/value-objects/sighting-rep
 import { PetRepository } from "@domain/pet/repositories/pet.repository";
 import { IUserRepository } from "@domain/repositories/IUserRepository";
 import { StorageService } from "@application/ports/StorageService";
+import { ExifReader } from "@application/ports/ExifReader";
+import { ExifAnalysis, ExifSuspicionAnalyzer } from "@domain/shared/exif/exif-suspicion.analyzer";
 import { SightingImage } from "@domain/report/value-objects/sighting.images";
 import { CreateReportDTO, LocationDTO } from "./dto/create-report.dto";
 
@@ -23,6 +25,7 @@ export class CreateReportUseCase {
         private userRepository: IUserRepository,
         private petRepository: PetRepository,
         private storageService: StorageService,
+        private exifReader: ExifReader,
     ) { }
 
     async execute(dto: CreateReportDTO, userId: string): Promise<{ publicId: string }> {
@@ -30,11 +33,12 @@ export class CreateReportUseCase {
         if (!user) throw new Error("User not found");
 
         let petInternalId: number | null = null;
+        let lostPet: Pet | null = null;
 
         if (dto.type === ReportType.LOST && dto.petId) {
-            const pet: Pet | null = await this.petRepository.findByPublicId(dto.petId);
-            if (!pet) throw new Error("Pet not found");
-            petInternalId = pet.idPet;
+            lostPet = await this.petRepository.findByPublicId(dto.petId);
+            if (!lostPet) throw new Error("Pet not found");
+            petInternalId = lostPet.idPet;
         }
 
         this.validateDTO(dto);
@@ -42,6 +46,8 @@ export class CreateReportUseCase {
         const location = this.buildLocation(dto.location);
         const details = await this.buildDetails(dto, petInternalId!);
         const report = this.buildReport(dto, location, details, user);
+
+        report.applyExifAnalysis(await this.analyzeExif(dto, lostPet));
 
         let images: SightingImage[] = [];
         if (dto.type === ReportType.LOST && dto.images && dto.images.length > 0) {
@@ -51,6 +57,23 @@ export class CreateReportUseCase {
         await this.reportRepository.save(report, images);
 
         return { publicId: report.publicId };
+    }
+
+    private async analyzeExif(dto: CreateReportDTO, lostPet: Pet | null): Promise<ExifAnalysis> {
+        const results = await Promise.all(
+            (dto.images ?? []).map((buffer) => this.exifReader.read(buffer))
+        );
+        const imageAnalysis = ExifSuspicionAnalyzer.analyzeMany(results);
+
+        if (dto.type === ReportType.LOST && lostPet) {
+            return {
+                isSuspicious: lostPet.suspicious || imageAnalysis.isSuspicious,
+                reasons: [...new Set([...lostPet.suspiciousReasons, ...imageAnalysis.reasons])],
+                exifData: {},
+            };
+        }
+
+        return imageAnalysis;
     }
 
 

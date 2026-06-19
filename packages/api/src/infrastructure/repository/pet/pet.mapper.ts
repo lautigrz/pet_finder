@@ -34,6 +34,8 @@ export class PetMapper {
                     photoUrl: img.photoUrl
                 }))
             },
+            suspicious: pet.suspicious,
+            suspicious_reasons: pet.suspiciousReasons,
             created_at: pet.createdAt,
         }
     }
@@ -57,7 +59,9 @@ export class PetMapper {
                 photoUrl: img.photoUrl
             })),
             createdAt: raw.created_at,
-            updatedAt: raw.updated_at
+            updatedAt: raw.updated_at,
+            suspicious: raw.suspicious,
+            suspiciousReasons: raw.suspicious_reasons
         });
     }
 }

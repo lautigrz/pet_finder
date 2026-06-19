@@ -12,6 +12,7 @@ import { readAuthConfig } from "src/presentation/config/authConfig";
 import { JwtTokenSigner } from "src/infrastructure/security/JwtTokenSigner";
 import upload from "@infrastructure/storage/CloudinaryMulterUpload";
 import { ClaudinaryService } from "@infrastructure/storage/CloudinaryService";
+import { ExifrExifReader } from "@infrastructure/exif/ExifrExifReader";
 import { GetFilteredReportsUseCase } from "@application/usecase/report-usecase/get-filter-reports.usecase";
 import { validateRequest } from "src/presentation/middleware/validate.request";
 import { getFilteredReportsSchema } from "src/presentation/schemas/report/report-filter.schema";
@@ -30,12 +31,13 @@ const repository = new PrismaReportRepository(prisma)
 const petRepository = new PrismaPetRepository(prisma)
 const userRepository = new PrismaUserRepository();
 const storageService = new ClaudinaryService();
-const createReportUseCase = new CreateReportUseCase(repository, userRepository, petRepository, storageService)
+const exifReader = new ExifrExifReader();
+const createReportUseCase = new CreateReportUseCase(repository, userRepository, petRepository, storageService, exifReader)
 const getReportUseCase = new GetReportUseCase(repository, userRepository);
 const filteresReportsUseCase = new GetFilteredReportsUseCase(repository);
 const listUserReportsUseCase = new ListUserReportsUseCase(repository, petRepository);
 const updateStatusUseCase = new UpdateStatus(repository);
-const updateReportUseCase = new UpdateReportUseCase(repository, petRepository, storageService);
+const updateReportUseCase = new UpdateReportUseCase(repository, petRepository, storageService, exifReader);
 const createReportController = new CreateReportController(createReportUseCase, getReportUseCase, listUserReportsUseCase, filteresReportsUseCase, updateStatusUseCase, updateReportUseCase);
 
 

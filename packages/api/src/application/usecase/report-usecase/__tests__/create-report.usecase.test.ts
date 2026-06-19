@@ -13,6 +13,8 @@ import { SightingReportDetails } from "@domain/report/value-objects/sighting-rep
 import { IUserRepository } from "@domain/repositories/IUserRepository";
 import { PetRepository } from "@domain/pet/repositories/pet.repository";
 import { StorageService } from "@application/ports/StorageService";
+import { ExifReader } from "@application/ports/ExifReader";
+import { EXIF_REASON } from "@domain/shared/exif/exif-suspicion.analyzer";
 import { PetImage } from "@domain/pet/value-objects/image.vo";
 
 const TEST_EMAIL = "test.user@example.com";
@@ -58,6 +60,7 @@ describe("CreateReportUseCase", () => {
   let petRepository: PetRepository;
   let useCase: CreateReportUseCase;
   let storageService: StorageService;
+  let exifReader: ExifReader;
 
   beforeEach(() => {
     reportRepository = {
@@ -85,7 +88,11 @@ describe("CreateReportUseCase", () => {
     } as unknown as StorageService;
 
 
-    useCase = new CreateReportUseCase(reportRepository, userRepository, petRepository, storageService);
+    exifReader = {
+      read: vi.fn().mockResolvedValue({ parsed: true, metadata: { DateTimeOriginal: new Date() } }),
+    } as unknown as ExifReader;
+
+    useCase = new CreateReportUseCase(reportRepository, userRepository, petRepository, storageService, exifReader);
   });
 
   describe("reporte LOST", () => {
@@ -94,7 +101,7 @@ describe("CreateReportUseCase", () => {
       petId: "pet-public-uuid",
       occurredAt: new Date("2024-05-01"),
       location: validLocation,
-      description: "Mi perro se perdió cerca del parque",
+      description: "Mi perro se perdió cerca de la plaza",
     };
 
     it("crea y guarda un reporte LOST correctamente", async () => {
@@ -237,6 +244,72 @@ describe("CreateReportUseCase", () => {
       await expect(
         useCase.execute(lostDtoWithoutPetId as Parameters<typeof useCase.execute>[0], TEST_EMAIL)
       ).rejects.toThrow("Pet id is required for lost report");
+    });
+  });
+
+  describe("detección de EXIF sospechoso", () => {
+    const sightingDtoWithImage = {
+      type: ReportType.SIGHTING as typeof ReportType.SIGHTING,
+      animalType: AnimalType.DOG,
+      hasIdCollar: true,
+      color: "brown",
+      isInTransit: false,
+      occurredAt: new Date("2024-05-01"),
+      location: validLocation,
+      description: "Vi un perro suelto en la plaza",
+      images: [Buffer.from("img")],
+    };
+
+    it("marca el reporte SIGHTING como sospechoso si la imagen no tiene EXIF", async () => {
+      vi.mocked(exifReader.read).mockResolvedValue({ parsed: true, metadata: null });
+
+      await useCase.execute(sightingDtoWithImage, TEST_EMAIL);
+
+      const savedReport = vi.mocked(reportRepository.save).mock.calls[0]![0];
+      expect(savedReport.suspicious).toBe(true);
+      expect(savedReport.suspiciousReasons).toContain(EXIF_REASON.NO_METADATA);
+    });
+
+    it("no marca el reporte SIGHTING como sospechoso si la imagen tiene EXIF válido", async () => {
+      await useCase.execute(sightingDtoWithImage, TEST_EMAIL);
+
+      const savedReport = vi.mocked(reportRepository.save).mock.calls[0]![0];
+      expect(savedReport.suspicious).toBe(false);
+    });
+
+    it("propaga el flag de sospecha de la mascota al reporte LOST", async () => {
+      const suspiciousPet = Pet.restore({
+        idPet: 10,
+        publicId: "pet-public-uuid",
+        userId: 5,
+        name: "Firulais",
+        animalType: AnimalType.DOG,
+        genderType: GenderType.MALE,
+        sizeType: SizeType.MEDIUM,
+        color: "brown",
+        hasIdCollar: true,
+        isVaccinated: true,
+        breed: "Labrador",
+        petImage: [PetImage.create({ cloudinaryId: "fake-id", photoUrl: "https://fake.com/img.jpg" })],
+        createdAt: new Date(),
+        suspicious: true,
+        suspiciousReasons: [EXIF_REASON.NO_METADATA],
+      });
+      vi.mocked(petRepository.findByPublicId).mockResolvedValue(suspiciousPet);
+
+      const lostDto = {
+        type: ReportType.LOST as typeof ReportType.LOST,
+        petId: "pet-public-uuid",
+        occurredAt: new Date("2024-05-01"),
+        location: validLocation,
+        description: "Mi perro se perdió cerca de la plaza",
+      };
+
+      await useCase.execute(lostDto, TEST_EMAIL);
+
+      const savedReport = vi.mocked(reportRepository.save).mock.calls[0]![0];
+      expect(savedReport.suspicious).toBe(true);
+      expect(savedReport.suspiciousReasons).toContain(EXIF_REASON.NO_METADATA);
     });
   });
 });

@@ -3,6 +3,8 @@ import { CreatePetUseCase } from "@application/usecase/pet-usecase/create-pet.us
 import { PetRepository } from "@domain/pet/repositories/pet.repository";
 import { IUserRepository } from "@domain/repositories/IUserRepository";
 import { StorageService } from "@application/ports/StorageService";
+import { ExifReader } from "@application/ports/ExifReader";
+import { EXIF_REASON } from "@domain/shared/exif/exif-suspicion.analyzer";
 import { AnimalType } from "@domain/shared/animal-type/animal-type";
 import { GenderType } from "@domain/shared/gender-type/gender.type";
 import { SizeType } from "@domain/shared/size-type/size.type";
@@ -38,6 +40,7 @@ describe("CreatePetUseCase", () => {
     let petRepository: PetRepository;
     let storageService: StorageService;
     let userRepository: IUserRepository;
+    let exifReader: ExifReader;
     let useCase: CreatePetUseCase;
 
     beforeEach(() => {
@@ -62,7 +65,11 @@ describe("CreatePetUseCase", () => {
             updateProfile: vi.fn(),
         } as unknown as IUserRepository;
 
-        useCase = new CreatePetUseCase(petRepository, storageService, userRepository);
+        exifReader = {
+            read: vi.fn().mockResolvedValue({ parsed: true, metadata: { DateTimeOriginal: new Date() } }),
+        } as unknown as ExifReader;
+
+        useCase = new CreatePetUseCase(petRepository, storageService, userRepository, exifReader);
     });
 
     it("busca al usuario por publicId antes de crear la mascota", async () => {
@@ -101,5 +108,31 @@ describe("CreatePetUseCase", () => {
         expect(savedPet?.name).toBe("Firulais");
         expect(savedPet?.animalType).toBe(AnimalType.DOG);
         expect(savedPet?.isVaccinated).toBe(true);
+    });
+
+    it("no marca la mascota como sospechosa si la imagen tiene EXIF válido", async () => {
+        await useCase.execute(validDto);
+        const savedPet = vi.mocked(petRepository.save).mock.calls[0]?.[0];
+        expect(savedPet?.suspicious).toBe(false);
+        expect(savedPet?.suspiciousReasons).toEqual([]);
+    });
+
+    it("marca la mascota como sospechosa si la imagen no tiene metadatos EXIF", async () => {
+        vi.mocked(exifReader.read).mockResolvedValue({ parsed: true, metadata: null });
+
+        await useCase.execute(validDto);
+
+        const savedPet = vi.mocked(petRepository.save).mock.calls[0]?.[0];
+        expect(savedPet?.suspicious).toBe(true);
+        expect(savedPet?.suspiciousReasons).toContain(EXIF_REASON.NO_METADATA);
+    });
+
+    it("no marca la mascota como sospechosa si el parseo EXIF falla", async () => {
+        vi.mocked(exifReader.read).mockResolvedValue({ parsed: false, metadata: null });
+
+        await useCase.execute(validDto);
+
+        const savedPet = vi.mocked(petRepository.save).mock.calls[0]?.[0];
+        expect(savedPet?.suspicious).toBe(false);
     });
 });

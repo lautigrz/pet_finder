@@ -10,6 +10,7 @@ import { JwtTokenSigner } from "@infrastructure/security/JwtTokenSigner";
 import { requireAuth } from "src/presentation/middleware/requireAuth.middleware";
 import upload from "@infrastructure/storage/CloudinaryMulterUpload";
 import { ClaudinaryService } from "@infrastructure/storage/CloudinaryService";
+import { ExifrExifReader } from "@infrastructure/exif/ExifrExifReader";
 import { validateRequest } from "src/presentation/middleware/validate.request";
 import { createPetRequestSchema, petSchema } from "src/presentation/schemas/pet/pet.schema";
 
@@ -19,7 +20,8 @@ const tokenSigner = new JwtTokenSigner(jwtSecret, accessTtl);
 const petRepository = new PrismaPetRepository(prisma);
 const userRepository = new PrismaUserRepository();
 const storageService = new ClaudinaryService();
-const createPetUseCase = new CreatePetUseCase(petRepository, storageService, userRepository);
+const exifReader = new ExifrExifReader();
+const createPetUseCase = new CreatePetUseCase(petRepository, storageService, userRepository, exifReader);
 const getPetsUseCase = new GetPetsUseCase(petRepository, userRepository);
 const createPetController = new PetController(createPetUseCase, getPetsUseCase);
 

@@ -3,6 +3,8 @@ import { UpdateReportUseCase } from '@application/usecase/report-usecase/update-
 import { ReportRepository } from '@domain/report/repositories/report.repository';
 import { PetRepository } from '@domain/pet/repositories/pet.repository';
 import { StorageService } from '@application/ports/StorageService';
+import { ExifReader } from '@application/ports/ExifReader';
+import { EXIF_REASON } from '@domain/shared/exif/exif-suspicion.analyzer';
 import { ReportNotFoundError } from '@domain/errors/ReportNotFoundError';
 import { UnauthorizedReportEditError } from '@domain/errors/UnauthorizedReportEditError';
 import { InvalidFieldError } from '@application/errors/errors';
@@ -34,7 +36,10 @@ function makeSightingReport() {
     userPublicId: OWNER_ID,
     reportType: ReportType.SIGHTING,
     details,
+    suspicious: false,
+    suspiciousReasons: [] as string[],
     updateFields: vi.fn(),
+    applyExifAnalysis: vi.fn(),
   };
 }
 
@@ -45,7 +50,10 @@ function makeLostReport() {
     userPublicId: OWNER_ID,
     reportType: ReportType.LOST,
     details: { petId: 10 },
+    suspicious: false,
+    suspiciousReasons: [] as string[],
     updateFields: vi.fn(),
+    applyExifAnalysis: vi.fn(),
   };
 }
 
@@ -72,6 +80,7 @@ describe('UpdateReportUseCase', () => {
   let reportRepository: ReportRepository;
   let petRepository: PetRepository;
   let storageService: StorageService;
+  let exifReader: ExifReader;
   let useCase: UpdateReportUseCase;
 
   beforeEach(() => {
@@ -91,7 +100,11 @@ describe('UpdateReportUseCase', () => {
       delete: vi.fn().mockResolvedValue(undefined),
     } as unknown as StorageService;
 
-    useCase = new UpdateReportUseCase(reportRepository, petRepository, storageService);
+    exifReader = {
+      read: vi.fn().mockResolvedValue({ parsed: true, metadata: { DateTimeOriginal: new Date() } }),
+    } as unknown as ExifReader;
+
+    useCase = new UpdateReportUseCase(reportRepository, petRepository, storageService, exifReader);
   });
 
 
@@ -189,6 +202,49 @@ describe('UpdateReportUseCase', () => {
       expect(storageService.upload).toHaveBeenCalledWith(buffer, 'reports');
       const images = vi.mocked(reportRepository.updateFields).mock.calls[0]?.[1] ?? [];
       expect(images).toHaveLength(2);
+    });
+
+    it('marca el reporte como sospechoso si una imagen nueva no tiene EXIF', async () => {
+      const report = makeSightingReport();
+      vi.mocked(reportRepository.findByPublicId).mockResolvedValue(report as any);
+      vi.mocked(exifReader.read).mockResolvedValue({ parsed: true, metadata: null });
+
+      await useCase.execute(baseDTO({
+        sightingDetails: { color: 'negro' },
+        newImages: [Buffer.from('fake-image')],
+      }), OWNER_ID);
+
+      expect(report.applyExifAnalysis).toHaveBeenCalledOnce();
+      const analysis = vi.mocked(report.applyExifAnalysis).mock.calls[0]![0];
+      expect(analysis.isSuspicious).toBe(true);
+      expect(analysis.reasons).toContain(EXIF_REASON.NO_METADATA);
+    });
+
+    it('vuelve a poner suspicious en false si la imagen nueva es limpia', async () => {
+      const report = makeSightingReport();
+      report.suspicious = true;
+      report.suspiciousReasons = [EXIF_REASON.NO_METADATA];
+      vi.mocked(reportRepository.findByPublicId).mockResolvedValue(report as any);
+
+      await useCase.execute(baseDTO({
+        sightingDetails: { color: 'negro' },
+        newImages: [Buffer.from('clean-image')],
+      }), OWNER_ID);
+
+      expect(report.applyExifAnalysis).toHaveBeenCalledOnce();
+      const analysis = vi.mocked(report.applyExifAnalysis).mock.calls[0]![0];
+      expect(analysis.isSuspicious).toBe(false);
+      expect(analysis.reasons).toEqual([]);
+    });
+
+    it('no analiza EXIF si no se suben imágenes nuevas', async () => {
+      const report = makeSightingReport();
+      vi.mocked(reportRepository.findByPublicId).mockResolvedValue(report as any);
+
+      await useCase.execute(baseDTO({ sightingDetails: { color: 'negro' } }), OWNER_ID);
+
+      expect(exifReader.read).not.toHaveBeenCalled();
+      expect(report.applyExifAnalysis).not.toHaveBeenCalled();
     });
   });
 

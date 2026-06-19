@@ -2,6 +2,8 @@ import { Pet } from "@domain/pet/aggregates/PetAggregate";
 import { PetRepository } from "@domain/pet/repositories/pet.repository";
 import { PetImage } from "@domain/pet/value-objects/image.vo";
 import { StorageService } from "@application/ports/StorageService";
+import { ExifReader } from "@application/ports/ExifReader";
+import { ExifSuspicionAnalyzer } from "@domain/shared/exif/exif-suspicion.analyzer";
 import { IUserRepository } from "@domain/repositories/IUserRepository";
 import { CreatePetDTO, CreatePetResponse } from "./dto/create-pet.dto";
 
@@ -12,6 +14,7 @@ export class CreatePetUseCase {
         private petRepository: PetRepository,
         private storageService: StorageService,
         private userRepository: IUserRepository,
+        private exifReader: ExifReader,
     ) { }
 
     async execute(dto: CreatePetDTO): Promise<CreatePetResponse> {
@@ -42,6 +45,11 @@ export class CreatePetUseCase {
             breed: dto.breed,
             petImage: petImages,
         });
+
+        const exifResults = await Promise.all(
+            dto.images.map((buffer) => this.exifReader.read(buffer))
+        );
+        pet.applyExifAnalysis(ExifSuspicionAnalyzer.analyzeMany(exifResults));
 
         await this.petRepository.save(pet);
 
