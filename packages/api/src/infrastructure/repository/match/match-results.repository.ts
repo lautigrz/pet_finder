@@ -1,7 +1,19 @@
 import { MatchResultsEntity } from "@domain/match/entities/MatchResultsEntity";
 import { MatchResultsRepository } from "@domain/match/repositories/match-results.repository";
-import { PrismaClient } from "@prisma/client";
+import { Prisma, PrismaClient } from "@prisma/client";
 import { MatchResultsMapper } from "./match-results.mapper";
+import { MatchNotification } from "@pet-alert/shared";
+
+const LOST_TYPE_ID = 1;
+const SIGHTING_TYPE_ID = 2;
+
+const NOTIFICATION_INCLUDE = {
+    user: { select: { public_id: true } },
+    lost_report_detail: { include: { pet: { select: { pet_name: true } } } },
+    reportImages: { select: { photoUrl: true }, take: 1 },
+} satisfies Prisma.ReportInclude;
+
+type NotificationReportRow = Prisma.ReportGetPayload<{ include: typeof NOTIFICATION_INCLUDE }>;
 
 
 export class PrismaMatchResultsRepository implements MatchResultsRepository {
@@ -25,4 +37,53 @@ export class PrismaMatchResultsRepository implements MatchResultsRepository {
 
         return results.map((result) => MatchResultsMapper.toDomain(result));
     }
+
+    async findNotificationsByUser(userPublicId: string): Promise<MatchNotification[]> {
+        const rows = await this.prisma.matchResult.findMany({
+            where: {
+                OR: [
+                    {
+                        source_report: { report_type_id: LOST_TYPE_ID, user: { public_id: userPublicId } },
+                        candidate_report: { report_type_id: SIGHTING_TYPE_ID },
+                    },
+                    {
+                        candidate_report: { report_type_id: LOST_TYPE_ID, user: { public_id: userPublicId } },
+                        source_report: { report_type_id: SIGHTING_TYPE_ID },
+                    },
+                ],
+            },
+            include: {
+                source_report: { include: NOTIFICATION_INCLUDE },
+                candidate_report: { include: NOTIFICATION_INCLUDE },
+            },
+            orderBy: { created_at: "desc" },
+            take: 50,
+        });
+
+        return rows.map((row) => {
+            const sourceIsLost = row.source_report.report_type_id === LOST_TYPE_ID;
+            const lost = sourceIsLost ? row.source_report : row.candidate_report;
+            const sighting = sourceIsLost ? row.candidate_report : row.source_report;
+            return toMatchNotification(row.public_id, row.score, row.created_at, lost, sighting);
+        });
+    }
+}
+
+function toMatchNotification(
+    matchPublicId: string,
+    score: number,
+    createdAt: Date,
+    lost: NotificationReportRow,
+    sighting: NotificationReportRow,
+): MatchNotification {
+    return {
+        ownerPublicId: lost.user.public_id,
+        lostReportPublicId: lost.public_id,
+        lostPetName: lost.lost_report_detail?.pet?.pet_name ?? null,
+        matchPublicId,
+        matchedReportPublicId: sighting.public_id,
+        matchedImage: sighting.reportImages[0]?.photoUrl ?? null,
+        score,
+        createdAt: createdAt.toISOString(),
+    };
 }

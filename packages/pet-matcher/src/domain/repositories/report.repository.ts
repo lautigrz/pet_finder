@@ -1,5 +1,6 @@
 import { DetailsReport, LocationReport, ReportEntity } from '@domain/entities/report.entity';
 import { MatchResult } from '@domain/entities/match-result.entity';
+import { MatchNotification } from '@pet-alert/shared';
 
 export interface IReportRepository {
   findById(reportId: number): Promise<ReportEntity | null>;
@@ -11,5 +12,7 @@ export interface IReportRepository {
   updateImageEmbedding(imageId: number, embedding: number[]): Promise<void>;
 
   saveMatchResults(sourceReportId: number, results: MatchResult[]): Promise<void>;
+
+  findMatchNotifications(sourceReportId: number, candidateReportIds: number[]): Promise<MatchNotification[]>;
 }
 

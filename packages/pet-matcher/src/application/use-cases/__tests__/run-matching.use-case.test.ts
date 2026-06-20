@@ -4,6 +4,7 @@ import { IReportRepository } from '@domain/repositories/report.repository';
 import { IPetRepository } from '@domain/repositories/pet.repository';
 import { MatchingDomainService } from '@domain/services/matching.domain-service';
 import { ReportEntity } from '@domain/entities/report.entity';
+import { IMatchNotifier } from '@domain/services/match-notifier';
 
 vi.mock('@services/embedding-images-services', () => ({
   extractEmbedding: vi.fn().mockResolvedValue([1, 0, 0]),
@@ -37,6 +38,7 @@ function makeReportRepo(overrides: Partial<IReportRepository> = {}): IReportRepo
     updateDescriptionEmbedding: vi.fn().mockResolvedValue(undefined),
     updateImageEmbedding: vi.fn().mockResolvedValue(undefined),
     saveMatchResults: vi.fn().mockResolvedValue(undefined),
+    findMatchNotifications: vi.fn().mockResolvedValue([]),
     ...overrides,
   };
 }
@@ -44,6 +46,13 @@ function makeReportRepo(overrides: Partial<IReportRepository> = {}): IReportRepo
 function makePetRepo(overrides: Partial<IPetRepository> = {}): IPetRepository {
   return {
     updateImageEmbedding: vi.fn().mockResolvedValue(undefined),
+    ...overrides,
+  };
+}
+
+function makeNotifier(overrides: Partial<IMatchNotifier> = {}): IMatchNotifier {
+  return {
+    publish: vi.fn().mockResolvedValue(undefined),
     ...overrides,
   };
 }
@@ -56,6 +65,7 @@ describe('RunMatchingUseCase', () => {
   let reportRepo: IReportRepository;
   let petRepo: IPetRepository;
   let matchingService: MatchingDomainService;
+  let matchNotifier: IMatchNotifier;
   let useCase: RunMatchingUseCase;
 
   beforeEach(() => {
@@ -63,7 +73,8 @@ describe('RunMatchingUseCase', () => {
     reportRepo = makeReportRepo();
     petRepo = makePetRepo();
     matchingService = new MatchingDomainService();
-    useCase = new RunMatchingUseCase(reportRepo, petRepo, matchingService);
+    matchNotifier = makeNotifier();
+    useCase = new RunMatchingUseCase(reportRepo, petRepo, matchingService, matchNotifier);
   });
 
 
@@ -203,6 +214,49 @@ describe('RunMatchingUseCase', () => {
       const [savedId, savedResults]: any = (reportRepo.saveMatchResults as ReturnType<typeof vi.fn>).mock.calls[0];
       expect(savedId).toBe(1);
       expect(savedResults).toHaveLength(1);
+    });
+  });
+
+
+  describe('notificaciones de coincidencias', () => {
+    beforeEach(() => {
+      vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
+        arrayBuffer: vi.fn().mockResolvedValue(new ArrayBuffer(8)),
+      }));
+    });
+
+    it('publica una notificacion cuando la coincidencia supera el umbral de score', async () => {
+      const source = makeReport({ images: [{ imageId: 1, photoUrl: 'a', embeddingPhoto: [1, 0, 0] }] });
+      const candidate = makeReport({ reportId: 2, publicId: 'pub-2', images: [{ imageId: 2, photoUrl: 'b', embeddingPhoto: [1, 0, 0] }] });
+      (reportRepo.findById as ReturnType<typeof vi.fn>).mockResolvedValue(source);
+      (reportRepo.findCandidatesReportsActives as ReturnType<typeof vi.fn>).mockResolvedValue([candidate]);
+
+      const notification = {
+        ownerPublicId: 'owner-1',
+        lostReportPublicId: 'pub-1',
+        lostPetName: 'Mandarina',
+        matchPublicId: 'match-1',
+        matchedReportPublicId: 'pub-2',
+        matchedImage: 'b',
+        score: 0.71,
+        createdAt: '2026-06-19T18:00:00.000Z',
+      };
+      (reportRepo.findMatchNotifications as ReturnType<typeof vi.fn>).mockResolvedValue([notification]);
+
+      await useCase.execute(1, LOST_TYPE);
+
+      expect(reportRepo.findMatchNotifications).toHaveBeenCalledWith(1, [2]);
+      expect(matchNotifier.publish).toHaveBeenCalledWith(notification);
+    });
+
+    it('no publica notificaciones cuando los scores estan por debajo del umbral', async () => {
+      const candidate = makeReport({ reportId: 2, publicId: 'pub-2' });
+      (reportRepo.findCandidatesReportsActives as ReturnType<typeof vi.fn>).mockResolvedValue([candidate]);
+
+      await useCase.execute(1, LOST_TYPE);
+
+      expect(reportRepo.findMatchNotifications).not.toHaveBeenCalled();
+      expect(matchNotifier.publish).not.toHaveBeenCalled();
     });
   });
 });
