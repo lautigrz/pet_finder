@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { Request, Response } from "express";
 import { MatchResultsController } from "../match-results.controller";
 import { GetMatchResultsUseCase } from "@application/usecase/match-results-usecase/get-match-results.usecase";
+import { GetUserMatchNotificationsUseCase } from "@application/usecase/match-results-usecase/get-user-match-notifications.usecase";
 import { ReportNotFoundError } from "@domain/errors/ReportNotFoundError";
 import { invoke } from "./test-helpers";
 
@@ -45,7 +46,21 @@ const fakeMatchResults = [
     },
 ];
 
+const fakeNotifications = [
+    {
+        ownerPublicId: "user-public-id",
+        lostReportPublicId: "lost-report-uuid",
+        lostPetName: "naranja",
+        matchPublicId: "match-uuid-1",
+        matchedReportPublicId: "sighting-uuid-1",
+        matchedImage: "https://img.example.com/cat.jpg",
+        score: 0.9,
+        createdAt: "2026-06-19T18:00:00.000Z",
+    },
+];
+
 let getMatchResultsUseCase: GetMatchResultsUseCase;
+let getUserMatchNotificationsUseCase: GetUserMatchNotificationsUseCase;
 let controller: MatchResultsController;
 
 beforeEach(() => {
@@ -53,7 +68,11 @@ beforeEach(() => {
         execute: vi.fn().mockResolvedValue(fakeMatchResults),
     } as unknown as GetMatchResultsUseCase;
 
-    controller = new MatchResultsController(getMatchResultsUseCase);
+    getUserMatchNotificationsUseCase = {
+        execute: vi.fn().mockResolvedValue(fakeNotifications),
+    } as unknown as GetUserMatchNotificationsUseCase;
+
+    controller = new MatchResultsController(getMatchResultsUseCase, getUserMatchNotificationsUseCase);
 });
 
 
@@ -120,6 +139,18 @@ describe("MatchResultsController", () => {
             await invoke(controller.getMatchResults, req, res);
 
             expect(res.status).toHaveBeenCalledWith(500);
+        });
+    });
+
+    describe("getMyNotifications — éxito", () => {
+        it("retorna 200 con las notificaciones del usuario logueado", async () => {
+            const req = buildReq({});
+            const res = buildRes();
+
+            await invoke(controller.getMyNotifications, req, res);
+
+            expect(getUserMatchNotificationsUseCase.execute).toHaveBeenCalledWith("user-public-id");
+            expect(res.json).toHaveBeenCalledWith(fakeNotifications);
         });
     });
 });

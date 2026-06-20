@@ -14,7 +14,8 @@ import {
 import { toReportEntity, REPORT_INCLUDE } from './mappers/report.mapper';
 import { RawPetImageEmb } from './types/raw-embedding.types';
 import { toVectorLiteral } from './utils/vector.utils';
-import { logger } from '@pet-alert/shared';
+import { ReportType } from './types/report-type';
+import { logger, MatchNotification } from '@pet-alert/shared';
 
 function withDbTimeout<T>(promise: Promise<T>, ms: number, context: string): Promise<T> {
   return Promise.race([
@@ -147,6 +148,38 @@ export class PrismaReportRepository implements IReportRepository {
       logger.error(`[PrismaReportRepository] Failed to save ${failed.length} match results for report ${sourceReportId}`);
     }
   }
+
+  async findMatchNotifications(sourceReportId: number, candidateReportIds: number[]): Promise<MatchNotification[]> {
+    if (candidateReportIds.length === 0) return [];
+
+    const rows = await prisma.matchResult.findMany({
+      where: {
+        source_report_id: sourceReportId,
+        candidate_report_id: { in: candidateReportIds },
+      },
+      include: {
+        source_report: { include: MATCH_NOTIFICATION_INCLUDE },
+        candidate_report: { include: MATCH_NOTIFICATION_INCLUDE },
+      },
+    });
+
+    return rows.flatMap(row => {
+      const pair = toLostSightingPair(row.source_report, row.candidate_report);
+      if (!pair) return [];
+
+      const { lost, sighting } = pair;
+      return [{
+        ownerPublicId: lost.user.public_id,
+        lostReportPublicId: lost.public_id,
+        lostPetName: lost.lost_report_detail?.pet?.pet_name ?? null,
+        matchPublicId: row.public_id,
+        matchedReportPublicId: sighting.public_id,
+        matchedImage: sighting.reportImages[0]?.photoUrl ?? null,
+        score: row.score,
+        createdAt: row.created_at.toISOString(),
+      }];
+    });
+  }
 }
 
 
@@ -199,4 +232,22 @@ function buildMatchResultUpsert(
       structured_score: result.structuredScore,
     },
   });
+}
+
+const MATCH_NOTIFICATION_INCLUDE = {
+  user: { select: { public_id: true } },
+  lost_report_detail: { include: { pet: { select: { pet_name: true } } } },
+  reportImages: { select: { photoUrl: true }, take: 1 },
+} satisfies Prisma.ReportInclude;
+
+type NotificationReportRow = Prisma.ReportGetPayload<{ include: typeof MATCH_NOTIFICATION_INCLUDE }>;
+
+function toLostSightingPair(
+  a: NotificationReportRow,
+  b: NotificationReportRow,
+): { lost: NotificationReportRow; sighting: NotificationReportRow } | null {
+  const aIsLost = a.report_type_id === ReportType.LOST;
+  const bIsLost = b.report_type_id === ReportType.LOST;
+  if (aIsLost === bIsLost) return null;
+  return aIsLost ? { lost: a, sighting: b } : { lost: b, sighting: a };
 }

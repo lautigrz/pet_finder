@@ -59,3 +59,7 @@ export function initSocket(httpServer: HttpServer) {
     })
 
 }
+
+export function emitToUser(userPublicId: string, event: string, payload: unknown): void {
+    io.to(`user:${userPublicId}`).emit(event, payload);
+}

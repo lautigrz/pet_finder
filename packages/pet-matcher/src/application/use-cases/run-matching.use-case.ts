@@ -1,4 +1,4 @@
-import { logger } from '@pet-alert/shared';
+import { logger, MATCH_NOTIFICATION_THRESHOLD } from '@pet-alert/shared';
 import { MatchResult } from '@domain/entities/match-result.entity';
 import { IPetRepository } from '@domain/repositories/pet.repository';
 import { IReportRepository } from '@domain/repositories/report.repository';
@@ -7,12 +7,14 @@ import { extractEmbedding } from '@services/embedding-images-services';
 import { extractDescriptionEmbedding } from '@services/embedding-description-services';
 import { ReportType } from '@infrastructure/repositories/types/report-type';
 import { ReportEntity } from '@domain/entities/report.entity';
+import { IMatchNotifier } from '@domain/services/match-notifier';
 
 export class RunMatchingUseCase {
   constructor(
     private readonly reportRepository: IReportRepository,
     private readonly petRepository: IPetRepository,
     private readonly matchingService: MatchingDomainService,
+    private readonly matchNotifier: IMatchNotifier,
   ) { }
 
   async execute(reportId: number, reportType: number): Promise<MatchResult[]> {
@@ -46,6 +48,8 @@ export class RunMatchingUseCase {
 
       logger.info(`[RunMatchingUseCase] ${results.length} candidates ranked for report ${reportId} - total time: ${(performance.now() - t0).toFixed(0)}ms`);
 
+      await this.notifyStrongMatches(report.reportId, results);
+
       return results;
     } catch (err) {
       logger.error(`[RunMatchingUseCase] Fatal error processing report ${reportId} (type=${reportType}): ${err}`);
@@ -54,6 +58,24 @@ export class RunMatchingUseCase {
   }
 
 
+
+  private async notifyStrongMatches(sourceReportId: number, results: MatchResult[]): Promise<void> {
+    try {
+      const strong = results.filter(r => r.score >= MATCH_NOTIFICATION_THRESHOLD);
+      if (strong.length === 0) return;
+
+      const notifications = await this.reportRepository.findMatchNotifications(
+        sourceReportId,
+        strong.map(r => r.reportId),
+      );
+
+      for (const notification of notifications) {
+        await this.matchNotifier.publish(notification);
+      }
+    } catch (err) {
+      logger.error(`[RunMatchingUseCase] Failed to publish match notifications for report ${sourceReportId}: ${err}`);
+    }
+  }
 
   private async processDescription(report: ReportEntity, reportId: number) {
     if (!report.embeddingDescription && report.description) {

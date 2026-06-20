@@ -7,6 +7,8 @@ import { RunMatchingUseCase } from "../application/use-cases/run-matching.use-ca
 import { PrismaReportRepository } from "../infrastructure/repositories/prisma-report.repository";
 import { PrismaPetRepository } from "../infrastructure/repositories/prisma-pet.repository";
 import { MatchingDomainService } from "../domain/services/matching.domain-service";
+import { RedisMatchNotifier } from "../infrastructure/notifications/redis-match-notifier";
+import { redisPublisher } from "../infrastructure/redis/redis.publisher";
 
 dotenv.config();
 
@@ -14,7 +16,8 @@ dotenv.config();
 const reportRepository = new PrismaReportRepository();
 const petRepository = new PrismaPetRepository();
 const matchingDomainService = new MatchingDomainService();
-const runMatchingUseCase = new RunMatchingUseCase(reportRepository, petRepository, matchingDomainService);
+const matchNotifier = new RedisMatchNotifier(redisPublisher);
+const runMatchingUseCase = new RunMatchingUseCase(reportRepository, petRepository, matchingDomainService, matchNotifier);
 
 export const matchingWorker = new Worker<MatchingJobData>(
   "animal-matching",
