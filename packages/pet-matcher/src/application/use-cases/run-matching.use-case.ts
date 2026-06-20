@@ -97,6 +97,15 @@ export class RunMatchingUseCase {
           logger.warn(`[processImages] extractEmbedding returned null for image ${image.imageId}`);
           throw new Error(`No embedding returned for image ${image.imageId}`);
         }
+        if (!embedding) {
+          logger.warn(`[processImages] extractEmbedding returned null for image ${image.imageId}`);
+          throw new Error(`No embedding returned for image ${image.imageId}`);
+        }
+
+        if (!embedding) {
+          logger.warn(`[processImages] extractEmbedding returned null for image ${image.imageId}`);
+          throw new Error(`No embedding returned for image ${image.imageId}`);
+        }
         image.embeddingPhoto = embedding
         await this.updateImageEmbeddings(reportType, image.imageId, embedding)
       }));

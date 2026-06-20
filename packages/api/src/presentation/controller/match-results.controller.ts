@@ -15,7 +15,7 @@ export class MatchResultsController {
 
         const publicId = req.params.publicId;
         const matchResults = await this.getMatchResultsUseCase.execute(publicId as string);
-
+        console.log("reportes", matchResults.length)
         res.json(matchResults);
     })
 

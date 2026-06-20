@@ -195,7 +195,7 @@ describe("GetMatchResultsUseCase", () => {
             vi.mocked(reportRepository.findByPublicId).mockResolvedValue(sourceReport);
             vi.mocked(matchResultsRepository.findResultsBySourceReportId).mockResolvedValue([
                 makeMatchEntity({ candidateReportId: 20, score: 0.9, publicId: "match-a" }),
-                makeMatchEntity({ candidateReportId: 99, score: 0.5, publicId: "match-b" }),  // sin detalles
+                makeMatchEntity({ candidateReportId: 99, score: 0.72, publicId: "match-b" }),  // sin detalles
             ]);
             vi.mocked(reportRepository.findDetailsByIds).mockResolvedValue([
                 { report: makeReport(20, "candidate-a"), pet: makePet() },
@@ -239,7 +239,7 @@ describe("GetMatchResultsUseCase", () => {
             vi.mocked(reportRepository.findByPublicId).mockResolvedValue(sourceReport);
             vi.mocked(matchResultsRepository.findResultsBySourceReportId).mockResolvedValue([
                 makeMatchEntity({ candidateReportId: 20, score: 0.95, publicId: "high-score" }),
-                makeMatchEntity({ candidateReportId: 30, score: 0.60, publicId: "low-score" }),
+                makeMatchEntity({ candidateReportId: 30, score: 0.75, publicId: "low-score" }),
             ]);
             vi.mocked(reportRepository.findDetailsByIds).mockResolvedValue([
                 { report: makeReport(20, "report-high"), pet: makePet() },
@@ -249,7 +249,7 @@ describe("GetMatchResultsUseCase", () => {
             const result = await useCase.execute("source-pub-id");
 
             expect(result[0]!.score).toBe(0.95);
-            expect(result[1]!.score).toBe(0.60);
+            expect(result[1]!.score).toBe(0.75);
         });
     });
 

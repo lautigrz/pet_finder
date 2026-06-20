@@ -137,7 +137,7 @@ describe("CreateReportUseCase", () => {
       );
     });
 
-    it("sube imágenes al storage y las pasa a save cuando el LOST incluye imágenes", async () => {
+    it("no sube imágenes al storage para un LOST porque ya existen en pet_images", async () => {
       const dtoWithImages = {
         ...lostDto,
         images: [Buffer.from("img1"), Buffer.from("img2")],
@@ -145,12 +145,9 @@ describe("CreateReportUseCase", () => {
 
       await useCase.execute(dtoWithImages, TEST_EMAIL);
 
-      expect(storageService.upload).toHaveBeenCalledTimes(2);
+      expect(storageService.upload).not.toHaveBeenCalled();
       expect(reportRepository.save).toHaveBeenCalledWith(
         expect.any(Object),
-        expect.arrayContaining([
-          expect.objectContaining({ cloudinaryId: "image1", photoUrl: "https://image1.com" })
-        ])
       );
     });
   });
