@@ -44,12 +44,7 @@ export class CreateReportUseCase {
         const details = await this.buildDetails(dto, petInternalId!);
         const report = this.buildReport(dto, location, details, user);
 
-        let images: SightingImage[] = [];
-        if (dto.type === ReportType.LOST && dto.images && dto.images.length > 0) {
-            images = await this.buildImages(dto.images);
-        }
-
-        const reportId = await this.reportRepository.save(report, images);
+        const reportId = await this.reportRepository.save(report);
 
         if (reportId) {
             await enqueueMatchingJob({ type: 'run_matching', reportId: reportId, reportType: ReportTypeToNumber[dto.type], reportTypeName: dto.type })

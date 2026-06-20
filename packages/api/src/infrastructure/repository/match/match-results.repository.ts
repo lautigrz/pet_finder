@@ -30,7 +30,7 @@ export class PrismaMatchResultsRepository implements MatchResultsRepository {
     async findResultsBySourceReportId(sourceReportId: number): Promise<MatchResultsEntity[]> {
 
         const results = await this.prisma.matchResult.findMany({
-            where: { source_report_id: sourceReportId },
+            where: { source_report_id: sourceReportId, score: { gte: 0.70 } },
             orderBy: { score: 'desc' },
             take: 10
         });

@@ -2,6 +2,7 @@ import { DetailsReport, LocationReport, ReportEntity, ReportImageEntity } from '
 import { RawImageEmb, RawReportEmb } from '@infrastructure/repositories/types/raw-embedding.types';
 import { parseVector } from '@infrastructure/repositories/utils/vector.utils';
 import { Prisma } from '@prisma/client';
+import { ReportType } from '@infrastructure/repositories/types/report-type';
 
 
 type SightingDetail = Prisma.SightingReportDetailGetPayload<{
@@ -56,6 +57,9 @@ export function toReportEntity(
   const reportImages = mapImages(row.reportImages ?? [], imageEmbById);
   const petImages = mapImages(lostPet?.petImages ?? [], petImageEmbById);
 
+  const isLost = row.report_type_id === ReportType.LOST;
+  const images = isLost ? petImages : reportImages;
+
   return {
     reportId: row.report_id,
     publicId: row.public_id,
@@ -65,7 +69,7 @@ export function toReportEntity(
     description: row.description ?? null,
     location: buildLocation(row),
     embeddingDescription: parseVector(descEmb?.embedding_description ?? null),
-    images: reportImages.length > 0 ? reportImages : petImages,
+    images,
   };
 }
 
