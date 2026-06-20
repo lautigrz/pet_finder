@@ -168,6 +168,8 @@ export class PrismaReportRepository implements IReportRepository {
       if (!pair) return [];
 
       const { lost, sighting } = pair;
+      if (lost.user.public_id === sighting.user.public_id) return [];
+
       return [{
         ownerPublicId: lost.user.public_id,
         lostReportPublicId: lost.public_id,

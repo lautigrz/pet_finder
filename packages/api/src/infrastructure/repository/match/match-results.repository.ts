@@ -60,11 +60,12 @@ export class PrismaMatchResultsRepository implements MatchResultsRepository {
             take: 50,
         });
 
-        return rows.map((row) => {
+        return rows.flatMap((row) => {
             const sourceIsLost = row.source_report.report_type_id === LOST_TYPE_ID;
             const lost = sourceIsLost ? row.source_report : row.candidate_report;
             const sighting = sourceIsLost ? row.candidate_report : row.source_report;
-            return toMatchNotification(row.public_id, row.score, row.created_at, lost, sighting);
+            if (lost.user.public_id === sighting.user.public_id) return [];
+            return [toMatchNotification(row.public_id, row.score, row.created_at, lost, sighting)];
         });
     }
 }
