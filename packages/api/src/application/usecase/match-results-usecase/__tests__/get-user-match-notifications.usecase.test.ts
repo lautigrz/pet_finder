@@ -41,8 +41,8 @@ describe("GetUserMatchNotificationsUseCase", () => {
 
     it("descarta las coincidencias por debajo del umbral", async () => {
         vi.mocked(matchResultsRepository.findNotificationsByUser).mockResolvedValue([
-            makeNotification({ matchPublicId: "alta", score: 0.5 }),
-            makeNotification({ matchPublicId: "baja", score: 0.05 }),
+            makeNotification({ matchPublicId: "alta", score: 0.8 }),
+            makeNotification({ matchPublicId: "baja", score: 0.5 }),
         ]);
 
         const result = await useCase.execute("user-1");

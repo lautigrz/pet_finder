@@ -1,6 +1,6 @@
 export const MATCH_CHANNEL = 'match:notification';
 export const MATCH_EVENT = 'match:new';
-export const MATCH_NOTIFICATION_THRESHOLD = 0.1;
+export const MATCH_NOTIFICATION_THRESHOLD = 0.7;
 
 export type MatchNotification = {
   ownerPublicId: string;
