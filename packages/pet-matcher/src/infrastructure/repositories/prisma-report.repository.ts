@@ -172,16 +172,21 @@ export class PrismaReportRepository implements IReportRepository {
       const { lost, sighting } = pair;
       if (lost.user.public_id === sighting.user.public_id) return [];
 
-      return [{
-        ownerPublicId: lost.user.public_id,
+      const base = {
         lostReportPublicId: lost.public_id,
         lostPetName: lost.lost_report_detail?.pet?.pet_name ?? null,
+        lostPetImage: lost.lost_report_detail?.pet?.petImages?.[0]?.photoUrl ?? null,
         matchPublicId: row.public_id,
         matchedReportPublicId: sighting.public_id,
         matchedImage: sighting.reportImages[0]?.photoUrl ?? null,
         score: row.score,
         createdAt: row.created_at.toISOString(),
-      }];
+      };
+
+      return [
+        { ...base, ownerPublicId: lost.user.public_id, rol: 'dueno' as const },
+        { ...base, ownerPublicId: sighting.user.public_id, rol: 'avistador' as const },
+      ];
     });
   }
 }
@@ -240,7 +245,7 @@ function buildMatchResultUpsert(
 
 const MATCH_NOTIFICATION_INCLUDE = {
   user: { select: { public_id: true } },
-  lost_report_detail: { include: { pet: { select: { pet_name: true } } } },
+  lost_report_detail: { include: { pet: { select: { pet_name: true, petImages: { select: { photoUrl: true }, take: 1 } } } } },
   reportImages: { select: { photoUrl: true }, take: 1 },
 } satisfies Prisma.ReportInclude;
 
