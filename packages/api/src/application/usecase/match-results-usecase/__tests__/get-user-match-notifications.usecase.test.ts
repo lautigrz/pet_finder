@@ -6,8 +6,10 @@ import { MatchNotification } from "@pet-alert/shared";
 function makeNotification(overrides: Partial<MatchNotification> = {}): MatchNotification {
     return {
         ownerPublicId: "user-1",
+        rol: "dueno",
         lostReportPublicId: "lost-1",
         lostPetName: "naranja",
+        lostPetImage: null,
         matchPublicId: "match-1",
         matchedReportPublicId: "sighting-1",
         matchedImage: "https://img.example.com/1.jpg",
