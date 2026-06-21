@@ -5,7 +5,7 @@ import { MatchNotification } from '@pet-alert/shared';
 export interface IReportRepository {
   findById(reportId: number): Promise<ReportEntity | null>;
 
-  findCandidatesReportsActives(reportId: number, details: DetailsReport, location: LocationReport): Promise<ReportEntity[]>;
+  findCandidatesReportsActives(reportId: number, reportTypeId: number, details: DetailsReport, location: LocationReport): Promise<ReportEntity[]>;
 
   updateDescriptionEmbedding(reportId: number, embedding: number[]): Promise<void>;
 

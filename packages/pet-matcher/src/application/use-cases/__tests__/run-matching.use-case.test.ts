@@ -102,6 +102,7 @@ describe('RunMatchingUseCase', () => {
       await useCase.execute(1, LOST_TYPE);
       expect(reportRepo.findCandidatesReportsActives).toHaveBeenCalledWith(
         report.reportId,
+        report.reportTypeId,
         report.details,
         report.location,
       );
