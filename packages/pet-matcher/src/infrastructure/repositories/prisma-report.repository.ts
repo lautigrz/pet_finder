@@ -56,7 +56,7 @@ export class PrismaReportRepository implements IReportRepository {
     );
   }
 
-  async findCandidatesReportsActives(reportId: number, details: DetailsReport, location: LocationReport): Promise<ReportEntity[]> {
+  async findCandidatesReportsActives(reportId: number, reportTypeId: number, details: DetailsReport, location: LocationReport): Promise<ReportEntity[]> {
 
     const nearbyIds = await findReportIdsWithinRadius(
       location.locationLat,
@@ -66,15 +66,17 @@ export class PrismaReportRepository implements IReportRepository {
 
     if (nearbyIds.length === 0) return [];
 
+    const candidateFilter = reportTypeId === ReportType.LOST
+      ? buildSightingFilter(details)
+      : buildLostFilter(details);
+
     const rows = await prisma.report.findMany({
       where: {
-        OR: [buildSightingFilter(details), buildLostFilter(details)],
-        AND: {
-          report_id: {
-            not: reportId,
-            in: nearbyIds,
-          },
-        }
+        ...candidateFilter,
+        report_id: {
+          not: reportId,
+          in: nearbyIds,
+        },
       },
       include: REPORT_INCLUDE,
     });

@@ -35,7 +35,7 @@ export class RunMatchingUseCase {
       logger.info(`[E5-Small] inference took ${(performance.now() - t1).toFixed(0)}ms`);
 
       const t2 = performance.now();
-      const candidates = await this.reportRepository.findCandidatesReportsActives(report.reportId, report.details, report.location);
+      const candidates = await this.reportRepository.findCandidatesReportsActives(report.reportId, report.reportTypeId, report.details, report.location);
       logger.info(`[findCandidatesReportsActives] inference took ${(performance.now() - t2).toFixed(0)}ms`);
 
       const t3 = performance.now();
