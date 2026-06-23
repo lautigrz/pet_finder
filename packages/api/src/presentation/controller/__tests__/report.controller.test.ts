@@ -92,6 +92,7 @@ const fakeReportOutput = {
   details: { animalType: AnimalType.DOG, hasIdCollar: false, isInTransit: false, color: "brown", images: [{ url: "https://image1.com" }] },
   occurredAt: new Date(),
   createdAt: new Date(),
+  updatedAt: null,
 };
 
 const fakeListOutput = {

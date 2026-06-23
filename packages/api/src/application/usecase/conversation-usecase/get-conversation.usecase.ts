@@ -38,7 +38,6 @@ export class GetConversationUseCase {
             conversation.conversationId!,
             { page: request.page ?? 1, limit: request.limit ?? 20, orderBy: 'desc' }
         );
-
         return ConversationOutputMapper.toOutput(conversation, user, otherUser, messages.items.reverse());
     }
 }

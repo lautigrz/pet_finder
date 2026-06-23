@@ -33,6 +33,8 @@ describe("RefreshAccessTokenUseCase", () => {
       updateProfile: vi.fn(),
       findById: vi.fn(),
       updatePassword: vi.fn(),
+      findByIds: vi.fn(),
+      deleteById: vi.fn(),
     };
     tokenSigner = { sign: vi.fn(), verify: vi.fn() };
     useCase = new RefreshAccessTokenUseCase(refreshTokenRepository, userRepository, tokenSigner);

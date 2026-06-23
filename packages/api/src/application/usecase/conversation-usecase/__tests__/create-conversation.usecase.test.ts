@@ -45,6 +45,7 @@ describe("CreateConversationUseCase", () => {
       findById: vi.fn(),
       updateProfile: vi.fn(),
       updatePassword: vi.fn(),
+      deleteById: vi.fn(),
     };
     useCase = new CreateConversationUseCase(conversationRepository, userRepository);
   });

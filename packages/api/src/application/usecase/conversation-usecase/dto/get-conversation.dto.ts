@@ -12,6 +12,7 @@ interface MessageOutput {
     senderId: string;
     isRead: boolean;
     createdAt: Date;
+    images?: Array<{ publicId: string; url: string }>;
 }
 
 export interface ConversationOutput {

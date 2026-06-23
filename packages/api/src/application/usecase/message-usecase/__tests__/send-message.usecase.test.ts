@@ -9,6 +9,7 @@ import { User } from "@domain/entities/User";
 import type { ConversationRepository } from "@domain/conversation/repositories/conversation.repository";
 import type { MessageRepository } from "@domain/message/repositories/message.repository";
 import type { IUserRepository } from "@domain/repositories/IUserRepository";
+import type { StorageService } from "@application/ports/StorageService";
 
 const HASH = "$2b$12$abcdefghijklmnopqrstuv.wxyzabcdefghijklmnopqrstuvwxyz12";
 
@@ -22,13 +23,15 @@ describe("SendMessageUseCase", () => {
   let convRepo: ConversationRepository;
   let msgRepo: MessageRepository;
   let userRepo: IUserRepository;
+  let storageService: StorageService;
   let useCase: SendMessageUseCase;
 
   beforeEach(() => {
     convRepo = { findAllByUserId: vi.fn(), findByPublicId: vi.fn(), findByParticipants: vi.fn(), findById: vi.fn(), save: vi.fn(), delete: vi.fn() };
     msgRepo = { findById: vi.fn(), findByPublicId: vi.fn(), findByConversationId: vi.fn(), findLastMessageByConversationIds: vi.fn(), findUnreadByUserId: vi.fn(), countUnreadByConversationId: vi.fn(), save: vi.fn(), markAsRead: vi.fn(), delete: vi.fn() };
-    userRepo = { save: vi.fn(), findByEmail: vi.fn(), markVerified: vi.fn(), findByPublicId: vi.fn(), findByIds: vi.fn(), findById: vi.fn(), updateProfile: vi.fn(), updatePassword: vi.fn() };
-    useCase = new SendMessageUseCase(convRepo, msgRepo, userRepo);
+    userRepo = { save: vi.fn(), findByEmail: vi.fn(), markVerified: vi.fn(), findByPublicId: vi.fn(), findByIds: vi.fn(), findById: vi.fn(), updateProfile: vi.fn(), updatePassword: vi.fn(), deleteById: vi.fn() };
+    storageService = { upload: vi.fn(), delete: vi.fn() };
+    useCase = new SendMessageUseCase(convRepo, msgRepo, userRepo, storageService);
   });
 
   it("envía un mensaje y retorna MessageOutput", async () => {
@@ -52,6 +55,33 @@ describe("SendMessageUseCase", () => {
     expect(result.receiverId).toBe("receiver-uuid");
     expect(result.isRead).toBe(false);
     expect(result.publicId).toBeDefined();
+    expect(result.images).toEqual([]);
+    expect(msgRepo.save).toHaveBeenCalledOnce();
+  });
+
+  it("envía un mensaje con imágenes con éxito", async () => {
+    const sender = makeUser(10, "sender-uuid");
+    const receiver = makeUser(20, "receiver-uuid");
+    const conv = makeConv(10, 20);
+
+    vi.mocked(userRepo.findByPublicId).mockResolvedValue(sender);
+    vi.mocked(convRepo.findByPublicId).mockResolvedValue(conv);
+    vi.mocked(userRepo.findById).mockResolvedValue(receiver);
+    vi.mocked(storageService.upload).mockResolvedValue({ url: "https://example.com/uploaded.jpg", publicId: "uploaded-pub-id" });
+    vi.mocked(msgRepo.save).mockImplementation(async (msg) => msg);
+
+    const buffer = Buffer.from("fake-image");
+    const result = await useCase.execute({
+      publicUserId: "sender-uuid",
+      publicConversationId: "conv-uuid",
+      text: "",
+      images: [buffer],
+    });
+
+    expect(result.text).toBe("");
+    expect(result.images).toHaveLength(1);
+    expect(result.images[0]!.url).toBe("https://example.com/uploaded.jpg");
+    expect(storageService.upload).toHaveBeenCalledWith(buffer, "messages");
     expect(msgRepo.save).toHaveBeenCalledOnce();
   });
 

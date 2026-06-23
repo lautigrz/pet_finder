@@ -7,6 +7,7 @@ import { MessageMapper } from "./message.mapper";
 export class PrismaMessageRepository implements MessageRepository {
 
     constructor(private readonly prisma: PrismaClient) { }
+
     async findLastMessageByConversationIds(conversationIds: number[]): Promise<Message[]> {
         if (conversationIds.length === 0) return [];
 
@@ -61,6 +62,9 @@ export class PrismaMessageRepository implements MessageRepository {
                 skip,
                 take: limit,
                 orderBy: { created_at: options.orderBy ?? 'asc' },
+                include: {
+                    images: true
+                }
             }
             ),
             this.prisma.message.count({ where: { conversation_id: conversationId } })
@@ -84,7 +88,20 @@ export class PrismaMessageRepository implements MessageRepository {
 
         const result = MessageMapper.toPersistence(message);
 
-        const saveMessage = await this.prisma.message.create({ data: result });
+        const saveMessage = await this.prisma.message.create({
+            data: {
+                ...result,
+                images: {
+                    create: message.image.map((image) => ({
+                        public_id: image.publicId,
+                        photoUrl: image.url
+                    }))
+                }
+            },
+            include: {
+                images: true
+            }
+        });
 
         return MessageMapper.toDomain(saveMessage);
     }

@@ -8,6 +8,7 @@ import { catalogRouter } from "./catalog/catalog.router";
 import conversationRouter from "./conversation/conversation.router";
 import { matchRouter } from "./match/match.router";
 import notificationRouter from "./notifications/notification.router";
+import { messageRouter } from "./message/message.router";
 
 const router = Router();
 
@@ -20,5 +21,6 @@ router.use('/conversations', conversationRouter);
 router.use("/match", matchRouter)
 router.use('/notifications', notificationRouter);
 router.use('/auth', authRouter);
+router.use('/messages', messageRouter);
 
 export default router;
