@@ -18,7 +18,7 @@ const makeConv = (id: number, pub: string, u1: number, u2: number): Conversation
   Conversation.create({ conversationId: id, publicId: pub, userOneId: u1, userTwoId: u2, createdAt: new Date() });
 
 const makeMsg = (conversationId: number): Message =>
-  Message.create({ messageId: 1, publicId: "msg-uuid", senderUserId: 10, receiverId: 20, conversationId, text: MessageText.create("Hola"), isRead: false, createdAt: new Date() });
+  Message.create({ messageId: 1, publicId: "msg-uuid", senderUserId: 10, receiverId: 20, conversationId, text: MessageText.create("Hola"), isRead: false, createdAt: new Date(), images: [] });
 
 describe("ListMyConversationsUseCase", () => {
   let userRepo: IUserRepository;
@@ -27,7 +27,7 @@ describe("ListMyConversationsUseCase", () => {
   let useCase: ListMyConversationsUseCase;
 
   beforeEach(() => {
-    userRepo = { save: vi.fn(), findByEmail: vi.fn(), markVerified: vi.fn(), findByPublicId: vi.fn(), findById: vi.fn(), findByIds: vi.fn(), updateProfile: vi.fn(), updatePassword: vi.fn() };
+    userRepo = { save: vi.fn(), findByEmail: vi.fn(), markVerified: vi.fn(), findByPublicId: vi.fn(), findById: vi.fn(), findByIds: vi.fn(), updateProfile: vi.fn(), updatePassword: vi.fn(), deleteById: vi.fn() };
     convRepo = { findAllByUserId: vi.fn(), findByPublicId: vi.fn(), findByParticipants: vi.fn(), findById: vi.fn(), save: vi.fn(), delete: vi.fn() };
     msgRepo = { findById: vi.fn(), findByPublicId: vi.fn(), findByConversationId: vi.fn(), findLastMessageByConversationIds: vi.fn(), findUnreadByUserId: vi.fn(), countUnreadByConversationId: vi.fn(), save: vi.fn(), markAsRead: vi.fn(), delete: vi.fn() };
     useCase = new ListMyConversationsUseCase(userRepo, convRepo, msgRepo);

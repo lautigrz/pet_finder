@@ -40,6 +40,7 @@ describe("LoginUserUseCase", () => {
     userRepository = {
       save: vi.fn(), findByEmail: vi.fn(), markVerified: vi.fn(),
       findByPublicId: vi.fn(), updateProfile: vi.fn(), findById: vi.fn(), updatePassword: vi.fn(),
+      findByIds: vi.fn(), deleteById: vi.fn(),
     };
     refreshTokenRepository = { save: vi.fn(), findByValue: vi.fn(), revoke: vi.fn(), revokeAllByUser: vi.fn() };
     passwordHasher = { hash: vi.fn(), verify: vi.fn() };

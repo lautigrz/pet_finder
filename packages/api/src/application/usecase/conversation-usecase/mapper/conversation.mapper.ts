@@ -27,6 +27,10 @@ export class ConversationOutputMapper {
                     : otherUser.id!,
                 isRead: m.isRead,
                 createdAt: m.createdAt,
+                images: m.image?.map(img => ({
+                    publicId: img.publicId,
+                    url: img.url
+                })) || []
             })),
         };
     }

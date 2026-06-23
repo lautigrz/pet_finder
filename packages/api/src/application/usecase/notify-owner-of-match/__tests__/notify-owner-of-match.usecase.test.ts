@@ -15,8 +15,10 @@ describe("NotifyOwnerOfMatchUseCase", () => {
 
   const notification: MatchNotification = {
     ownerPublicId: "owner-1",
+    rol: "dueno",
     lostReportPublicId: "lost-1",
     lostPetName: "Pupo",
+    lostPetImage: null,
     matchPublicId: "match-1",
     matchedReportPublicId: "sighting-1",
     matchedImage: null,

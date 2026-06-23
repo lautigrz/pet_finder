@@ -1,3 +1,4 @@
+import { MessageImage } from '../value-objects/image.vo';
 import { MessageText } from '../value-objects/message.vo';
 
 interface MessageProps {
@@ -9,6 +10,7 @@ interface MessageProps {
     text: MessageText;
     isRead: boolean;
     createdAt: Date;
+    images: MessageImage[] | [];
 }
 
 export class Message {
@@ -26,4 +28,6 @@ export class Message {
     get text() { return this.props.text; }
     get isRead() { return this.props.isRead; }
     get createdAt() { return this.props.createdAt; }
+    get image() { return this.props.images; }
+
 }

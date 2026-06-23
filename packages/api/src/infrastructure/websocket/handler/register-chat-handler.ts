@@ -7,17 +7,19 @@ import { PrismaUserRepository } from "@infrastructure/repository/PrismaUserRepos
 import { DomainError } from "@domain/errors/DomainError";
 import logger from "@infrastructure/logger/";
 import { ReadMessageUseCase } from "@application/usecase/message-usecase/read-message.usecase";
+import { ClaudinaryService } from "@infrastructure/storage/CloudinaryService";
 
 const conversationRepository = new PrismaConversationRepository(prisma);
 const messageRepository = new PrismaMessageRepository(prisma);
 const userRepository = new PrismaUserRepository();
-
+const cloudinaryService = new ClaudinaryService();
 export function registerChatHandlers(io: Server, socket: Socket) {
 
     const sendMessageUseCase = new SendMessageUseCase(
         conversationRepository,
         messageRepository,
-        userRepository
+        userRepository,
+        cloudinaryService
     );
 
     const readMessageUseCase = new ReadMessageUseCase(

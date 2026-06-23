@@ -8,6 +8,8 @@ import { UnauthorizedConversationError } from "@domain/errors/UnauthorizedConver
 import { MessageText } from "@domain/message/value-objects/message.vo";
 import { Message } from "@domain/message/aggregate/MessageAgregate";
 import { randomUUID } from "crypto";
+import { StorageService } from "@application/ports/StorageService";
+import { MessageImage } from "@domain/message/value-objects/image.vo";
 
 export class SendMessageUseCase {
 
@@ -15,6 +17,7 @@ export class SendMessageUseCase {
         private readonly conversationRepository: ConversationRepository,
         private readonly messageRepository: MessageRepository,
         private readonly userRepository: IUserRepository,
+        private readonly storageService: StorageService
     ) { }
 
 
@@ -32,8 +35,22 @@ export class SendMessageUseCase {
         const receiver = await this.userRepository.findById(otherUserId);
         if (!receiver) throw new UserNotFoundError();
 
-        const messageText = MessageText.create(request.text);
+        const messageText = MessageText.create(request.text ?? '', request.images && request.images.length > 0);
 
+        const images = (request.images
+            ? await Promise.all(
+                request.images.map(image =>
+                    this.storageService.upload(image, "messages")
+                )
+            )
+            : []
+        ).map(result =>
+            MessageImage.create({
+                imageId: null,
+                publicId: crypto.randomUUID(),
+                url: result.url,
+            })
+        );
         const message = Message.create({
             publicId: randomUUID(),
             text: messageText,
@@ -42,6 +59,7 @@ export class SendMessageUseCase {
             receiverId: receiver.internalId!,
             isRead: false,
             createdAt: new Date(),
+            images
         })
 
         const saved = await this.messageRepository.save(message);
@@ -53,6 +71,10 @@ export class SendMessageUseCase {
             receiverId: receiver.id,
             isRead: saved.isRead,
             createdAt: saved.createdAt,
+            images: saved.image.map(image => ({
+                url: image.url,
+                publicId: image.publicId,
+            })) || []
         }
 
     }

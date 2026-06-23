@@ -18,6 +18,7 @@ describe("VerifyEmailUseCase", () => {
     userRepository = {
       save: vi.fn(), findByEmail: vi.fn(), markVerified: vi.fn(),
       findByPublicId: vi.fn(), updateProfile: vi.fn(), findById: vi.fn(), updatePassword: vi.fn(),
+      findByIds: vi.fn(), deleteById: vi.fn(),
     };
     tokenRepository = { save: vi.fn(), findByValue: vi.fn(), markAsUsed: vi.fn() };
     useCase = new VerifyEmailUseCase(userRepository, tokenRepository);

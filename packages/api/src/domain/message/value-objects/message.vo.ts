@@ -5,13 +5,14 @@ export class MessageText {
         private readonly value: string,
     ) { }
 
-    static create(text: string): MessageText {
-        MessageText.validate(text);
+    static create(text: string, allowEmpty = false): MessageText {
+        MessageText.validate(text, allowEmpty);
         return new MessageText(text);
     }
 
-    private static validate(text: string): void {
+    private static validate(text: string, allowEmpty: boolean): void {
         if (text.trim().length === 0) {
+            if (allowEmpty) return;
             throw new InvalidMessageTextError('Message text cannot be empty');
         }
 
