@@ -25,26 +25,92 @@ import { NotifyNearbyLostOwnersUseCase } from '@application/usecase/notify-nearb
 import { PrismaNotificationPreferencesRepository } from '@infrastructure/repository/PrismaNotificationPreferencesRepository';
 import { PrismaDeviceTokenRepository } from '@infrastructure/repository/PrismaDeviceTokenRepository';
 import { createPushSender } from '@infrastructure/push/push-sender.factory';
+import { PrismaReportFollowerRepository } from "@infrastructure/repository/report/report-follower.repository";
+import { FollowReportUseCase } from "@application/usecase/report-usecase/follow-report.usecase";
+import { UnfollowReportUseCase } from "@application/usecase/report-usecase/unfollow-report.usecase";
+import { IsFollowingReportUseCase } from "@application/usecase/report-usecase/is-following-report.usecase";
+import { NotifyReportFollowersOfStatusChangeUseCase } from "@application/usecase/report-usecase/notify-report-followers-of-status-change.usecase";
+import { SendPushToUserUseCase } from "@application/usecase/send-push-to-user/send-push-to-user.usecase";
 
 
 const router = Router();
 const { jwtSecret, accessTtl } = readAuthConfig();
 const tokenSigner = new JwtTokenSigner(jwtSecret, accessTtl);
-const repository = new PrismaReportRepository(prisma)
-const petRepository = new PrismaPetRepository(prisma)
+const repository = new PrismaReportRepository(prisma);
+const reportFollowerRepository = new PrismaReportFollowerRepository(prisma);
+const petRepository = new PrismaPetRepository(prisma);
 const userRepository = new PrismaUserRepository();
 const storageService = new ClaudinaryService();
-const createReportUseCase = new CreateReportUseCase(repository, userRepository, petRepository, storageService)
-const getReportUseCase = new GetReportUseCase(repository, userRepository);
-const filteresReportsUseCase = new GetFilteredReportsUseCase(repository);
-const listUserReportsUseCase = new ListUserReportsUseCase(repository, petRepository);
-const updateStatusUseCase = new UpdateStatus(repository);
-const updateReportUseCase = new UpdateReportUseCase(repository, petRepository, storageService);
+
 const notificationPreferencesRepository = new PrismaNotificationPreferencesRepository();
 const deviceTokenRepository = new PrismaDeviceTokenRepository();
 const pushSender = createPushSender();
-const notifyNearbyLostOwnersUseCase = new NotifyNearbyLostOwnersUseCase(repository, notificationPreferencesRepository, deviceTokenRepository, pushSender);
-const createReportController = new CreateReportController(createReportUseCase, getReportUseCase, listUserReportsUseCase, filteresReportsUseCase, updateStatusUseCase, updateReportUseCase, notifyNearbyLostOwnersUseCase);
+
+const sendPushToUserUseCase = new SendPushToUserUseCase(
+    deviceTokenRepository,
+    pushSender,
+);
+
+const notifyReportFollowersOfStatusChangeUseCase =
+    new NotifyReportFollowersOfStatusChangeUseCase(
+        reportFollowerRepository,
+        sendPushToUserUseCase,
+    );
+
+const createReportUseCase = new CreateReportUseCase(
+    repository,
+    userRepository,
+    petRepository,
+    storageService,
+);
+
+const getReportUseCase = new GetReportUseCase(repository, userRepository);
+const filteresReportsUseCase = new GetFilteredReportsUseCase(repository);
+const listUserReportsUseCase = new ListUserReportsUseCase(repository, petRepository);
+
+const updateStatusUseCase = new UpdateStatus(
+    repository,
+    notifyReportFollowersOfStatusChangeUseCase,
+);
+
+const updateReportUseCase = new UpdateReportUseCase(
+    repository,
+    petRepository,
+    storageService,
+);
+
+const notifyNearbyLostOwnersUseCase = new NotifyNearbyLostOwnersUseCase(
+    repository,
+    notificationPreferencesRepository,
+    deviceTokenRepository,
+    pushSender,
+);
+
+const followReportUseCase = new FollowReportUseCase(
+    repository,
+    reportFollowerRepository,
+);
+
+const unfollowReportUseCase = new UnfollowReportUseCase(
+    reportFollowerRepository,
+);
+
+const isFollowingReportUseCase = new IsFollowingReportUseCase(
+    reportFollowerRepository,
+);
+
+const createReportController = new CreateReportController(
+    createReportUseCase,
+    getReportUseCase,
+    listUserReportsUseCase,
+    filteresReportsUseCase,
+    updateStatusUseCase,
+    updateReportUseCase,
+    notifyNearbyLostOwnersUseCase,
+    followReportUseCase,
+    unfollowReportUseCase,
+    isFollowingReportUseCase,
+);
 
 
 
@@ -54,4 +120,8 @@ router.get('/filter', requireAuth(tokenSigner), validateRequest(getFilteredRepor
 router.get('/:publicId', createReportController.getByPublicId)
 router.patch('/status/:publicId', requireAuth(tokenSigner), validateRequest(updateStatusReportSchema), createReportController.updateStatus)
 router.patch('/:publicId', requireAuth(tokenSigner), upload.array('photos', 4), validateRequest(updateReportSchema), createReportController.update);
+router.post('/:publicId/follow',requireAuth(tokenSigner),createReportController.follow,);
+router.delete('/:publicId/follow',requireAuth(tokenSigner),createReportController.unfollow,);
+router.get('/:publicId/follow',requireAuth(tokenSigner),createReportController.isFollowing,
+);
 export const createReportRoute = router

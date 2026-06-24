@@ -16,6 +16,9 @@ import { NotifyNearbyLostOwnersUseCase } from "@application/usecase/notify-nearb
 import { asyncHandler } from "@presentation/handler/async-handler";
 import { UserNotFoundError } from "@domain/errors/UserNotFoundError";
 import logger from "@infrastructure/logger";
+import { FollowReportUseCase } from "@application/usecase/report-usecase/follow-report.usecase";
+import { UnfollowReportUseCase } from "@application/usecase/report-usecase/unfollow-report.usecase";
+import { IsFollowingReportUseCase } from "@application/usecase/report-usecase/is-following-report.usecase";
 
 export class CreateReportController {
     constructor(
@@ -25,7 +28,10 @@ export class CreateReportController {
         private filteresUseCase: GetFilteredReportsUseCase,
         private updateStatusUseCase: UpdateStatus,
         private updateReportUseCase: UpdateReportUseCase,
-        private notifyNearbyLostOwnersUseCase: NotifyNearbyLostOwnersUseCase
+        private notifyNearbyLostOwnersUseCase: NotifyNearbyLostOwnersUseCase,
+        private followReportUseCase: FollowReportUseCase,
+        private unfollowReportUseCase: UnfollowReportUseCase,
+        private isFollowingReportUseCase: IsFollowingReportUseCase,
     ) { }
 
     create = asyncHandler(async (req: Request, res: Response): Promise<void> => {
@@ -153,5 +159,81 @@ export class CreateReportController {
         logger.info('Report updated successfully', { publicId });
         res.sendStatus(204);
 
+    });
+
+    follow = asyncHandler(async (req: Request, res: Response): Promise<void> => {
+        const userPublicId = req.auth?.sub;
+        const reportPublicId = req.params.publicId;
+
+        if (typeof userPublicId !== "string") {
+            res.status(401).json({ error: "Unauthorized" });
+            return;
+        }
+
+        if (typeof reportPublicId !== "string") {
+            res.status(400).json({ error: "Report publicId is required" });
+            return;
+        }
+
+        await this.followReportUseCase.execute({
+            userPublicId,
+            reportPublicId,
+        });
+
+        logger.info("User followed report successfully", {
+            userPublicId,
+            reportPublicId,
+        });
+
+        res.sendStatus(204);
+    });
+
+    unfollow = asyncHandler(async (req: Request, res: Response): Promise<void> => {
+        const userPublicId = req.auth?.sub;
+        const reportPublicId = req.params.publicId;
+
+        if (typeof userPublicId !== "string") {
+            res.status(401).json({ error: "Unauthorized" });
+            return;
+        }
+
+        if (typeof reportPublicId !== "string") {
+            res.status(400).json({ error: "Report publicId is required" });
+            return;
+        }
+
+        await this.unfollowReportUseCase.execute({
+            userPublicId,
+            reportPublicId,
+        });
+
+        logger.info("User unfollowed report successfully", {
+            userPublicId,
+            reportPublicId,
+        });
+
+        res.sendStatus(204);
+    });
+
+    isFollowing = asyncHandler(async (req: Request, res: Response): Promise<void> => {
+        const userPublicId = req.auth?.sub;
+        const reportPublicId = req.params.publicId;
+
+        if (typeof userPublicId !== "string") {
+            res.status(401).json({ error: "Unauthorized" });
+            return;
+        }
+
+        if (typeof reportPublicId !== "string") {
+            res.status(400).json({ error: "Report publicId is required" });
+            return;
+        }
+
+        const result = await this.isFollowingReportUseCase.execute({
+            userPublicId,
+            reportPublicId,
+        });
+
+        res.status(200).json(result);
     });
 }
