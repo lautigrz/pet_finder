@@ -259,9 +259,9 @@ export class PrismaReportRepository implements ReportRepository {
         }
 
         if (filters?.createdFrom || filters?.createdTo) {
-            where.created_at = {
-                ...(filters.createdFrom && { gte: new Date(`${filters.createdFrom}T00:00:00.000Z`) }),
-                ...(filters.createdTo && { lte: new Date(`${filters.createdTo}T23:59:59.999Z`) })
+            where.occurred_at = {
+                ...(filters.createdFrom && { gte: new Date(`${filters.createdFrom}T00:00:00.000-03:00`) }),
+                ...(filters.createdTo && { lte: new Date(`${filters.createdTo}T23:59:59.999-03:00`) })
             }
         }
 
@@ -299,7 +299,7 @@ export class PrismaReportRepository implements ReportRepository {
         }
 
         if (query.createdFrom || query.createdTo) {
-            where.created_at = {
+            where.occurred_at = {
                 ...(query.createdFrom && { gte: query.createdFrom }),
                 ...(query.createdTo && { lte: query.createdTo })
             }
