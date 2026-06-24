@@ -7,6 +7,7 @@ import { ReportStatus } from "@domain/report/types/report.status";
 import { Location } from "@domain/report/value-objects/location.vo";
 import { LostReportDetails } from "@domain/report/value-objects/lost-report-details.vo";
 import { InvalidStatusTransitionError } from "@domain/errors/InvalidStatusTransitionError";
+import { NotifyReportFollowersOfStatusChangeUseCase } from "../notify-report-followers-of-status-change.usecase";
 
 const validLocation = Location.create({
   address: "Av. Corrientes 1234",
@@ -50,6 +51,7 @@ const createFakeClosedReport = () => {
 
 describe("UpdateStatus UseCase", () => {
   let reportRepository: ReportRepository;
+  let notifyReportFollowersOfStatusChange: NotifyReportFollowersOfStatusChangeUseCase;
   let useCase: UpdateStatus;
 
   beforeEach(() => {
@@ -60,40 +62,92 @@ describe("UpdateStatus UseCase", () => {
       findByUserPublicId: vi.fn(),
       findIdsByQuery: vi.fn(),
       findByIds: vi.fn(),
-      update: vi.fn(),
+      findDetailsByIds: vi.fn(),
+      update: vi.fn().mockResolvedValue(undefined),
+      findImagesByReportId: vi.fn(),
+      updateFields: vi.fn(),
     } as unknown as ReportRepository;
 
-    useCase = new UpdateStatus(reportRepository);
+    notifyReportFollowersOfStatusChange = {
+      execute: vi.fn().mockResolvedValue(undefined),
+    } as unknown as NotifyReportFollowersOfStatusChangeUseCase;
+
+    useCase = new UpdateStatus(
+      reportRepository,
+      notifyReportFollowersOfStatusChange,
+    );
   });
 
   it("debería lanzar un error si el reporte no existe", async () => {
     vi.mocked(reportRepository.findByPublicId).mockResolvedValue(null);
 
     await expect(
-      useCase.execute({ publicId: "report-uuid", status: ReportStatus.RESOLVED })
+      useCase.execute({
+        publicId: "report-uuid",
+        status: ReportStatus.RESOLVED,
+      }),
     ).rejects.toThrow("Report not found");
 
     expect(reportRepository.update).not.toHaveBeenCalled();
+    expect(notifyReportFollowersOfStatusChange.execute).not.toHaveBeenCalled();
   });
 
   it("debería actualizar el estado a RESOLVED correctamente y guardarlo en el repositorio", async () => {
     const report = createFakeActiveReport();
     vi.mocked(reportRepository.findByPublicId).mockResolvedValue(report);
 
-    await useCase.execute({ publicId: "report-uuid", status: ReportStatus.RESOLVED });
+    await useCase.execute({
+      publicId: "report-uuid",
+      status: ReportStatus.RESOLVED,
+    });
 
     expect(report.status).toBe(ReportStatus.RESOLVED);
     expect(reportRepository.update).toHaveBeenCalledWith(report);
+  });
+
+  it("debería notificar a los seguidores cuando el reporte pasa a RESOLVED", async () => {
+    const report = createFakeActiveReport();
+    vi.mocked(reportRepository.findByPublicId).mockResolvedValue(report);
+
+    await useCase.execute({
+      publicId: "report-uuid",
+      status: ReportStatus.RESOLVED,
+    });
+
+    expect(notifyReportFollowersOfStatusChange.execute).toHaveBeenCalledWith({
+      reportPublicId: "report-uuid",
+      ownerPublicId: "user-pub-id",
+      status: ReportStatus.RESOLVED,
+    });
   });
 
   it("debería actualizar el estado a CLOSED correctamente y guardarlo en el repositorio", async () => {
     const report = createFakeActiveReport();
     vi.mocked(reportRepository.findByPublicId).mockResolvedValue(report);
 
-    await useCase.execute({ publicId: "report-uuid", status: ReportStatus.CLOSED });
+    await useCase.execute({
+      publicId: "report-uuid",
+      status: ReportStatus.CLOSED,
+    });
 
     expect(report.status).toBe(ReportStatus.CLOSED);
     expect(reportRepository.update).toHaveBeenCalledWith(report);
+  });
+
+  it("debería notificar a los seguidores cuando el reporte pasa a CLOSED", async () => {
+    const report = createFakeActiveReport();
+    vi.mocked(reportRepository.findByPublicId).mockResolvedValue(report);
+
+    await useCase.execute({
+      publicId: "report-uuid",
+      status: ReportStatus.CLOSED,
+    });
+
+    expect(notifyReportFollowersOfStatusChange.execute).toHaveBeenCalledWith({
+      reportPublicId: "report-uuid",
+      ownerPublicId: "user-pub-id",
+      status: ReportStatus.CLOSED,
+    });
   });
 
   it("debería propagar errores de transición de estado inválidos", async () => {
@@ -101,9 +155,28 @@ describe("UpdateStatus UseCase", () => {
     vi.mocked(reportRepository.findByPublicId).mockResolvedValue(report);
 
     await expect(
-      useCase.execute({ publicId: "report-uuid", status: ReportStatus.RESOLVED })
+      useCase.execute({
+        publicId: "report-uuid",
+        status: ReportStatus.RESOLVED,
+      }),
     ).rejects.toThrow(InvalidStatusTransitionError);
 
     expect(reportRepository.update).not.toHaveBeenCalled();
+    expect(notifyReportFollowersOfStatusChange.execute).not.toHaveBeenCalled();
+  });
+
+  it("no debería notificar si falla el update del repositorio", async () => {
+    const report = createFakeActiveReport();
+    vi.mocked(reportRepository.findByPublicId).mockResolvedValue(report);
+    vi.mocked(reportRepository.update).mockRejectedValue(new Error("DB error"));
+
+    await expect(
+      useCase.execute({
+        publicId: "report-uuid",
+        status: ReportStatus.RESOLVED,
+      }),
+    ).rejects.toThrow("DB error");
+
+    expect(notifyReportFollowersOfStatusChange.execute).not.toHaveBeenCalled();
   });
 });

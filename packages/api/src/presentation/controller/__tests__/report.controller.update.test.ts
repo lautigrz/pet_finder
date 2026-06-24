@@ -7,6 +7,10 @@ import { ListUserReportsUseCase } from '@application/usecase/report-usecase/list
 import { GetFilteredReportsUseCase } from '@application/usecase/report-usecase/get-filter-reports.usecase';
 import { UpdateStatus } from '@application/usecase/report-usecase/update-status-report';
 import { UpdateReportUseCase } from '@application/usecase/report-usecase/update-report.usecase';
+import { FollowReportUseCase } from '@application/usecase/report-usecase/follow-report.usecase';
+import { UnfollowReportUseCase } from '@application/usecase/report-usecase/unfollow-report.usecase';
+import { IsFollowingReportUseCase } from '@application/usecase/report-usecase/is-following-report.usecase';
+import { NotifyNearbyLostOwnersUseCase } from '@application/usecase/notify-nearby-lost-owners/notify-nearby-lost-owners.usecase';
 import { ReportNotFoundError } from '@domain/errors/ReportNotFoundError';
 import { UnauthorizedReportEditError } from '@domain/errors/UnauthorizedReportEditError';
 import { InvalidFieldError } from '@application/errors/errors';
@@ -38,7 +42,6 @@ const validUpdateBody = {
   occurredAt: new Date('2024-05-01T10:00:00.000Z'),
 };
 
-
 describe('CreateReportController — update', () => {
   let updateReportUseCase: UpdateReportUseCase;
   let controller: CreateReportController;
@@ -48,17 +51,55 @@ describe('CreateReportController — update', () => {
       execute: vi.fn().mockResolvedValue(undefined),
     } as unknown as UpdateReportUseCase;
 
+    const createReportUseCase = {
+      execute: vi.fn(),
+    } as unknown as CreateReportUseCase;
+
+    const getReportUseCase = {
+      execute: vi.fn(),
+    } as unknown as GetReportUseCase;
+
+    const listUserReportsUseCase = {
+      execute: vi.fn(),
+    } as unknown as ListUserReportsUseCase;
+
+    const filteredReportsUseCase = {
+      execute: vi.fn(),
+    } as unknown as GetFilteredReportsUseCase;
+
+    const updateStatusUseCase = {
+      execute: vi.fn(),
+    } as unknown as UpdateStatus;
+
+    const notifyNearbyLostOwnersUseCase = {
+      execute: vi.fn().mockResolvedValue(undefined),
+    } as unknown as NotifyNearbyLostOwnersUseCase;
+
+    const followReportUseCase = {
+      execute: vi.fn().mockResolvedValue(undefined),
+    } as unknown as FollowReportUseCase;
+
+    const unfollowReportUseCase = {
+      execute: vi.fn().mockResolvedValue(undefined),
+    } as unknown as UnfollowReportUseCase;
+
+    const isFollowingReportUseCase = {
+      execute: vi.fn().mockResolvedValue({ isFollowing: false }),
+    } as unknown as IsFollowingReportUseCase;
+
     controller = new CreateReportController(
-      { execute: vi.fn() } as unknown as CreateReportUseCase,
-      { execute: vi.fn() } as unknown as GetReportUseCase,
-      { execute: vi.fn() } as unknown as ListUserReportsUseCase,
-      { execute: vi.fn() } as unknown as GetFilteredReportsUseCase,
-      { execute: vi.fn() } as unknown as UpdateStatus,
+      createReportUseCase,
+      getReportUseCase,
+      listUserReportsUseCase,
+      filteredReportsUseCase,
+      updateStatusUseCase,
       updateReportUseCase,
-      { execute: vi.fn().mockResolvedValue(undefined) } as any,
+      notifyNearbyLostOwnersUseCase,
+      followReportUseCase,
+      unfollowReportUseCase,
+      isFollowingReportUseCase,
     );
   });
-
 
   it('retorna 204 cuando la actualización es exitosa', async () => {
     const req = buildUpdateReq(validUpdateBody, REPORT_ID);
@@ -95,7 +136,6 @@ describe('CreateReportController — update', () => {
     );
   });
 
-
   it('retorna 401 si no hay usuario autenticado', async () => {
     const req: Partial<Request> = {
       validated: { body: validUpdateBody, params: { publicId: REPORT_ID } },
@@ -111,7 +151,6 @@ describe('CreateReportController — update', () => {
     expect(res.status).toHaveBeenCalledWith(401);
     expect(updateReportUseCase.execute).not.toHaveBeenCalled();
   });
-
 
   it('retorna 404 si el reporte no existe', async () => {
     const err = new ReportNotFoundError(REPORT_ID);
@@ -150,7 +189,9 @@ describe('CreateReportController — update', () => {
   });
 
   it('retorna 500 si ocurre un error inesperado', async () => {
-    vi.mocked(updateReportUseCase.execute).mockRejectedValue(new Error('DB crash'));
+    vi.mocked(updateReportUseCase.execute).mockRejectedValue(
+      new Error('DB crash'),
+    );
 
     const req = buildUpdateReq(validUpdateBody, REPORT_ID);
     const res = buildRes();

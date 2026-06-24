@@ -6,6 +6,11 @@ import { GetReportUseCase } from "@application/usecase/report-usecase/get-report
 import { ListUserReportsUseCase } from "@application/usecase/report-usecase/list-user-reports.usecase";
 import { GetFilteredReportsUseCase } from "@application/usecase/report-usecase/get-filter-reports.usecase";
 import { UpdateStatus } from "@application/usecase/report-usecase/update-status-report";
+import { UpdateReportUseCase } from "@application/usecase/report-usecase/update-report.usecase";
+import { FollowReportUseCase } from "@application/usecase/report-usecase/follow-report.usecase";
+import { UnfollowReportUseCase } from "@application/usecase/report-usecase/unfollow-report.usecase";
+import { IsFollowingReportUseCase } from "@application/usecase/report-usecase/is-following-report.usecase";
+import { NotifyNearbyLostOwnersUseCase } from "@application/usecase/notify-nearby-lost-owners/notify-nearby-lost-owners.usecase";
 import { ValidationError } from "../../errors/ValidationError";
 import { ReportType } from "@domain/report/types/report.type";
 import { ReportStatus } from "@domain/report/types/report.status";
@@ -35,7 +40,7 @@ const buildRes = (): Partial<Response> => ({
 
 const buildReq = (
   body: unknown,
-  params?: Record<string, string>
+  params?: Record<string, string>,
 ): Partial<Request> => ({
   body,
   validated: { body, params: params ?? {} },
@@ -45,9 +50,29 @@ const buildReq = (
   auth: {
     sub: "user-public-id",
     email: "test@mail.com",
-    isVerified: true
+    isVerified: true,
   },
   is: vi.fn().mockReturnValue(false),
+});
+
+const buildAuthenticatedParamReq = (
+  publicId: string | undefined,
+  sub = "user-public-id",
+): Partial<Request> => ({
+  params: publicId ? { publicId } : {},
+  validated: {
+    params: publicId ? { publicId } : {},
+    body: {},
+  },
+  auth: {
+    sub,
+    email: "test@mail.com",
+    isVerified: true,
+  },
+  originalUrl: publicId
+    ? `/api/reports/${publicId}/follow`
+    : "/api/reports/follow",
+  method: "POST",
 });
 
 const validLostBody = {
@@ -89,7 +114,13 @@ const fakeReportOutput = {
   status: ReportStatus.ACTIVE,
   description: "",
   location: { address: "Parque", latitude: 0, longitude: 0 },
-  details: { animalType: AnimalType.DOG, hasIdCollar: false, isInTransit: false, color: "brown", images: [{ url: "https://image1.com" }] },
+  details: {
+    animalType: AnimalType.DOG,
+    hasIdCollar: false,
+    isInTransit: false,
+    color: "brown",
+    images: [{ url: "https://image1.com" }],
+  },
   occurredAt: new Date(),
   createdAt: new Date(),
   updatedAt: null,
@@ -106,7 +137,11 @@ describe("CreateReportController", () => {
   let listUserReportsUseCase: ListUserReportsUseCase;
   let filteresUseCase: GetFilteredReportsUseCase;
   let updateStatusUseCase: UpdateStatus;
-  let updateReportUseCase: any;
+  let updateReportUseCase: UpdateReportUseCase;
+  let notifyNearbyLostOwnersUseCase: NotifyNearbyLostOwnersUseCase;
+  let followReportUseCase: FollowReportUseCase;
+  let unfollowReportUseCase: UnfollowReportUseCase;
+  let isFollowingReportUseCase: IsFollowingReportUseCase;
   let controller: CreateReportController;
 
   beforeEach(() => {
@@ -132,7 +167,23 @@ describe("CreateReportController", () => {
 
     updateReportUseCase = {
       execute: vi.fn().mockResolvedValue(undefined),
-    } as any;
+    } as unknown as UpdateReportUseCase;
+
+    notifyNearbyLostOwnersUseCase = {
+      execute: vi.fn().mockResolvedValue(undefined),
+    } as unknown as NotifyNearbyLostOwnersUseCase;
+
+    followReportUseCase = {
+      execute: vi.fn().mockResolvedValue(undefined),
+    } as unknown as FollowReportUseCase;
+
+    unfollowReportUseCase = {
+      execute: vi.fn().mockResolvedValue(undefined),
+    } as unknown as UnfollowReportUseCase;
+
+    isFollowingReportUseCase = {
+      execute: vi.fn().mockResolvedValue({ isFollowing: true }),
+    } as unknown as IsFollowingReportUseCase;
 
     controller = new CreateReportController(
       createReportUseCase,
@@ -141,7 +192,10 @@ describe("CreateReportController", () => {
       filteresUseCase,
       updateStatusUseCase,
       updateReportUseCase,
-      { execute: vi.fn().mockResolvedValue(undefined) } as any
+      notifyNearbyLostOwnersUseCase,
+      followReportUseCase,
+      unfollowReportUseCase,
+      isFollowingReportUseCase,
     );
   });
 
@@ -181,7 +235,11 @@ describe("CreateReportController", () => {
       const res = buildRes();
       const next = vi.fn();
 
-      validateRequest(createReportRequestSchema)(req as Request, res as Response, next);
+      validateRequest(createReportRequestSchema)(
+        req as Request,
+        res as Response,
+        next,
+      );
 
       expect(res.status).toHaveBeenCalledWith(400);
       expect(next).not.toHaveBeenCalled();
@@ -192,7 +250,11 @@ describe("CreateReportController", () => {
       const res = buildRes();
       const next = vi.fn();
 
-      validateRequest(createReportRequestSchema)(req as Request, res as Response, next);
+      validateRequest(createReportRequestSchema)(
+        req as Request,
+        res as Response,
+        next,
+      );
 
       expect(res.status).toHaveBeenCalledWith(400);
       expect(next).not.toHaveBeenCalled();
@@ -201,14 +263,35 @@ describe("CreateReportController", () => {
 
   describe("create — errores de dominio (400)", () => {
     const domainErrors = [
-      { name: "InvalidCoordinatesError", error: new InvalidCoordinatesError("bad lat") },
+      {
+        name: "InvalidCoordinatesError",
+        error: new InvalidCoordinatesError("bad lat"),
+      },
       { name: "InvalidLocationError", error: new InvalidLocationError() },
-      { name: "InvalidReportDescriptionError", error: new InvalidReportDescriptionError("empty") },
-      { name: "InvalidStatusTransitionError", error: new InvalidStatusTransitionError("active", "active") },
-      { name: "InvalidReportDetailsError", error: new InvalidReportDetailsError("lost", "LostReportDetails") },
-      { name: "InvalidFieldError", error: new InvalidFieldError("occurredAt", "future") },
-      { name: "InvalidReportTypeError", error: new InvalidReportTypeError("bad-type") },
-      { name: "MappingError", error: new MappingError("mapping failed") },
+      {
+        name: "InvalidReportDescriptionError",
+        error: new InvalidReportDescriptionError("empty"),
+      },
+      {
+        name: "InvalidStatusTransitionError",
+        error: new InvalidStatusTransitionError("active", "active"),
+      },
+      {
+        name: "InvalidReportDetailsError",
+        error: new InvalidReportDetailsError("lost", "LostReportDetails"),
+      },
+      {
+        name: "InvalidFieldError",
+        error: new InvalidFieldError("occurredAt", "future"),
+      },
+      {
+        name: "InvalidReportTypeError",
+        error: new InvalidReportTypeError("bad-type"),
+      },
+      {
+        name: "MappingError",
+        error: new MappingError("mapping failed"),
+      },
     ];
 
     for (const { name, error } of domainErrors) {
@@ -217,6 +300,7 @@ describe("CreateReportController", () => {
 
         const req = buildReq(validLostBody);
         const res = buildRes();
+
         await invoke(controller.create, req, res);
 
         expect(res.status).toHaveBeenCalledWith(400);
@@ -231,6 +315,7 @@ describe("CreateReportController", () => {
 
       const req = buildReq(validLostBody);
       const res = buildRes();
+
       await invoke(controller.create, req, res);
 
       expect(res.status).toHaveBeenCalledWith(404);
@@ -239,10 +324,13 @@ describe("CreateReportController", () => {
 
   describe("create — error inesperado (500)", () => {
     it("retorna 500 si ocurre un error no controlado", async () => {
-      vi.mocked(createReportUseCase.execute).mockRejectedValue(new Error("Unknown DB error"));
+      vi.mocked(createReportUseCase.execute).mockRejectedValue(
+        new Error("Unknown DB error"),
+      );
 
       const req = buildReq(validLostBody);
       const res = buildRes();
+
       await invoke(controller.create, req, res);
 
       expect(res.status).toHaveBeenCalledWith(500);
@@ -257,6 +345,7 @@ describe("CreateReportController", () => {
 
       const req = buildReq({}, { publicId: "report-uuid" });
       const res = buildRes();
+
       await invoke(controller.getByPublicId, req, res);
 
       expect(res.status).toHaveBeenCalledWith(200);
@@ -271,6 +360,7 @@ describe("CreateReportController", () => {
 
       const req = buildReq({}, { publicId: "non-existent-uuid" });
       const res = buildRes();
+
       await invoke(controller.getByPublicId, req, res);
 
       expect(res.status).toHaveBeenCalledWith(404);
@@ -279,10 +369,13 @@ describe("CreateReportController", () => {
 
   describe("getByPublicId — error inesperado", () => {
     it("retorna 500 si ocurre un error no controlado", async () => {
-      vi.mocked(getReportUseCase.execute).mockRejectedValue(new Error("DB failure"));
+      vi.mocked(getReportUseCase.execute).mockRejectedValue(
+        new Error("DB failure"),
+      );
 
       const req = buildReq({}, { publicId: "any-uuid" });
       const res = buildRes();
+
       await invoke(controller.getByPublicId, req, res);
 
       expect(res.status).toHaveBeenCalledWith(500);
@@ -302,13 +395,13 @@ describe("CreateReportController", () => {
     },
   });
 
-
   describe("list — query válida", () => {
     it("retorna 200 con la lista paginada del usuario autenticado", async () => {
       const req = buildListReq({ page: 1, limit: 10 });
-
       const res = buildRes();
+
       await invoke(controller.list, req, res);
+
       expect(res.status).toHaveBeenCalledWith(200);
       expect(res.json).toHaveBeenCalledWith(fakeListOutput);
       expect(listUserReportsUseCase.execute).toHaveBeenCalledWith(
@@ -319,7 +412,6 @@ describe("CreateReportController", () => {
     });
 
     it("pasa los filtros y la búsqueda al use case", async () => {
-      // Given
       const req = buildListReq({
         page: 1,
         limit: 10,
@@ -331,10 +423,8 @@ describe("CreateReportController", () => {
 
       const res = buildRes();
 
-      // When
       await invoke(controller.list, req, res);
 
-      // Then
       expect(listUserReportsUseCase.execute).toHaveBeenCalledWith(
         "user-public-id",
         {
@@ -349,167 +439,393 @@ describe("CreateReportController", () => {
         }),
       );
     });
+  });
 
+  describe("list — query inválida", () => {
+    it("retorna 400 si page es menor a 1", async () => {
+      const req = { query: { page: "0" } } as unknown as Request;
+      const res = buildRes();
+      const next = vi.fn();
 
-    describe("list — query inválida", () => {
-      it("retorna 400 si page es menor a 1", async () => {
-        const req = { query: { page: "0" } } as unknown as Request;
-        const res = buildRes();
-        const next = vi.fn();
+      validateRequest(listUserReportsSchema)(req, res as Response, next);
 
-        validateRequest(listUserReportsSchema)(req, res as Response, next);
+      expect(res.status).toHaveBeenCalledWith(400);
+      expect(next).not.toHaveBeenCalled();
+      expect(listUserReportsUseCase.execute).not.toHaveBeenCalled();
+    });
+  });
 
-        expect(res.status).toHaveBeenCalledWith(400);
-        expect(next).not.toHaveBeenCalled();
-        expect(listUserReportsUseCase.execute).not.toHaveBeenCalled();
+  describe("list — PetNotFoundError (404)", () => {
+    it("retorna 404 si un reporte LOST referencia una mascota inexistente", async () => {
+      const petErr = new PetNotFoundError(99);
+      vi.mocked(listUserReportsUseCase.execute).mockRejectedValue(petErr);
+
+      const req = buildListReq({ page: 1, limit: 10 });
+      const res = buildRes();
+
+      await invoke(controller.list, req, res);
+
+      expect(res.status).toHaveBeenCalledWith(404);
+    });
+
+    it("retorna 500 si ocurre un error no controlado", async () => {
+      vi.mocked(listUserReportsUseCase.execute).mockRejectedValue(
+        new Error("DB failure"),
+      );
+
+      const req = buildListReq({ page: 1, limit: 10 });
+      const res = buildRes();
+
+      await invoke(controller.list, req, res);
+
+      expect(res.status).toHaveBeenCalledWith(500);
+    });
+  });
+
+  // ─── getFilteres ──────────────────────────────────────────────────────────
+
+  describe("getFilteres", () => {
+    const buildFilterReq = (
+      query: Record<string, string>,
+    ): Partial<Request> => ({
+      validated: { query },
+      originalUrl: "/api/reports/filter",
+      method: "GET",
+    });
+
+    it("pasa q al caso de uso de reportes filtrados", async () => {
+      const req = buildFilterReq({
+        q: "perrro marron",
+      });
+
+      const res = buildRes();
+
+      await invoke(controller.getFilteres, req, res);
+
+      expect(filteresUseCase.execute).toHaveBeenCalledWith({
+        q: "perrro marron",
+      });
+
+      expect(res.status).toHaveBeenCalledWith(200);
+    });
+
+    it("retorna 200 con la lista de reportes filtrados", async () => {
+      vi.mocked(filteresUseCase.execute).mockResolvedValue([fakeReportOutput]);
+
+      const req = buildFilterReq({ reportType: "LOST" });
+      const res = buildRes();
+
+      await invoke(controller.getFilteres, req, res);
+
+      expect(res.status).toHaveBeenCalledWith(200);
+      expect(res.json).toHaveBeenCalledWith([fakeReportOutput]);
+      expect(filteresUseCase.execute).toHaveBeenCalledWith({
+        reportType: "LOST",
       });
     });
 
-    describe("list — PetNotFoundError (404)", () => {
-      it("retorna 404 si un reporte LOST referencia una mascota inexistente", async () => {
-        const petErr = new PetNotFoundError(99);
-        vi.mocked(listUserReportsUseCase.execute).mockRejectedValue(petErr);
+    it("retorna 400 si el caso de uso lanza ValidationError", async () => {
+      const validationErr = new ValidationError(["ReportType inválido"]);
+      vi.mocked(filteresUseCase.execute).mockRejectedValue(validationErr);
 
-        const req = buildListReq({ page: 1, limit: 10 });
-        const res = buildRes();
-        await invoke(controller.list, req, res);
+      const req = buildFilterReq({ reportType: "INVALID" });
+      const res = buildRes();
 
-        expect(res.status).toHaveBeenCalledWith(404);
-      });
+      await invoke(controller.getFilteres, req, res);
 
-      it("retorna 500 si ocurre un error no controlado", async () => {
-        vi.mocked(listUserReportsUseCase.execute).mockRejectedValue(new Error("DB failure"));
+      expect(res.status).toHaveBeenCalledWith(400);
+    });
 
-        const req = buildListReq({ page: 1, limit: 10 });
-        const res = buildRes();
-        await invoke(controller.list, req, res);
+    it("retorna 400 si el caso de uso lanza MappingError", async () => {
+      const mappingErr = new MappingError("Error de mapeo");
+      vi.mocked(filteresUseCase.execute).mockRejectedValue(mappingErr);
 
-        expect(res.status).toHaveBeenCalledWith(500);
+      const req = buildFilterReq({ reportType: "LOST" });
+      const res = buildRes();
+
+      await invoke(controller.getFilteres, req, res);
+
+      expect(res.status).toHaveBeenCalledWith(400);
+    });
+
+    it("retorna 500 si ocurre un error no controlado", async () => {
+      vi.mocked(filteresUseCase.execute).mockRejectedValue(
+        new Error("Unexpected DB fail"),
+      );
+
+      const req = buildFilterReq({ reportType: "LOST" });
+      const res = buildRes();
+
+      await invoke(controller.getFilteres, req, res);
+
+      expect(res.status).toHaveBeenCalledWith(500);
+    });
+  });
+
+  // ─── updateStatus ─────────────────────────────────────────────────────────
+
+  describe("updateStatus", () => {
+    const buildUpdateStatusReq = (
+      publicId: string | undefined,
+      status: string,
+    ): Partial<Request> => ({
+      validated: {
+        params: { publicId },
+        body: { status },
+      },
+      originalUrl: `/api/reports/status/${publicId}`,
+      method: "PATCH",
+    });
+
+    it("retorna 204 cuando el estado se actualiza con éxito", async () => {
+      const req = buildUpdateStatusReq("report-uuid", "RESOLVED");
+      const res = buildRes();
+
+      vi.mocked(updateStatusUseCase.execute).mockResolvedValue(undefined);
+
+      await invoke(controller.updateStatus, req, res);
+
+      expect(res.sendStatus).toHaveBeenCalledWith(204);
+      expect(updateStatusUseCase.execute).toHaveBeenCalledWith({
+        publicId: "report-uuid",
+        status: "RESOLVED",
       });
     });
 
-    // ─── getFilteres ──────────────────────────────────────────────────────────
+    it("retorna 401 si falta publicId en los parámetros", async () => {
+      const req = buildUpdateStatusReq(undefined, "RESOLVED");
+      const res = buildRes();
 
-    describe("getFilteres", () => {
-      const buildFilterReq = (query: Record<string, string>): Partial<Request> => ({
-        validated: { query },
-        originalUrl: "/api/reports/filter",
+      await invoke(controller.updateStatus, req, res);
+
+      expect(res.status).toHaveBeenCalledWith(401);
+      expect(res.json).toHaveBeenCalledWith({ error: "Unauthorized" });
+      expect(updateStatusUseCase.execute).not.toHaveBeenCalled();
+    });
+
+    it("propaga errores del caso de uso", async () => {
+      const req = buildUpdateStatusReq("report-uuid", "RESOLVED");
+      const res = buildRes();
+
+      vi.mocked(updateStatusUseCase.execute).mockRejectedValue(
+        new Error("Report not found"),
+      );
+
+      await invoke(controller.updateStatus, req, res);
+
+      expect(res.status).toHaveBeenCalledWith(500);
+    });
+  });
+
+  // ─── follow ───────────────────────────────────────────────────────────────
+
+  describe("follow", () => {
+    it("retorna 204 cuando el usuario sigue un reporte correctamente", async () => {
+      const req = buildAuthenticatedParamReq("report-uuid");
+      const res = buildRes();
+
+      await invoke(controller.follow, req, res);
+
+      expect(followReportUseCase.execute).toHaveBeenCalledWith({
+        userPublicId: "user-public-id",
+        reportPublicId: "report-uuid",
+      });
+      expect(res.sendStatus).toHaveBeenCalledWith(204);
+    });
+
+    it("retorna 401 si no hay usuario autenticado", async () => {
+      const req: Partial<Request> = {
+        params: { publicId: "report-uuid" },
+        auth: undefined,
+        originalUrl: "/api/reports/report-uuid/follow",
+        method: "POST",
+      };
+
+      const res = buildRes();
+
+      await invoke(controller.follow, req, res);
+
+      expect(res.status).toHaveBeenCalledWith(401);
+      expect(res.json).toHaveBeenCalledWith({ error: "Unauthorized" });
+      expect(followReportUseCase.execute).not.toHaveBeenCalled();
+    });
+
+    it("retorna 400 si falta publicId", async () => {
+      const req = buildAuthenticatedParamReq(undefined);
+      const res = buildRes();
+
+      await invoke(controller.follow, req, res);
+
+      expect(res.status).toHaveBeenCalledWith(400);
+      expect(res.json).toHaveBeenCalledWith({
+        error: "Report publicId is required",
+      });
+      expect(followReportUseCase.execute).not.toHaveBeenCalled();
+    });
+
+    it("retorna 404 si el reporte a seguir no existe", async () => {
+      const req = buildAuthenticatedParamReq("missing-report");
+      const res = buildRes();
+
+      vi.mocked(followReportUseCase.execute).mockRejectedValue(
+        new ReportNotFoundError("missing-report"),
+      );
+
+      await invoke(controller.follow, req, res);
+
+      expect(res.status).toHaveBeenCalledWith(404);
+    });
+
+    it("retorna 500 si ocurre un error inesperado", async () => {
+      const req = buildAuthenticatedParamReq("report-uuid");
+      const res = buildRes();
+
+      vi.mocked(followReportUseCase.execute).mockRejectedValue(
+        new Error("DB crash"),
+      );
+
+      await invoke(controller.follow, req, res);
+
+      expect(res.status).toHaveBeenCalledWith(500);
+    });
+  });
+
+  // ─── unfollow ─────────────────────────────────────────────────────────────
+
+  describe("unfollow", () => {
+    it("retorna 204 cuando el usuario deja de seguir un reporte correctamente", async () => {
+      const req = buildAuthenticatedParamReq("report-uuid");
+      const res = buildRes();
+
+      await invoke(controller.unfollow, req, res);
+
+      expect(unfollowReportUseCase.execute).toHaveBeenCalledWith({
+        userPublicId: "user-public-id",
+        reportPublicId: "report-uuid",
+      });
+      expect(res.sendStatus).toHaveBeenCalledWith(204);
+    });
+
+    it("retorna 401 si no hay usuario autenticado", async () => {
+      const req: Partial<Request> = {
+        params: { publicId: "report-uuid" },
+        auth: undefined,
+        originalUrl: "/api/reports/report-uuid/follow",
+        method: "DELETE",
+      };
+
+      const res = buildRes();
+
+      await invoke(controller.unfollow, req, res);
+
+      expect(res.status).toHaveBeenCalledWith(401);
+      expect(res.json).toHaveBeenCalledWith({ error: "Unauthorized" });
+      expect(unfollowReportUseCase.execute).not.toHaveBeenCalled();
+    });
+
+    it("retorna 400 si falta publicId", async () => {
+      const req = buildAuthenticatedParamReq(undefined);
+      const res = buildRes();
+
+      await invoke(controller.unfollow, req, res);
+
+      expect(res.status).toHaveBeenCalledWith(400);
+      expect(res.json).toHaveBeenCalledWith({
+        error: "Report publicId is required",
+      });
+      expect(unfollowReportUseCase.execute).not.toHaveBeenCalled();
+    });
+
+    it("retorna 500 si ocurre un error inesperado", async () => {
+      const req = buildAuthenticatedParamReq("report-uuid");
+      const res = buildRes();
+
+      vi.mocked(unfollowReportUseCase.execute).mockRejectedValue(
+        new Error("DB crash"),
+      );
+
+      await invoke(controller.unfollow, req, res);
+
+      expect(res.status).toHaveBeenCalledWith(500);
+    });
+  });
+
+  // ─── isFollowing ──────────────────────────────────────────────────────────
+
+  describe("isFollowing", () => {
+    it("retorna 200 con isFollowing true", async () => {
+      const req = buildAuthenticatedParamReq("report-uuid");
+      const res = buildRes();
+
+      vi.mocked(isFollowingReportUseCase.execute).mockResolvedValue({
+        isFollowing: true,
+      });
+
+      await invoke(controller.isFollowing, req, res);
+
+      expect(isFollowingReportUseCase.execute).toHaveBeenCalledWith({
+        userPublicId: "user-public-id",
+        reportPublicId: "report-uuid",
+      });
+      expect(res.status).toHaveBeenCalledWith(200);
+      expect(res.json).toHaveBeenCalledWith({ isFollowing: true });
+    });
+
+    it("retorna 200 con isFollowing false", async () => {
+      const req = buildAuthenticatedParamReq("report-uuid");
+      const res = buildRes();
+
+      vi.mocked(isFollowingReportUseCase.execute).mockResolvedValue({
+        isFollowing: false,
+      });
+
+      await invoke(controller.isFollowing, req, res);
+
+      expect(res.status).toHaveBeenCalledWith(200);
+      expect(res.json).toHaveBeenCalledWith({ isFollowing: false });
+    });
+
+    it("retorna 401 si no hay usuario autenticado", async () => {
+      const req: Partial<Request> = {
+        params: { publicId: "report-uuid" },
+        auth: undefined,
+        originalUrl: "/api/reports/report-uuid/follow",
         method: "GET",
-      });
+      };
 
-      it("pasa q al caso de uso de reportes filtrados", async () => {
-        // Given
-        const req = buildFilterReq({
-          q: "perrro marron",
-        });
+      const res = buildRes();
 
-        const res = buildRes();
+      await invoke(controller.isFollowing, req, res);
 
-        // When
-        await invoke(controller.getFilteres, req, res);
-
-        // Then
-        expect(filteresUseCase.execute).toHaveBeenCalledWith({
-          q: "perrro marron",
-        });
-
-        expect(res.status).toHaveBeenCalledWith(200);
-      });
-      it("retorna 200 con la lista de reportes filtrados", async () => {
-        vi.mocked(filteresUseCase.execute).mockResolvedValue([fakeReportOutput]);
-
-        const req = buildFilterReq({ reportType: "LOST" });
-        const res = buildRes();
-
-        await invoke(controller.getFilteres, req, res);
-
-        expect(res.status).toHaveBeenCalledWith(200);
-        expect(res.json).toHaveBeenCalledWith([fakeReportOutput]);
-        expect(filteresUseCase.execute).toHaveBeenCalledWith({ reportType: "LOST" });
-      });
-
-      it("retorna 400 si el caso de uso lanza ValidationError", async () => {
-        const validationErr = new ValidationError(["ReportType inválido"]);
-        vi.mocked(filteresUseCase.execute).mockRejectedValue(validationErr);
-
-        const req = buildFilterReq({ reportType: "INVALID" });
-        const res = buildRes();
-
-        await invoke(controller.getFilteres, req, res);
-
-        expect(res.status).toHaveBeenCalledWith(400);
-      });
-
-      it("retorna 400 si el caso de uso lanza MappingError", async () => {
-        const mappingErr = new MappingError("Error de mapeo");
-        vi.mocked(filteresUseCase.execute).mockRejectedValue(mappingErr);
-
-        const req = buildFilterReq({ reportType: "LOST" });
-        const res = buildRes();
-
-        await invoke(controller.getFilteres, req, res);
-
-        expect(res.status).toHaveBeenCalledWith(400);
-      });
-
-      it("retorna 500 si ocurre un error no controlado", async () => {
-        vi.mocked(filteresUseCase.execute).mockRejectedValue(new Error("Unexpected DB fail"));
-
-        const req = buildFilterReq({ reportType: "LOST" });
-        const res = buildRes();
-
-        await invoke(controller.getFilteres, req, res);
-
-        expect(res.status).toHaveBeenCalledWith(500);
-      });
+      expect(res.status).toHaveBeenCalledWith(401);
+      expect(res.json).toHaveBeenCalledWith({ error: "Unauthorized" });
+      expect(isFollowingReportUseCase.execute).not.toHaveBeenCalled();
     });
 
-    // ─── updateStatus ─────────────────────────────────────────────────────────
+    it("retorna 400 si falta publicId", async () => {
+      const req = buildAuthenticatedParamReq(undefined);
+      const res = buildRes();
 
-    describe("updateStatus", () => {
-      const buildUpdateStatusReq = (publicId: string | undefined, status: string): Partial<Request> => ({
-        validated: {
-          params: { publicId },
-          body: { status },
-        },
-        originalUrl: `/api/reports/status/${publicId}`,
-        method: "PATCH",
+      await invoke(controller.isFollowing, req, res);
+
+      expect(res.status).toHaveBeenCalledWith(400);
+      expect(res.json).toHaveBeenCalledWith({
+        error: "Report publicId is required",
       });
+      expect(isFollowingReportUseCase.execute).not.toHaveBeenCalled();
+    });
 
-      it("retorna 204 cuando el estado se actualiza con éxito", async () => {
-        const req = buildUpdateStatusReq("report-uuid", "RESOLVED");
-        const res = buildRes();
-        vi.mocked(updateStatusUseCase.execute).mockResolvedValue(undefined);
+    it("retorna 500 si ocurre un error inesperado", async () => {
+      const req = buildAuthenticatedParamReq("report-uuid");
+      const res = buildRes();
 
-        await invoke(controller.updateStatus, req, res);
+      vi.mocked(isFollowingReportUseCase.execute).mockRejectedValue(
+        new Error("DB crash"),
+      );
 
-        expect(res.sendStatus).toHaveBeenCalledWith(204);
-        expect(updateStatusUseCase.execute).toHaveBeenCalledWith({
-          publicId: "report-uuid",
-          status: "RESOLVED",
-        });
-      });
+      await invoke(controller.isFollowing, req, res);
 
-      it("retorna 401 si falta publicId en los parámetros", async () => {
-        const req = buildUpdateStatusReq(undefined, "RESOLVED");
-        const res = buildRes();
-
-        await invoke(controller.updateStatus, req, res);
-
-        expect(res.status).toHaveBeenCalledWith(401);
-        expect(res.json).toHaveBeenCalledWith({ error: "Unauthorized" });
-        expect(updateStatusUseCase.execute).not.toHaveBeenCalled();
-      });
-
-      it("propaga errores del caso de uso", async () => {
-        const req = buildUpdateStatusReq("report-uuid", "RESOLVED");
-        const res = buildRes();
-        vi.mocked(updateStatusUseCase.execute).mockRejectedValue(new Error("Report not found"));
-
-        await invoke(controller.updateStatus, req, res);
-
-        expect(res.status).toHaveBeenCalledWith(500);
-      });
+      expect(res.status).toHaveBeenCalledWith(500);
     });
   });
 });
