@@ -29,8 +29,8 @@ export class ReportQuery {
         this.reportType = dto.reportType as ReportType | undefined;
         this.animalType = dto.animalType as AnimalType | undefined;
         this.status = dto.status as ReportStatus | undefined;
-        this.createdFrom = dto.createdFrom ? new Date(`${dto.createdFrom}T00:00:00.000Z`) : undefined;
-        this.createdTo = dto.createdTo ? new Date(`${dto.createdTo}T23:59:59.999Z`) : undefined;
+        this.createdFrom = dto.createdFrom ? new Date(`${dto.createdFrom}T00:00:00.000-03:00`) : undefined;
+        this.createdTo = dto.createdTo ? new Date(`${dto.createdTo}T23:59:59.999-03:00`) : undefined;
         this.userPublicId = dto.userPublicId;
         const normalizedQuery = dto.q?.trim();
         this.q = normalizedQuery || undefined;

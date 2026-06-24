@@ -21,10 +21,10 @@ describe("ReportQuery", () => {
     expect(query.animalType).toBe(AnimalType.DOG);
     expect(query.status).toBe(ReportStatus.ACTIVE);
     expect(query.createdFrom).toEqual(
-      new Date("2024-05-01T00:00:00.000Z"),
+      new Date("2024-05-01T00:00:00.000-03:00"),
     );
     expect(query.createdTo).toEqual(
-      new Date("2024-05-10T23:59:59.999Z"),
+      new Date("2024-05-10T23:59:59.999-03:00"),
     );
     expect(query.q).toBe("perro marrón");
   });
@@ -57,8 +57,8 @@ describe("ReportQuery", () => {
 
     const query = new ReportQuery(dto);
 
-    expect(query.createdFrom?.toISOString()).toBe("2026-06-01T00:00:00.000Z");
-    expect(query.createdTo?.toISOString()).toBe("2026-06-01T23:59:59.999Z");
+    expect(query.createdFrom?.toISOString()).toBe("2026-06-01T03:00:00.000Z");
+    expect(query.createdTo?.toISOString()).toBe("2026-06-02T02:59:59.999Z");
   });
 
   it("debería lanzar un error si reportType no es válido", () => {
