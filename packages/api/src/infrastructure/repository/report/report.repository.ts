@@ -24,6 +24,44 @@ const reportInclude = {
     reportImages: true,
 } satisfies Prisma.ReportInclude
 
+
+
+const SPECIES_SYNONYMS: Record<string, string> = {
+    perro: "DOG", perra: "DOG", perros: "DOG", can: "DOG", cachorro: "DOG",
+    gato: "CAT", gata: "CAT", gatos: "CAT", michi: "CAT",
+};
+const GENDER_SYNONYMS: Record<string, string> = {
+    macho: "MALE", machos: "MALE", hembra: "FEMALE", hembras: "FEMALE",
+};
+const SIZE_SYNONYMS: Record<string, string> = {
+    grande: "LARGE", grandes: "LARGE",
+    mediano: "MEDIUM", medio: "MEDIUM", medianos: "MEDIUM",
+    chico: "SMALL", chica: "SMALL", chicos: "SMALL",
+    pequeno: "SMALL", pequena: "SMALL", peque: "SMALL",
+};
+
+function tokenize(text: string): string[] {
+    return text
+        .toLowerCase()
+        .normalize("NFD")
+        .replace(/\p{Diacritic}/gu, "")
+        .split(/\s+/)
+        .filter(Boolean);
+}
+
+
+function synonymCodes(words: string[], dict: Record<string, string>): string[] {
+    return [...new Set(
+        words.flatMap((w) =>
+            w.length >= 3
+                ? Object.entries(dict)
+                    .filter(([key]) => key.startsWith(w))
+                    .map(([, code]) => code)
+                : [],
+        ),
+    )];
+}
+
 @injectable()
 export class PrismaReportRepository implements ReportRepository {
     private readonly catalog: CatalogResolver;
@@ -239,15 +277,14 @@ export class PrismaReportRepository implements ReportRepository {
         const where: Prisma.ReportWhereInput = { user: { public_id: userPublicId } }
 
         if (filters?.q) {
-            const matchingDescriptionIds =
-                await this.findIdsByDescriptionQuery(filters.q);
+            const matchingIds = await this.findIdsBySearchQuery(filters.q);
 
-            if (matchingDescriptionIds.length === 0) {
+            if (matchingIds.length === 0) {
                 return [];
             }
 
             where.public_id = {
-                in: matchingDescriptionIds,
+                in: matchingIds,
             };
         }
 
@@ -284,13 +321,13 @@ export class PrismaReportRepository implements ReportRepository {
         const where: Prisma.ReportWhereInput = {}
 
         if (query.q) {
-            const matchingDescriptionIds = await this.findIdsByDescriptionQuery(query.q);
-            if (matchingDescriptionIds.length === 0) {
+            const matchingIds = await this.findIdsBySearchQuery(query.q);
+            if (matchingIds.length === 0) {
                 return [];
             }
 
             where.public_id = {
-                in: matchingDescriptionIds
+                in: matchingIds
             };
         }
 
@@ -376,23 +413,59 @@ export class PrismaReportRepository implements ReportRepository {
 
     }
 
-    private async findIdsByDescriptionQuery(queryText: string,): Promise<string[]> {
+    private async findIdsBySearchQuery(queryText: string): Promise<string[]> {
         const searchText = queryText.trim();
+        const pattern = `%${searchText}%`;
+
+        const words = tokenize(searchText);
+        const speciesCodes = synonymCodes(words, SPECIES_SYNONYMS);
+        const genderCodes = synonymCodes(words, GENDER_SYNONYMS);
+        const sizeCodes = synonymCodes(words, SIZE_SYNONYMS);
+
+        const conditions: Prisma.Sql[] = [
+            Prisma.sql`unaccent(r."description") ILIKE unaccent(${pattern})`,
+            Prisma.sql`word_similarity(unaccent(${searchText}), unaccent(r."description")) >= 0.3`,
+            Prisma.sql`unaccent(r."location_address") ILIKE unaccent(${pattern})`,
+            Prisma.sql`unaccent(srd."pet_name") ILIKE unaccent(${pattern})`,
+            Prisma.sql`unaccent(p."pet_name") ILIKE unaccent(${pattern})`,
+            Prisma.sql`unaccent(c_s."name") ILIKE unaccent(${pattern})`,
+            Prisma.sql`unaccent(c_p."name") ILIKE unaccent(${pattern})`,
+            Prisma.sql`unaccent(b_s."name") ILIKE unaccent(${pattern})`,
+            Prisma.sql`unaccent(b_p."name") ILIKE unaccent(${pattern})`,
+        ];
+
+        if (speciesCodes.length) {
+            conditions.push(Prisma.sql`at_s."name" IN (${Prisma.join(speciesCodes)})`);
+            conditions.push(Prisma.sql`at_p."name" IN (${Prisma.join(speciesCodes)})`);
+        }
+        if (genderCodes.length) {
+            conditions.push(Prisma.sql`g_p."name" IN (${Prisma.join(genderCodes)})`);
+        }
+        if (sizeCodes.length) {
+            conditions.push(Prisma.sql`ps_p."name" IN (${Prisma.join(sizeCodes)})`);
+        }
+
+        const whereClause = Prisma.join(conditions, " OR ");
 
         const rows = await this.prisma.$queryRaw<Array<{ public_id: string }>>(
             Prisma.sql`
-                SELECT
-                    r."public_id"::text AS "public_id"
+                SELECT r."public_id"::text AS "public_id"
                 FROM "reports" r
-                WHERE
-                    r."description" IS NOT NULL
-                    AND (
-                    r."description" ILIKE ${`%${searchText}%`}
-                    OR word_similarity(${searchText}, r."description") >= 0.3
-                    )
+                LEFT JOIN "sighting_report_details" srd ON srd."report_id" = r."report_id"
+                LEFT JOIN "lost_report_details" lrd ON lrd."report_id" = r."report_id"
+                LEFT JOIN "pets" p ON p."pet_id" = lrd."pet_id"
+                LEFT JOIN "animal_types" at_s ON at_s."animal_type_id" = srd."animal_type_id"
+                LEFT JOIN "animal_types" at_p ON at_p."animal_type_id" = p."animal_type_id"
+                LEFT JOIN "colors" c_s ON c_s."color_id" = srd."color_id"
+                LEFT JOIN "colors" c_p ON c_p."color_id" = p."color_id"
+                LEFT JOIN "breeds" b_s ON b_s."breed_id" = srd."breed_id"
+                LEFT JOIN "breeds" b_p ON b_p."breed_id" = p."breed_id"
+                LEFT JOIN "genders" g_p ON g_p."gender_id" = p."gender_id"
+                LEFT JOIN "pet_sizes" ps_p ON ps_p."size_id" = p."size_id"
+                WHERE ${whereClause}
                 ORDER BY GREATEST(
-                    similarity(r."description", ${searchText}),
-                    word_similarity(${searchText}, r."description")
+                    similarity(unaccent(COALESCE(r."description", '')), unaccent(${searchText})),
+                    word_similarity(unaccent(${searchText}), unaccent(COALESCE(r."description", '')))
                 ) DESC
             `,
         );
