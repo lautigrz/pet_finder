@@ -1,13 +1,16 @@
-import { MatchResultsRepository } from "@domain/match/repositories/match-results.repository";
-import { ReportRepository } from "@domain/report/repositories/report.repository";
+import type { MatchResultsRepository } from "@domain/match/repositories/match-results.repository";
+import type { ReportRepository } from "@domain/report/repositories/report.repository";
 import { MatchResultMapper } from "./mapper/match-result.mapper";
 import { MatchResultDetailDTO } from "./dto/match-result.dto";
 import { ReportNotFoundError } from "@domain/errors/ReportNotFoundError";
+import { injectable, inject } from "tsyringe";
 
-
+@injectable()
 export class GetMatchResultsUseCase {
     constructor(
+        @inject("MatchResultsRepository")
         private readonly matchResultsRepository: MatchResultsRepository,
+        @inject("ReportRepository")
         private readonly reportRepository: ReportRepository,
     ) { }
 

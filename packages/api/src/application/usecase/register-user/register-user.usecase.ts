@@ -1,25 +1,32 @@
 import { User } from "../../../domain/entities/User";
 import { EmailVerificationToken } from "../../../domain/entities/EmailVerificationToken";
-import { IUserRepository } from "../../../domain/repositories/IUserRepository";
-import { IEmailVerificationTokenRepository } from "../../../domain/repositories/IEmailVerificationTokenRepository";
-import { IPasswordHasher } from "../../../domain/services/IPasswordHasher";
-import { ITokenGenerator } from "../../../domain/services/ITokenGenerator";
-import { IEmailService } from "../../../domain/services/IEmailService";
+import type { IUserRepository } from "../../../domain/repositories/IUserRepository";
+import type { IEmailVerificationTokenRepository } from "../../../domain/repositories/IEmailVerificationTokenRepository";
+import type { IPasswordHasher } from "../../../domain/services/IPasswordHasher";
+import type { ITokenGenerator } from "../../../domain/services/ITokenGenerator";
+import type { IEmailService } from "../../../domain/services/IEmailService";
 import { EmailAddress } from "../../../domain/shared/email/email-address.vo";
 import { EmailAlreadyExistsError } from "../../../domain/errors/EmailAlreadyExistsError";
 import { RegisterUserInput } from "./register-user.input";
 import { RegisterUserOutput } from "./register-user.output";
+import { inject, injectable } from "tsyringe";
 
 const VERIFICATION_TOKEN_TTL_MS = 24 * 60 * 60 * 1000;
 
+@injectable()
 export class RegisterUserUseCase {
   constructor(
+    @inject("UserRepository")
     private readonly userRepository: IUserRepository,
+    @inject("PasswordHasher")
     private readonly passwordHasher: IPasswordHasher,
+    @inject("EmailVerificationTokenRepository")
     private readonly tokenRepository: IEmailVerificationTokenRepository,
+    @inject("TokenGenerator")
     private readonly tokenGenerator: ITokenGenerator,
+    @inject("EmailService")
     private readonly emailService: IEmailService,
-  ) {}
+  ) { }
 
   async execute(input: RegisterUserInput): Promise<RegisterUserOutput> {
     const email = EmailAddress.create(input.email);

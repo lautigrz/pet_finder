@@ -3,6 +3,7 @@ import { MatchResultsRepository } from "@domain/match/repositories/match-results
 import { Prisma, PrismaClient } from "@prisma/client";
 import { MatchResultsMapper } from "./match-results.mapper";
 import { MatchNotification, MatchRole } from "@pet-alert/shared";
+import { inject, injectable } from "tsyringe";
 
 const LOST_TYPE_ID = 1;
 const SIGHTING_TYPE_ID = 2;
@@ -15,10 +16,12 @@ const NOTIFICATION_INCLUDE = {
 
 type NotificationReportRow = Prisma.ReportGetPayload<{ include: typeof NOTIFICATION_INCLUDE }>;
 
-
+@injectable()
 export class PrismaMatchResultsRepository implements MatchResultsRepository {
 
-    constructor(private readonly prisma: PrismaClient) { }
+    constructor(
+        @inject("PrismaClient")
+        private readonly prisma: PrismaClient) { }
 
     async findById(id: number): Promise<MatchResultsEntity | null> {
         const result = await this.prisma.matchResult.findUnique({

@@ -1,25 +1,33 @@
 import { RefreshToken } from "../../../domain/entities/RefreshToken";
 import { User } from "../../../domain/entities/User";
-import { IUserRepository } from "../../../domain/repositories/IUserRepository";
-import { IRefreshTokenRepository } from "../../../domain/repositories/IRefreshTokenRepository";
-import { IPasswordHasher } from "../../../domain/services/IPasswordHasher";
-import { ITokenSigner } from "../../../domain/services/ITokenSigner";
-import { ITokenGenerator } from "../../../domain/services/ITokenGenerator";
+import type { IUserRepository } from "../../../domain/repositories/IUserRepository";
+import type { IRefreshTokenRepository } from "../../../domain/repositories/IRefreshTokenRepository";
+import type { IPasswordHasher } from "../../../domain/services/IPasswordHasher";
+import type { ITokenSigner } from "../../../domain/services/ITokenSigner";
+import type { ITokenGenerator } from "../../../domain/services/ITokenGenerator";
 import { accessTokenPayloadFor } from "../../../domain/auth/access-token-payload";
 import { EmailAddress } from "../../../domain/shared/email/email-address.vo";
 import { InvalidCredentialsError } from "../../../domain/errors/InvalidCredentialsError";
 import { LoginUserInput } from "./login-user.input";
 import { LoginUserOutput } from "./login-user.output";
+import { injectable, inject } from "tsyringe";
 
+@injectable()
 export class LoginUserUseCase {
   constructor(
+    @inject("UserRepository")
     private readonly userRepository: IUserRepository,
+    @inject("RefreshTokenRepository")
     private readonly refreshTokenRepository: IRefreshTokenRepository,
+    @inject("PasswordHasher")
     private readonly passwordHasher: IPasswordHasher,
+    @inject("TokenSigner")
     private readonly tokenSigner: ITokenSigner,
+    @inject("TokenGenerator")
     private readonly tokenGenerator: ITokenGenerator,
+    @inject("RefreshTtlMs")
     private readonly refreshTtlMs: number,
-  ) {}
+  ) { }
 
   async execute(input: LoginUserInput): Promise<LoginUserOutput> {
     const user = await this.findUserByEmail(input.email);

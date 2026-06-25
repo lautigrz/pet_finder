@@ -1,16 +1,22 @@
-import { IPasswordResetTokenRepository } from "../../../domain/repositories/IPasswordResetTokenRepository";
-import { IUserRepository } from "../../../domain/repositories/IUserRepository";
-import { IRefreshTokenRepository } from "../../../domain/repositories/IRefreshTokenRepository";
-import { IPasswordHasher } from "../../../domain/services/IPasswordHasher";
+import type { IPasswordResetTokenRepository } from "../../../domain/repositories/IPasswordResetTokenRepository";
+import type { IUserRepository } from "../../../domain/repositories/IUserRepository";
+import type { IRefreshTokenRepository } from "../../../domain/repositories/IRefreshTokenRepository";
+import type { IPasswordHasher } from "../../../domain/services/IPasswordHasher";
 import { InvalidPasswordResetTokenError } from "../../../domain/errors/InvalidPasswordResetTokenError";
 import { PasswordResetToken } from "../../../domain/entities/PasswordResetToken";
 import { ResetPasswordInput } from "./reset-password.input";
+import { inject, injectable } from "tsyringe";
 
+@injectable()
 export class ResetPasswordUseCase {
   constructor(
+    @inject("PasswordResetTokenRepository")
     private readonly tokenRepository: IPasswordResetTokenRepository,
+    @inject("UserRepository")
     private readonly userRepository: IUserRepository,
+    @inject("PasswordHasher")
     private readonly passwordHasher: IPasswordHasher,
+    @inject("RefreshTokenRepository")
     private readonly refreshTokenRepository: IRefreshTokenRepository,
   ) {}
 

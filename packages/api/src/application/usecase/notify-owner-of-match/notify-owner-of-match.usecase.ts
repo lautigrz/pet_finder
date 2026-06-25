@@ -2,9 +2,14 @@ import { MatchNotification } from "@pet-alert/shared";
 import { PushNotification } from "../../../domain/services/IPushSender";
 import { SendPushToUserUseCase } from "../send-push-to-user/send-push-to-user.usecase";
 import { SendPushToUserInput } from "../send-push-to-user/send-push-to-user.input";
+import { inject, injectable } from "tsyringe";
 
+@injectable()
 export class NotifyOwnerOfMatchUseCase {
-    constructor(private readonly sendPushToUser: SendPushToUserUseCase) { }
+    constructor(
+        @inject("SendPushToUserUseCase")
+        private readonly sendPushToUser: SendPushToUserUseCase
+    ) { }
 
     async execute(notification: MatchNotification): Promise<void> {
         await this.sendPushToUser.execute(

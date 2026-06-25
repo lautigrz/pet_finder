@@ -2,9 +2,14 @@ import { PrismaClient } from "@prisma/client";
 import { AnimalType } from "@domain/shared/animal-type/animal-type";
 import { AnimalTypeMap } from "@domain/shared/animal-type/animal-type-map";
 import { CatalogItem, CatalogRepository } from "@domain/catalog/catalog.repository";
+import { inject, injectable } from "tsyringe";
 
+@injectable()
 export class PrismaCatalogRepository implements CatalogRepository {
-    constructor(private readonly prisma: PrismaClient) { }
+    constructor(
+        @inject("PrismaClient")
+        private readonly prisma: PrismaClient
+    ) { }
 
     async listBreeds(animalType?: AnimalType): Promise<CatalogItem[]> {
         const breeds = await this.prisma.breed.findMany({

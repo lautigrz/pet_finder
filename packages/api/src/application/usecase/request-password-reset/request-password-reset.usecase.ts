@@ -1,21 +1,27 @@
-import { IUserRepository } from "../../../domain/repositories/IUserRepository";
-import { IPasswordResetTokenRepository } from "../../../domain/repositories/IPasswordResetTokenRepository";
-import { ITokenGenerator } from "../../../domain/services/ITokenGenerator";
-import { IEmailService } from "../../../domain/services/IEmailService";
+import type { IUserRepository } from "../../../domain/repositories/IUserRepository";
+import type { IPasswordResetTokenRepository } from "../../../domain/repositories/IPasswordResetTokenRepository";
+import type { ITokenGenerator } from "../../../domain/services/ITokenGenerator";
+import type { IEmailService } from "../../../domain/services/IEmailService";
 import { PasswordResetToken } from "../../../domain/entities/PasswordResetToken";
 import { User } from "../../../domain/entities/User";
 import { EmailAddress } from "../../../domain/shared/email/email-address.vo";
 import { RequestPasswordResetInput } from "./request-password-reset.input";
+import { inject, injectable } from "tsyringe";
 
 const RESET_TOKEN_TTL_MS = 60 * 60 * 1000;
 
+@injectable()
 export class RequestPasswordResetUseCase {
   constructor(
+    @inject("UserRepository")
     private readonly userRepository: IUserRepository,
+    @inject("PasswordResetTokenRepository")
     private readonly tokenRepository: IPasswordResetTokenRepository,
+    @inject("TokenGenerator")
     private readonly tokenGenerator: ITokenGenerator,
+    @inject("EmailService")
     private readonly emailService: IEmailService,
-  ) {}
+  ) { }
 
   async execute(input: RequestPasswordResetInput): Promise<void> {
     const user = await this.userRepository.findByEmail(EmailAddress.create(input.email).value);

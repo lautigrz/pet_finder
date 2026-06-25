@@ -1,8 +1,13 @@
 import { AnimalType } from "@domain/shared/animal-type/animal-type";
-import { CatalogItem, CatalogRepository } from "@domain/catalog/catalog.repository";
+import type { CatalogItem, CatalogRepository } from "@domain/catalog/catalog.repository";
+import { inject, injectable } from "tsyringe";
 
+@injectable()
 export class GetBreedsUseCase {
-    constructor(private readonly catalogRepository: CatalogRepository) { }
+    constructor(
+        @inject("CatalogRepository")
+        private readonly catalogRepository: CatalogRepository
+    ) { }
 
     execute(animalType?: AnimalType): Promise<CatalogItem[]> {
         return this.catalogRepository.listBreeds(animalType);

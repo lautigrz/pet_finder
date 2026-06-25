@@ -1,7 +1,7 @@
-import { ReportRepository } from "../../../domain/report/repositories/report.repository";
-import { INotificationPreferencesRepository } from "../../../domain/repositories/INotificationPreferencesRepository";
-import { IDeviceTokenRepository } from "../../../domain/repositories/IDeviceTokenRepository";
-import { IPushSender, PushNotification } from "../../../domain/services/IPushSender";
+import type { ReportRepository } from "../../../domain/report/repositories/report.repository";
+import type { INotificationPreferencesRepository } from "../../../domain/repositories/INotificationPreferencesRepository";
+import type { IDeviceTokenRepository } from "../../../domain/repositories/IDeviceTokenRepository";
+import type { IPushSender, PushNotification } from "../../../domain/services/IPushSender";
 import { NotificationPreference } from "../../../domain/entities/NotificationPreference";
 import { Report } from "../../../domain/report/aggregates/ReportAggregate";
 import { Location } from "../../../domain/report/value-objects/location.vo";
@@ -10,12 +10,18 @@ import { ReportStatus } from "../../../domain/report/types/report.status";
 import { GeoPoint, haversineKm } from "../../../domain/shared/geo/haversine";
 import { ReportQuery } from "../report-usecase/report-query";
 import { GetFilteredReportsDTO } from "../report-usecase/dto/get-filtered-reports.dto";
+import { injectable, inject } from "tsyringe";
 
+@injectable()
 export class NotifyNearbyLostOwnersUseCase {
     constructor(
+        @inject("ReportRepository")
         private readonly reportRepository: ReportRepository,
+        @inject("NotificationPreferencesRepository")
         private readonly notificationPreferencesRepository: INotificationPreferencesRepository,
+        @inject("DeviceTokenRepository")
         private readonly deviceTokenRepository: IDeviceTokenRepository,
+        @inject("PushSender")
         private readonly pushSender: IPushSender,
     ) { }
 

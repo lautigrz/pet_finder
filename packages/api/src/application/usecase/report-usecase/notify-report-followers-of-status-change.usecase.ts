@@ -1,8 +1,9 @@
-import { ReportFollowerRepository } from "@domain/report/repositories/report-follower.repository";
+import type { ReportFollowerRepository } from "@domain/report/repositories/report-follower.repository";
 import { ReportStatus } from "@domain/report/types/report.status";
 import { PushNotification } from "@domain/services/IPushSender";
 import { SendPushToUserUseCase } from "@application/usecase/send-push-to-user/send-push-to-user.usecase";
 import { SendPushToUserInput } from "@application/usecase/send-push-to-user/send-push-to-user.input";
+import { inject, injectable } from "tsyringe";
 
 interface NotifyReportFollowersInput {
   reportPublicId: string;
@@ -10,9 +11,12 @@ interface NotifyReportFollowersInput {
   status: ReportStatus;
 }
 
+@injectable()
 export class NotifyReportFollowersOfStatusChangeUseCase {
   constructor(
+    @inject("ReportFollowerRepository")
     private readonly followerRepository: ReportFollowerRepository,
+    @inject("SendPushToUserUseCase")
     private readonly sendPushToUser: SendPushToUserUseCase,
   ) {}
 

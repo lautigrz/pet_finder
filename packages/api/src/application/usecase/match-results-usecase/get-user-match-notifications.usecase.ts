@@ -1,9 +1,11 @@
 import { MatchNotification, MATCH_NOTIFICATION_THRESHOLD } from "@pet-alert/shared";
-import { MatchResultsRepository } from "@domain/match/repositories/match-results.repository";
+import type { MatchResultsRepository } from "@domain/match/repositories/match-results.repository";
+import { injectable, inject } from "tsyringe";
 
-
+@injectable()
 export class GetUserMatchNotificationsUseCase {
     constructor(
+        @inject("MatchResultsRepository")
         private readonly matchResultsRepository: MatchResultsRepository,
     ) { }
 

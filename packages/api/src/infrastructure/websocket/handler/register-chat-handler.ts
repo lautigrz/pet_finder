@@ -1,32 +1,14 @@
 import { Server, Socket } from "socket.io";
-import prisma from "@infrastructure/prisma/prisma.client";
+import { container } from "tsyringe";
 import { SendMessageUseCase } from "@application/usecase/message-usecase/send-message.usecase";
-import { PrismaConversationRepository } from "@infrastructure/repository/conversation/conversation.repository";
-import { PrismaMessageRepository } from "@infrastructure/repository/message/message.repository";
-import { PrismaUserRepository } from "@infrastructure/repository/PrismaUserRepository";
 import { DomainError } from "@domain/errors/DomainError";
-import logger from "@infrastructure/logger/";
+import { logger } from '@pet-alert/shared';
 import { ReadMessageUseCase } from "@application/usecase/message-usecase/read-message.usecase";
-import { ClaudinaryService } from "@infrastructure/storage/CloudinaryService";
 
-const conversationRepository = new PrismaConversationRepository(prisma);
-const messageRepository = new PrismaMessageRepository(prisma);
-const userRepository = new PrismaUserRepository();
-const cloudinaryService = new ClaudinaryService();
 export function registerChatHandlers(io: Server, socket: Socket) {
 
-    const sendMessageUseCase = new SendMessageUseCase(
-        conversationRepository,
-        messageRepository,
-        userRepository,
-        cloudinaryService
-    );
-
-    const readMessageUseCase = new ReadMessageUseCase(
-        conversationRepository,
-        messageRepository,
-        userRepository
-    )
+    const sendMessageUseCase = container.resolve(SendMessageUseCase);
+    const readMessageUseCase = container.resolve(ReadMessageUseCase);
 
     socket.on('message:send', async (data: { conversationId: string, text: string }) => {
         try {

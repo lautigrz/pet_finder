@@ -12,6 +12,7 @@ import { GenderTypeMap } from '@domain/shared/gender-type/gender-map';
 import { SizeTypeMap } from '@domain/shared/size-type/size-map';
 import { SightingImage } from "@domain/report/value-objects/sighting.images";
 import { CatalogResolver } from "../catalog/catalog-resolver";
+import { inject, injectable } from "tsyringe";
 
 
 const reportInclude = {
@@ -22,6 +23,7 @@ const reportInclude = {
     lost_report_detail: true,
     reportImages: true,
 } satisfies Prisma.ReportInclude
+
 
 
 const SPECIES_SYNONYMS: Record<string, string> = {
@@ -60,10 +62,13 @@ function synonymCodes(words: string[], dict: Record<string, string>): string[] {
     )];
 }
 
+@injectable()
 export class PrismaReportRepository implements ReportRepository {
     private readonly catalog: CatalogResolver;
 
-    constructor(private readonly prisma: PrismaClient) {
+    constructor(
+        @inject("PrismaClient")
+        private readonly prisma: PrismaClient) {
         this.catalog = new CatalogResolver(prisma);
     }
     async findDetailsByIds(ids: number[]): Promise<ReportWithPetDetail[]> {

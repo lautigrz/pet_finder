@@ -3,12 +3,17 @@ import { CreateConversationUseCase } from "@application/usecase/conversation-use
 import { asyncHandler } from "@presentation/handler/async-handler";
 import { ListMyConversationsUseCase } from "@application/usecase/conversation-usecase/list-my-conversations.usecase";
 import { GetConversationUseCase } from "@application/usecase/conversation-usecase/get-conversation.usecase";
+import { inject, injectable } from "tsyringe";
 
+@injectable()
 export class ConversationController {
 
     constructor(
+        @inject("CreateConversationUseCase")
         private createConversationUseCase: CreateConversationUseCase,
+        @inject("ListConversationUseCase")
         private listMyConversationsUseCase: ListMyConversationsUseCase,
+        @inject("GetConversationUseCase")
         private getConversationUseCase: GetConversationUseCase
     ) { }
 
@@ -47,9 +52,5 @@ export class ConversationController {
 
         res.status(200).json(conversation);
     });
-
-
-
-
 
 }

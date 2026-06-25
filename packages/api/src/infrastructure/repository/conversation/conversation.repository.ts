@@ -2,10 +2,15 @@ import { Conversation } from "@domain/conversation/Conversation";
 import { ConversationRepository } from "@domain/conversation/repositories/conversation.repository";
 import { PrismaClient } from "@prisma/client";
 import { ConversationMapper } from "./conversation.mapper";
+import { inject, injectable } from "tsyringe";
 
+
+@injectable()
 export class PrismaConversationRepository implements ConversationRepository {
 
-    constructor(private readonly prisma: PrismaClient) { }
+    constructor(
+        @inject("PrismaClient")
+        private readonly prisma: PrismaClient) { }
 
     async findAllByUserId(userId: number): Promise<Conversation[]> {
 

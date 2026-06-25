@@ -1,8 +1,14 @@
 import { Prisma, PrismaClient } from "@prisma/client";
 import { ReportFollowerRepository } from "@domain/report/repositories/report-follower.repository";
+import { inject, injectable } from "tsyringe";
 
+
+@injectable()
 export class PrismaReportFollowerRepository implements ReportFollowerRepository {
-    constructor(private readonly prisma: PrismaClient) { }
+
+    constructor(
+        @inject("PrismaClient")
+        private readonly prisma: PrismaClient) { }
 
     async follow(userPublicId: string, reportPublicId: string): Promise<void> {
         try {

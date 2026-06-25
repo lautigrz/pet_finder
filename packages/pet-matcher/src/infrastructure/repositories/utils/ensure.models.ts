@@ -6,9 +6,6 @@ import { logger } from '@pet-alert/shared';
 import http from 'http';
 
 const MODELS_DIR = path.resolve(__dirname, '../../../models');
-console.log('MODELS_DIR:', MODELS_DIR);
-console.log('__dirname:', __dirname);
-
 
 const MODELS = [
     {

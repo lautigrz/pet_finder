@@ -1,16 +1,21 @@
 import { Pet } from "@domain/pet/aggregates/PetAggregate";
-import { PetRepository } from "@domain/pet/repositories/pet.repository";
+import type { PetRepository } from "@domain/pet/repositories/pet.repository";
 import { PetImage } from "@domain/pet/value-objects/image.vo";
-import { StorageService } from "@application/ports/StorageService";
-import { IUserRepository } from "@domain/repositories/IUserRepository";
+import type { StorageService } from "@application/ports/StorageService";
+import type { IUserRepository } from "@domain/repositories/IUserRepository";
 import { CreatePetDTO, CreatePetResponse } from "./dto/create-pet.dto";
+import { inject, injectable } from "tsyringe";
 
 export type { CreatePetDTO, CreatePetResponse };
 
+@injectable()
 export class CreatePetUseCase {
     constructor(
+        @inject("PetRepository")
         private petRepository: PetRepository,
+        @inject("StorageService")
         private storageService: StorageService,
+        @inject("UserRepository")
         private userRepository: IUserRepository,
     ) { }
 

@@ -3,11 +3,18 @@ import { CreatePetDTO } from "@application/usecase/pet-usecase/dto/create-pet.dt
 import { GetPetsUseCase } from "@application/usecase/pet-usecase/get-user-pets.usecase";
 import { CreatePetInput } from "../schemas/pet/pet.schema";
 import { Request, Response } from "express";
-import logger from "@infrastructure/logger/";
+import { logger } from '@pet-alert/shared';
 import { asyncHandler } from "@presentation/handler/async-handler";
+import { inject, injectable } from "tsyringe";
 
+@injectable()
 export class PetController {
-    constructor(private useCase: CreatePetUseCase, private getPetsUseCase: GetPetsUseCase) { }
+    constructor(
+        @inject("CreatePetUseCase")
+        private useCase: CreatePetUseCase,
+        @inject("GetPetsUseCase")
+        private getPetsUseCase: GetPetsUseCase,
+    ) { }
 
     create = asyncHandler(async (req: Request, res: Response): Promise<void> => {
         const files = (req.files as Express.Multer.File[] | undefined) ?? [];

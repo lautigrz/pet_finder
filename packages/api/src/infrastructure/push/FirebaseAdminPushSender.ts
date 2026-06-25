@@ -1,7 +1,7 @@
 import { App } from "firebase-admin/app";
 import { getMessaging } from "firebase-admin/messaging";
 import { IPushSender, PushNotification } from "@domain/services/IPushSender";
-import logger from "../logger";
+import { logger } from '@pet-alert/shared';
 
 const DEAD_TOKEN_CODES = new Set([
   "messaging/registration-token-not-registered",
@@ -10,7 +10,7 @@ const DEAD_TOKEN_CODES = new Set([
 ]);
 
 export class FirebaseAdminPushSender implements IPushSender {
-  constructor(private readonly app: App) {}
+  constructor(private readonly app: App) { }
 
   async send(tokens: string[], notification: PushNotification): Promise<string[]> {
     if (tokens.length === 0) return [];

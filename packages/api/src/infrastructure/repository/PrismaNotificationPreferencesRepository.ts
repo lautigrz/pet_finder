@@ -1,18 +1,25 @@
 import { INotificationPreferencesRepository, UpdateNotificationPreferencesData } from "../../domain/repositories/INotificationPreferencesRepository";
 import { NotificationPreference } from "../../domain/entities/NotificationPreference";
-import prisma from "../prisma/prisma.client";
 import { NotificationPreferencesMapper } from "./NotificationPreferencesMapper";
+import { inject, injectable } from "tsyringe";
+import { PrismaClient } from "@prisma/client";
 
+@injectable()
 export class PrismaNotificationPreferencesRepository implements INotificationPreferencesRepository {
+
+    constructor(
+        @inject("PrismaClient")
+        private readonly prisma: PrismaClient) { }
+
     async getOrCreateByUserPublicId(
         userPublicId: string,
     ): Promise<NotificationPreference> {
-        const user = await prisma.user.findUniqueOrThrow({
+        const user = await this.prisma.user.findUniqueOrThrow({
             where: { public_id: userPublicId },
             select: { user_id: true },
         });
 
-        const record = await prisma.notificationPreference.upsert({
+        const record = await this.prisma.notificationPreference.upsert({
             where: {
                 user_id: user.user_id,
             },
@@ -26,10 +33,10 @@ export class PrismaNotificationPreferencesRepository implements INotificationPre
     }
 
     async updateByUserPublicId(userPublicId: string, data: UpdateNotificationPreferencesData): Promise<NotificationPreference> {
-        const record = await prisma.notificationPreference.update({
+        const record = await this.prisma.notificationPreference.update({
             where: {
                 user_id: (
-                    await prisma.user.findUniqueOrThrow({
+                    await this.prisma.user.findUniqueOrThrow({
                         where: { public_id: userPublicId },
                         select: { user_id: true },
                     })

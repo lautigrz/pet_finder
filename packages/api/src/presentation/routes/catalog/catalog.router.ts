@@ -1,23 +1,14 @@
 import { Router } from "express";
-import prisma from "@infrastructure/prisma/prisma.client";
-import { PrismaCatalogRepository } from "@infrastructure/repository/catalog/catalog.repository";
-import { GetBreedsUseCase } from "@application/usecase/catalog/get-breeds.usecase";
-import { GetColorsUseCase } from "@application/usecase/catalog/get-colors.usecase";
+import { container } from "tsyringe";
 import { CatalogController } from "src/presentation/controller/catalog.controller";
-import { readAuthConfig } from "src/presentation/config/authConfig";
-import { JwtTokenSigner } from "@infrastructure/security/JwtTokenSigner";
+import { ITokenSigner } from "../../../domain/services/ITokenSigner";
 import { requireAuth } from "src/presentation/middleware/requireAuth.middleware";
 import { validateRequest } from "src/presentation/middleware/validate.request";
 import { getBreedsRequestSchema } from "src/presentation/schemas/catalog/catalog.schema";
 
 const router = Router();
-const { jwtSecret, accessTtl } = readAuthConfig();
-const tokenSigner = new JwtTokenSigner(jwtSecret, accessTtl);
-
-const catalogRepository = new PrismaCatalogRepository(prisma);
-const getBreedsUseCase = new GetBreedsUseCase(catalogRepository);
-const getColorsUseCase = new GetColorsUseCase(catalogRepository);
-const controller = new CatalogController(getBreedsUseCase, getColorsUseCase);
+const tokenSigner = container.resolve<ITokenSigner>("TokenSigner");
+const controller = container.resolve(CatalogController);
 
 router.get("/breeds", requireAuth(tokenSigner), validateRequest(getBreedsRequestSchema), controller.getBreeds);
 router.get("/colors", requireAuth(tokenSigner), controller.getColors);

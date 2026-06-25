@@ -1,7 +1,12 @@
-import { CatalogItem, CatalogRepository } from "@domain/catalog/catalog.repository";
+import { inject, injectable } from "tsyringe";
+import type { CatalogItem, CatalogRepository } from "@domain/catalog/catalog.repository";
 
+@injectable()
 export class GetColorsUseCase {
-    constructor(private readonly catalogRepository: CatalogRepository) { }
+    constructor(
+        @inject("CatalogRepository")
+        private readonly catalogRepository: CatalogRepository
+    ) { }
 
     execute(): Promise<CatalogItem[]> {
         return this.catalogRepository.listColors();

@@ -1,17 +1,22 @@
 import { InvalidNotificationRadiusError } from "../../../domain/errors/InvalidNotificationRadiusError";
-import {
+import type {
   INotificationPreferencesRepository,
   UpdateNotificationPreferencesData,
 } from "../../../domain/repositories/INotificationPreferencesRepository";
 import { UpdateNotificationPreferencesInput } from "./update-notification-preferences.input";
 import { UpdateNotificationPreferencesOutput } from "./update-notification-preferences.output";
 import { InvalidMutedUntilError } from "../../../domain/errors/InvalidMutedUntilError";
+import { inject, injectable } from "tsyringe";
 
 const MIN_NOTIFICATION_RADIUS = 1;
 const MAX_NOTIFICATION_RADIUS = 100;
 
+@injectable()
 export class UpdateNotificationPreferencesUseCase {
-  constructor(private readonly notificationPreferencesRepository: INotificationPreferencesRepository,) { }
+  constructor(
+    @inject("NotificationPreferencesRepository")
+    private readonly notificationPreferencesRepository: INotificationPreferencesRepository,
+  ) { }
 
   async execute(
     input: UpdateNotificationPreferencesInput,

@@ -1,6 +1,8 @@
+import "../../../container/index.js";
 import { describe, it, expect, vi } from "vitest";
 import request from "supertest";
-
+import app from "../../../app.js";
+//import { container } from "tsyringe";
 vi.mock("@infrastructure/storage/CloudinaryConfig", () => ({
   cloudinary: {
     uploader: {
@@ -11,8 +13,9 @@ vi.mock("@infrastructure/storage/CloudinaryConfig", () => ({
   },
 }));
 
-vi.mock("@infrastructure/prisma/prisma.client", () => ({
-  default: {
+vi.mock("@infrastructure/prisma/prisma.client", async () => {
+  const { container } = await import("tsyringe");
+  const mockPrisma = {
     pet: {
       create: vi.fn().mockResolvedValue({}),
       findMany: vi.fn().mockResolvedValue([
@@ -26,8 +29,11 @@ vi.mock("@infrastructure/prisma/prisma.client", () => ({
       count: vi.fn(),
       findMany: vi.fn(),
     },
-  },
-}));
+  };
+
+  container.registerInstance("PrismaClient", mockPrisma);
+  return { default: mockPrisma };
+});
 
 vi.mock("@infrastructure/queue/embedding.queue", () => ({
   enqueueMatchingJob: vi.fn().mockResolvedValue({}),
@@ -38,8 +44,6 @@ vi.mock("@infrastructure/push/push-sender.factory", () => ({
     send: vi.fn().mockResolvedValue(undefined),
   })),
 }));
-
-import app from "../../../app";
 
 describe("GET /health", () => {
   it("debe retornar status 200 y ok", async () => {

@@ -3,7 +3,7 @@ import type { Server as HttpServer } from "http"
 import { readAuthConfig } from 'src/presentation/config/authConfig';
 import { JwtTokenSigner } from 'src/infrastructure/security/JwtTokenSigner';
 import { registerChatHandlers } from './handler/register-chat-handler';
-import logger from '@infrastructure/logger/';
+import { logger } from '@pet-alert/shared';
 
 export let io: Server;
 
