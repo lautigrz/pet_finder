@@ -4,10 +4,14 @@ import { GetColorsUseCase } from "@application/usecase/catalog/get-colors.usecas
 import { AnimalType } from "@domain/shared/animal-type/animal-type";
 import { asyncHandler } from "@presentation/handler/async-handler";
 import { GetBreedsQuery } from "../schemas/catalog/catalog.schema";
+import { inject, injectable } from "tsyringe";
 
+@injectable()
 export class CatalogController {
     constructor(
+        @inject("GetBreedsUseCase")
         private readonly getBreedsUseCase: GetBreedsUseCase,
+        @inject("GetColorsUseCase")
         private readonly getColorsUseCase: GetColorsUseCase,
     ) { }
 

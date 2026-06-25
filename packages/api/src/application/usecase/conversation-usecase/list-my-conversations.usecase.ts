@@ -1,13 +1,18 @@
-import { ConversationRepository } from "@domain/conversation/repositories/conversation.repository"
-import { MessageRepository } from "@domain/message/repositories/message.repository"
-import { IUserRepository } from "@domain/repositories/IUserRepository"
-import { ConversationSummaryOutput } from "./dto/get-my-conversartions"
+import type { ConversationRepository } from "@domain/conversation/repositories/conversation.repository"
+import type { MessageRepository } from "@domain/message/repositories/message.repository"
+import type { IUserRepository } from "@domain/repositories/IUserRepository"
+import type { ConversationSummaryOutput } from "./dto/get-my-conversartions"
 import { UserNotFoundError } from "@domain/errors/UserNotFoundError"
+import { inject, injectable } from "tsyringe"
 
+@injectable()
 export class ListMyConversationsUseCase {
     constructor(
+        @inject("UserRepository")
         private userRepository: IUserRepository,
+        @inject("ConversationRepository")
         private conversationRepository: ConversationRepository,
+        @inject("MessageRepository")
         private messageRepository: MessageRepository
     ) { }
 

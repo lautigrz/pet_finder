@@ -1,15 +1,19 @@
-import { ConversationRepository } from "@domain/conversation/repositories/conversation.repository";
-import { IUserRepository } from "@domain/repositories/IUserRepository";
+import type { ConversationRepository } from "@domain/conversation/repositories/conversation.repository";
+import type { IUserRepository } from "@domain/repositories/IUserRepository";
 import { CreateConversationOutput, CreateConversationRequest } from "./dto/create-conversation.dto";
 import { UserNotFoundError } from "@domain/errors/UserNotFoundError";
 import { ConversationAlreadyExistsError } from "@domain/errors/ConversationAlreadyExistsError";
 import { Conversation } from "@domain/conversation/Conversation";
 import { InvalidConversationWithItself } from "@domain/errors/InvalidConversationWithItself";
 import { randomUUID } from "crypto";
+import { inject, injectable } from "tsyringe";
 
+@injectable()
 export class CreateConversationUseCase {
     constructor(
+        @inject("ConversationRepository")
         private readonly conversationRepository: ConversationRepository,
+        @inject("UserRepository")
         private readonly userRepository: IUserRepository,
     ) { }
 

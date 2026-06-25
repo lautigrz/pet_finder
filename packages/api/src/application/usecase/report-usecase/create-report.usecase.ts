@@ -2,27 +2,33 @@ import { InvalidFieldError, InvalidReportTypeError } from "@application/errors/e
 import { User } from "@domain/entities/User";
 import { Pet } from "@domain/pet/aggregates/PetAggregate";
 import { Report } from "@domain/report/aggregates/ReportAggregate";
-import { ReportRepository } from "@domain/report/repositories/report.repository";
+import type { ReportRepository } from "@domain/report/repositories/report.repository";
 import { ReportDetails } from "@domain/report/types/report-details.type";
 import { ReportType, ReportTypeToNumber } from "@domain/report/types/report.type";
 import { ReportDescription } from "@domain/report/value-objects/description.vo";
 import { Location } from "@domain/report/value-objects/location.vo";
 import { LostReportDetails } from "@domain/report/value-objects/lost-report-details.vo";
 import { SightingReportDetails } from "@domain/report/value-objects/sighting-report-details.vo";
-import { PetRepository } from "@domain/pet/repositories/pet.repository";
-import { IUserRepository } from "@domain/repositories/IUserRepository";
-import { StorageService } from "@application/ports/StorageService";
+import type { PetRepository } from "@domain/pet/repositories/pet.repository";
+import type { IUserRepository } from "@domain/repositories/IUserRepository";
+import type { StorageService } from "@application/ports/StorageService";
 import { SightingImage } from "@domain/report/value-objects/sighting.images";
 import { CreateReportDTO, LocationDTO } from "./dto/create-report.dto";
 import { enqueueMatchingJob } from "@infrastructure/queue/embedding.queue";
+import { inject, injectable } from "tsyringe";
 
 export type { CreateReportDTO, LocationDTO };
 
+@injectable()
 export class CreateReportUseCase {
     constructor(
+        @inject("ReportRepository")
         private reportRepository: ReportRepository,
+        @inject("UserRepository")
         private userRepository: IUserRepository,
+        @inject("PetRepository")
         private petRepository: PetRepository,
+        @inject("StorageService")
         private storageService: StorageService,
     ) { }
 

@@ -1,5 +1,5 @@
 import { IEmailService } from "../../domain/services/IEmailService";
-import logger from "../logger";
+import { logger } from '@pet-alert/shared';
 
 const APP_BASE_URL = process.env.APP_BASE_URL ?? "http://localhost:4200";
 

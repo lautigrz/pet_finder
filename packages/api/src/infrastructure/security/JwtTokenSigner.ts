@@ -1,14 +1,16 @@
 import jwt, { SignOptions } from "jsonwebtoken";
 import { AccessTokenPayload, ITokenSigner } from "../../domain/services/ITokenSigner";
 import { InvalidAccessTokenError } from "../../domain/errors/InvalidAccessTokenError";
+import { injectable } from "tsyringe";
 
 const ALGORITHM = "HS256";
 
+@injectable()
 export class JwtTokenSigner implements ITokenSigner {
   constructor(
     private readonly secret: string,
     private readonly expiresIn: SignOptions["expiresIn"],
-  ) {}
+  ) { }
 
   sign(payload: AccessTokenPayload): string {
     return jwt.sign(payload, this.secret, { algorithm: ALGORITHM, expiresIn: this.expiresIn });

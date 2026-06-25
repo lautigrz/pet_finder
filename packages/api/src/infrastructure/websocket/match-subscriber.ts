@@ -1,17 +1,13 @@
 import { MATCH_CHANNEL, MATCH_EVENT, MatchNotification } from '@pet-alert/shared';
 import { redisConnection } from '@infrastructure/redis/redis.client';
 import { emitToUser } from './socket';
-import logger from '@infrastructure/logger/';
-import { SendPushToUserUseCase } from '@application/usecase/send-push-to-user/send-push-to-user.usecase';
+import { logger } from '@pet-alert/shared';
 import { NotifyOwnerOfMatchUseCase } from '@application/usecase/notify-owner-of-match/notify-owner-of-match.usecase';
-import { PrismaDeviceTokenRepository } from '@infrastructure/repository/PrismaDeviceTokenRepository';
-import { createPushSender } from '@infrastructure/push/push-sender.factory';
+import { container } from 'tsyringe';
 
 export function initMatchSubscriber(): void {
     const subscriber = redisConnection.duplicate();
-    const notifyOwnerOfMatch = new NotifyOwnerOfMatchUseCase(
-        new SendPushToUserUseCase(new PrismaDeviceTokenRepository(), createPushSender()),
-    );
+    const notifyOwnerOfMatch = container.resolve(NotifyOwnerOfMatchUseCase);
 
     subscriber.subscribe(MATCH_CHANNEL, (err) => {
         if (err) {

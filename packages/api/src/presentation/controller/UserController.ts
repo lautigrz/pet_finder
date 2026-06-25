@@ -13,17 +13,26 @@ import { GetNotificationPreferencesUseCase } from "../../application/usecase/get
 import { UpdateNotificationPreferencesUseCase } from "../../application/usecase/update-notification-preferences/update-notification-preferences.usecase";
 import { UpdateNotificationPreferencesInput } from "../../application/usecase/update-notification-preferences/update-notification-preferences.input";
 import { UpdateNotificationPreferencesRequest } from "../dto/UpdateNotificationPreferencesRequest";
-import { ClaudinaryService } from "../../infrastructure/storage/CloudinaryService";
+import type { StorageService } from "../../application/ports/StorageService";
 import { asyncHandler } from "@presentation/handler/async-handler";
+import { inject, injectable } from "tsyringe";
 
+@injectable()
 export class UserController {
   constructor(
+    @inject("RegisterUserUseCase")
     private readonly registerUserUseCase: RegisterUserUseCase,
+    @inject("VerifyEmailUseCase")
     private readonly verifyEmailUseCase: VerifyEmailUseCase,
+    @inject("UpdateProfileUseCase")
     private readonly updateProfileUseCase: UpdateProfileUseCase,
+    @inject("GetProfileUseCase")
     private readonly getProfileUseCase: GetProfileUseCase,
-    private readonly cloudinaryService: ClaudinaryService,
+    @inject("StorageService")
+    private readonly storageService: StorageService,
+    @inject("UpdateNotificationPreferencesUseCase")
     private readonly updateNotificationsPreferenceUseCase: UpdateNotificationPreferencesUseCase,
+    @inject("GetNotificationPreferencesUseCase")
     private readonly getNotificationPreferencesUseCase: GetNotificationPreferencesUseCase,
   ) { }
 
@@ -72,7 +81,7 @@ export class UserController {
       return;
     }
 
-    const uploadedImage = await this.cloudinaryService.upload(req.file.buffer, "profiles");
+    const uploadedImage = await this.storageService.upload(req.file.buffer, "profiles");
 
     const updated = await this.updateProfileUseCase.execute(
       new UpdateProfileInput(

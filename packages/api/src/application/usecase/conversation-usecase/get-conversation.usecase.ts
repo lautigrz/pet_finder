@@ -1,11 +1,12 @@
-import { ConversationRepository } from "@domain/conversation/repositories/conversation.repository";
-import { MessageRepository } from "@domain/message/repositories/message.repository";
-import { IUserRepository } from "@domain/repositories/IUserRepository";
-import { ConversationOutput } from "./dto/get-conversation.dto";
+import type { ConversationRepository } from "@domain/conversation/repositories/conversation.repository";
+import type { MessageRepository } from "@domain/message/repositories/message.repository";
+import type { IUserRepository } from "@domain/repositories/IUserRepository";
+import type { ConversationOutput } from "./dto/get-conversation.dto";
 import { UserNotFoundError } from "@domain/errors/UserNotFoundError";
 import { UnauthorizedConversationError } from "@domain/errors/UnauthorizedConversationError";
 import { ConversationNotFoundError } from "@domain/errors/ConversationNotFoundError";
 import { ConversationOutputMapper } from "./mapper/conversation.mapper";
+import { inject, injectable } from "tsyringe";
 
 interface GetConversationRequest {
     publicUserId: string;
@@ -14,10 +15,14 @@ interface GetConversationRequest {
     limit?: number;
 }
 
+@injectable()
 export class GetConversationUseCase {
     constructor(
+        @inject("ConversationRepository")
         private readonly conversationRepository: ConversationRepository,
+        @inject("MessageRepository")
         private readonly messageRepository: MessageRepository,
+        @inject("UserRepository")
         private readonly userRepository: IUserRepository,
     ) { }
 

@@ -1,7 +1,9 @@
 import dotenv from "dotenv";
+import "reflect-metadata";
 dotenv.config();
+import "./container";
 import app from "./app";
-import logger from './infrastructure/logger';
+import { logger } from '@pet-alert/shared';
 import { createServer } from "http";
 import { initSocket } from "@infrastructure/websocket/socket";
 import { initMatchSubscriber } from "@infrastructure/websocket/match-subscriber";

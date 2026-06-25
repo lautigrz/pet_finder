@@ -1,13 +1,18 @@
-import { ReportRepository, ReportWithPet } from "@domain/report/repositories/report.repository";
+import type { ReportRepository, ReportWithPet } from "@domain/report/repositories/report.repository";
 import { ReportQuery } from "./report-query";
 import { GetFilteredReportsDTO } from "./dto/get-filtered-reports.dto";
 import { ReportOutputMapper } from "./mapper/report.mapper";
 import { ReportOutput } from "./get-report-usecase";
 import { haversineKm } from "@domain/shared/geo/haversine";
+import { inject, injectable } from "tsyringe";
 
+@injectable()
 export class GetFilteredReportsUseCase {
 
-    constructor(private reportRepository: ReportRepository) { }
+    constructor(
+        @inject("ReportRepository")
+        private reportRepository: ReportRepository
+    ) { }
 
     async execute(dto: GetFilteredReportsDTO): Promise<ReportOutput[]> {
         const query = new ReportQuery(dto);

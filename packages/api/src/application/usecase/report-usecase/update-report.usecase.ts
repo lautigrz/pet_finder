@@ -1,5 +1,5 @@
-import { PetRepository } from '@domain/pet/repositories/pet.repository';
-import { ReportRepository } from '@domain/report/repositories/report.repository';
+import type { PetRepository } from '@domain/pet/repositories/pet.repository';
+import type { ReportRepository } from '@domain/report/repositories/report.repository';
 import { ReportDescription } from '@domain/report/value-objects/description.vo';
 import { Location } from '@domain/report/value-objects/location.vo';
 import { LostReportDetails } from '@domain/report/value-objects/lost-report-details.vo';
@@ -9,13 +9,18 @@ import { InvalidFieldError } from '@application/errors/errors';
 import { ReportType } from '@domain/report/types/report.type';
 import { SightingReportDetails } from '@domain/report/value-objects/sighting-report-details.vo';
 import { SightingImage } from '@domain/report/value-objects/sighting.images';
-import { StorageService } from '@application/ports/StorageService';
+import type { StorageService } from '@application/ports/StorageService';
 import { UpdateReportDTO } from './dto/update-report.dto';
+import { inject, injectable } from 'tsyringe';
 
+@injectable()
 export class UpdateReportUseCase {
   constructor(
+    @inject("ReportRepository")
     private readonly reportRepository: ReportRepository,
+    @inject("PetRepository")
     private readonly petRepository: PetRepository,
+    @inject("StorageService")
     private readonly storageService: StorageService,
   ) { }
 

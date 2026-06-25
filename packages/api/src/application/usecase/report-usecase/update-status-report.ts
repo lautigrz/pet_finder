@@ -1,13 +1,17 @@
 import { Report } from "@domain/report/aggregates/ReportAggregate";
-import { ReportRepository } from "@domain/report/repositories/report.repository";
+import type { ReportRepository } from "@domain/report/repositories/report.repository";
 import { ReportStatus } from "@domain/report/types/report.status";
 import { UpdateStatusDTO } from "./dto/update-status.dto";
 import { ReportNotFoundError } from "@domain/errors/ReportNotFoundError";
 import { NotifyReportFollowersOfStatusChangeUseCase } from "./notify-report-followers-of-status-change.usecase";
+import { inject, injectable } from "tsyringe";
 
+@injectable()
 export class UpdateStatus {
   constructor(
+    @inject("ReportRepository")
     private readonly reportRepository: ReportRepository,
+    @inject("NotifyReportFollowersOfStatusChangeUseCase")
     private readonly notifyReportFollowersOfStatusChange: NotifyReportFollowersOfStatusChangeUseCase,
   ) {}
 

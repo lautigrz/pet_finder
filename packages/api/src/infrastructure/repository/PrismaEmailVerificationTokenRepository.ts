@@ -1,22 +1,29 @@
+import { PrismaClient } from "@prisma/client";
 import { EmailVerificationToken } from "../../domain/entities/EmailVerificationToken";
 import { IEmailVerificationTokenRepository } from "../../domain/repositories/IEmailVerificationTokenRepository";
-import prisma from "../prisma/prisma.client";
 import { EmailVerificationTokenMapper } from "./EmailVerificationTokenMapper";
+import { inject, injectable } from "tsyringe";
 
+@injectable()
 export class PrismaEmailVerificationTokenRepository implements IEmailVerificationTokenRepository {
+
+  constructor(
+    @inject("PrismaClient")
+    private readonly prisma: PrismaClient) { }
+
   async save(token: EmailVerificationToken): Promise<void> {
-    await prisma.emailVerificationToken.create({
+    await this.prisma.emailVerificationToken.create({
       data: EmailVerificationTokenMapper.toPersistence(token),
     });
   }
 
   async findByValue(value: string): Promise<EmailVerificationToken | null> {
-    const record = await prisma.emailVerificationToken.findUnique({ where: { token: value } });
+    const record = await this.prisma.emailVerificationToken.findUnique({ where: { token: value } });
     return record ? EmailVerificationTokenMapper.toDomain(record) : null;
   }
 
   async markAsUsed(tokenId: number, usedAt: Date): Promise<void> {
-    await prisma.emailVerificationToken.update({
+    await this.prisma.emailVerificationToken.update({
       where: { email_verification_token_id: tokenId },
       data: { used_at: usedAt },
     });

@@ -1,15 +1,19 @@
-import { ReportRepository } from "@domain/report/repositories/report.repository";
-import { ReportFollowerRepository } from "@domain/report/repositories/report-follower.repository";
+import type { ReportRepository } from "@domain/report/repositories/report.repository";
+import type { ReportFollowerRepository } from "@domain/report/repositories/report-follower.repository";
 import { ReportNotFoundError } from "@domain/errors/ReportNotFoundError";
+import { inject, injectable } from "tsyringe";
 
 interface FollowReportInput {
   userPublicId: string;
   reportPublicId: string;
 }
 
+@injectable()
 export class FollowReportUseCase {
   constructor(
+    @inject("ReportRepository")
     private readonly reportRepository: ReportRepository,
+    @inject("ReportFollowerRepository")
     private readonly followerRepository: ReportFollowerRepository,
   ) {}
 

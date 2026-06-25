@@ -6,11 +6,15 @@ import { GenderTypeMap } from "@domain/shared/gender-type/gender-map";
 import { AnimalTypeMap } from "@domain/shared/animal-type/animal-type-map";
 import { SizeTypeMap } from "@domain/shared/size-type/size-map";
 import { CatalogResolver } from "../catalog/catalog-resolver";
+import { inject, injectable } from "tsyringe";
 
+@injectable()
 export class PrismaPetRepository implements PetRepository {
     private readonly catalog: CatalogResolver;
 
-    constructor(private readonly prisma: PrismaClient) {
+    constructor(
+        @inject("PrismaClient")
+        private readonly prisma: PrismaClient) {
         this.catalog = new CatalogResolver(prisma);
     }
 

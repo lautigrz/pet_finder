@@ -4,9 +4,13 @@ import { emitToUser } from "@infrastructure/websocket/socket";
 import { asyncHandler } from "@presentation/handler/async-handler";
 import { SendMessageInput } from "@presentation/schemas/message/message.schema";
 import { Request, Response } from "express";
+import { inject, injectable } from "tsyringe";
+
+@injectable()
 export class MessageController {
 
     constructor(
+        @inject("SendMessageUseCase")
         private readonly sendMessageUseCase: SendMessageUseCase,
     ) { }
 

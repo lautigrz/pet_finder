@@ -1,19 +1,24 @@
-import { IRefreshTokenRepository } from "../../../domain/repositories/IRefreshTokenRepository";
-import { IUserRepository } from "../../../domain/repositories/IUserRepository";
-import { ITokenSigner } from "../../../domain/services/ITokenSigner";
+import type { IRefreshTokenRepository } from "../../../domain/repositories/IRefreshTokenRepository";
+import type { IUserRepository } from "../../../domain/repositories/IUserRepository";
+import type { ITokenSigner } from "../../../domain/services/ITokenSigner";
 import { accessTokenPayloadFor } from "../../../domain/auth/access-token-payload";
 import { InvalidRefreshTokenError } from "../../../domain/errors/InvalidRefreshTokenError";
 import { RefreshToken } from "../../../domain/entities/RefreshToken";
 import { User } from "../../../domain/entities/User";
 import { RefreshAccessTokenInput } from "./refresh-access-token.input";
 import { RefreshAccessTokenOutput } from "./refresh-access-token.output";
+import { inject, injectable } from "tsyringe";
 
+@injectable()
 export class RefreshAccessTokenUseCase {
   constructor(
+    @inject("RefreshTokenRepository")
     private readonly refreshTokenRepository: IRefreshTokenRepository,
+    @inject("UserRepository")
     private readonly userRepository: IUserRepository,
+    @inject("TokenSigner")
     private readonly tokenSigner: ITokenSigner,
-  ) {}
+  ) { }
 
   async execute(input: RefreshAccessTokenInput): Promise<RefreshAccessTokenOutput> {
     const token = await this.findActiveToken(input.refreshToken);

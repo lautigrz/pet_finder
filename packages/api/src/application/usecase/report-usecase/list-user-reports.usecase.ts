@@ -1,6 +1,6 @@
-import { PetRepository } from "@domain/pet/repositories/pet.repository";
+import type { PetRepository } from "@domain/pet/repositories/pet.repository";
 import { Report } from "@domain/report/aggregates/ReportAggregate";
-import { ReportRepository } from "@domain/report/repositories/report.repository";
+import type { ReportRepository } from "@domain/report/repositories/report.repository";
 import { ReportType } from "@domain/report/types/report.type";
 import { LostReportDetails } from "@domain/report/value-objects/lost-report-details.vo";
 import { PaginationParams } from "@domain/shared/pagination/pagination";
@@ -10,10 +10,14 @@ import { ReportOutputMapper } from "./mapper/report.mapper";
 import { ListUserReportsOutputDto } from "./list-user-reports.output";
 import { GetFilteredReportsDTO } from "./dto/get-filtered-reports.dto";
 import { haversineKm } from "@domain/shared/geo/haversine";
+import { inject, injectable } from "tsyringe";
 
+@injectable()
 export class ListUserReportsUseCase {
   constructor(
+    @inject("ReportRepository")
     private reportRepository: ReportRepository,
+    @inject("PetRepository")
     private petRepository: PetRepository,
   ) { }
 

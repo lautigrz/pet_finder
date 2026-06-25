@@ -1,10 +1,13 @@
-import { IUserRepository } from "../../../domain/repositories/IUserRepository";
+import type { IUserRepository } from "../../../domain/repositories/IUserRepository";
 import { UpdateProfileInput } from "./update-profile.input";
 import { UpdateProfileOutput } from "./update-profile.output";
 import { UserNotFoundError } from "../../../domain/errors/UserNotFoundError";
+import { inject, injectable } from "tsyringe";
 
+@injectable()
 export class UpdateProfileUseCase{
     constructor(
+        @inject("UserRepository")
         private readonly userRepository: IUserRepository
     ){} 
     

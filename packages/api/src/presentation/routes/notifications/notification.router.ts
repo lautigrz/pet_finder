@@ -1,27 +1,15 @@
 import { Router } from "express";
+import { container } from "tsyringe";
 import { NotificationController } from "../../controller/NotificationController";
-import { RegisterDeviceTokenUseCase } from "../../../application/usecase/register-device-token/register-device-token.usecase";
-import { RemoveDeviceTokenUseCase } from "../../../application/usecase/remove-device-token/remove-device-token.usecase";
-import { PrismaDeviceTokenRepository } from "../../../infrastructure/repository/PrismaDeviceTokenRepository";
-import { JwtTokenSigner } from "../../../infrastructure/security/JwtTokenSigner";
-import { readAuthConfig } from "../../config/authConfig";
+import { ITokenSigner } from "../../../domain/services/ITokenSigner";
 import { requireAuth } from "../../middleware/requireAuth.middleware";
 import { validateRequest } from "../../middleware/validate.request";
 import { registerDeviceTokenSchema, removeDeviceTokenSchema } from "../../schemas/notifications/device-token.schema";
 
 const router = Router();
 
-const deviceTokenRepository = new PrismaDeviceTokenRepository();
-const registerDeviceTokenUseCase = new RegisterDeviceTokenUseCase(deviceTokenRepository);
-const removeDeviceTokenUseCase = new RemoveDeviceTokenUseCase(deviceTokenRepository);
-
-const { jwtSecret, accessTtl } = readAuthConfig();
-const tokenSigner = new JwtTokenSigner(jwtSecret, accessTtl);
-
-const notificationController = new NotificationController(
-  registerDeviceTokenUseCase,
-  removeDeviceTokenUseCase,
-);
+const tokenSigner = container.resolve<ITokenSigner>("TokenSigner");
+const notificationController = container.resolve(NotificationController);
 
 router.post(
   "/tokens",

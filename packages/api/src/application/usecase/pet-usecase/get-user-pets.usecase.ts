@@ -1,12 +1,16 @@
-import { PetRepository } from "@domain/pet/repositories/pet.repository";
-import { IUserRepository } from "@domain/repositories/IUserRepository";
+import type { PetRepository } from "@domain/pet/repositories/pet.repository";
+import type { IUserRepository } from "@domain/repositories/IUserRepository";
 import { PetMapper, PetOutput } from "./mapper/pet-mapper";
+import { inject, injectable } from "tsyringe";
 
 export type { PetOutput };
 
+@injectable()
 export class GetPetsUseCase {
     constructor(
+        @inject("PetRepository")
         private petRepository: PetRepository,
+        @inject("UserRepository")
         private userRepository: IUserRepository,
     ) { }
 

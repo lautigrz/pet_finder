@@ -17,13 +17,20 @@ import {
   ForgotPasswordBody,
   ResetPasswordBody,
 } from "../schemas/auth/auth.schema";
+import { inject, injectable } from "tsyringe";
 
+@injectable()
 export class AuthController {
   constructor(
+    @inject("LoginUserUseCase")
     private readonly loginUserUseCase: LoginUserUseCase,
+    @inject("LogoutUserUseCase")
     private readonly logoutUserUseCase: LogoutUserUseCase,
+    @inject("RefreshAccessTokenUseCase")
     private readonly refreshAccessTokenUseCase: RefreshAccessTokenUseCase,
+    @inject("RequestPasswordResetUseCase")
     private readonly requestPasswordResetUseCase: RequestPasswordResetUseCase,
+    @inject("ResetPasswordUseCase")
     private readonly resetPasswordUseCase: ResetPasswordUseCase,
   ) { }
 

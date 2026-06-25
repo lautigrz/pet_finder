@@ -1,6 +1,6 @@
-import { ConversationRepository } from "@domain/conversation/repositories/conversation.repository";
-import { MessageRepository } from "@domain/message/repositories/message.repository";
-import { IUserRepository } from "@domain/repositories/IUserRepository";
+import type { ConversationRepository } from "@domain/conversation/repositories/conversation.repository";
+import type { MessageRepository } from "@domain/message/repositories/message.repository";
+import type { IUserRepository } from "@domain/repositories/IUserRepository";
 import { MessageOutput, SendMessageRequest } from "./dto/message.dto";
 import { UserNotFoundError } from "@domain/errors/UserNotFoundError";
 import { ConversationNotFoundError } from "@domain/errors/ConversationNotFoundError";
@@ -8,15 +8,21 @@ import { UnauthorizedConversationError } from "@domain/errors/UnauthorizedConver
 import { MessageText } from "@domain/message/value-objects/message.vo";
 import { Message } from "@domain/message/aggregate/MessageAgregate";
 import { randomUUID } from "crypto";
-import { StorageService } from "@application/ports/StorageService";
+import type { StorageService } from "@application/ports/StorageService";
 import { MessageImage } from "@domain/message/value-objects/image.vo";
+import { inject, injectable } from "tsyringe";
 
+@injectable()
 export class SendMessageUseCase {
 
     constructor(
+        @inject("ConversationRepository")
         private readonly conversationRepository: ConversationRepository,
+        @inject("MessageRepository")
         private readonly messageRepository: MessageRepository,
+        @inject("UserRepository")
         private readonly userRepository: IUserRepository,
+        @inject("StorageService")
         private readonly storageService: StorageService
     ) { }
 

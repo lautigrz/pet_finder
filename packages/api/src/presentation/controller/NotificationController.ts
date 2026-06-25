@@ -5,10 +5,14 @@ import { RemoveDeviceTokenUseCase } from "../../application/usecase/remove-devic
 import { RemoveDeviceTokenInput } from "../../application/usecase/remove-device-token/remove-device-token.input";
 import { RegisterDeviceTokenBody, RemoveDeviceTokenBody } from "../schemas/notifications/device-token.schema";
 import { asyncHandler } from "@presentation/handler/async-handler";
+import { inject, injectable } from "tsyringe";
 
+@injectable()
 export class NotificationController {
   constructor(
+    @inject("RegisterDeviceTokenUseCase")
     private readonly registerDeviceTokenUseCase: RegisterDeviceTokenUseCase,
+    @inject("RemoveDeviceTokenUseCase")
     private readonly removeDeviceTokenUseCase: RemoveDeviceTokenUseCase,
   ) { }
 

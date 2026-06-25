@@ -3,10 +3,15 @@ import { Message } from "@domain/message/aggregate/MessageAgregate";
 import { Page, PaginationParams } from "@domain/shared/pagination/pagination";
 import { PrismaClient } from "@prisma/client";
 import { MessageMapper } from "./message.mapper";
+import { inject, injectable } from "tsyringe";
 
+
+@injectable()
 export class PrismaMessageRepository implements MessageRepository {
 
-    constructor(private readonly prisma: PrismaClient) { }
+    constructor(
+        @inject("PrismaClient")
+        private readonly prisma: PrismaClient) { }
 
     async findLastMessageByConversationIds(conversationIds: number[]): Promise<Message[]> {
         if (conversationIds.length === 0) return [];

@@ -2,11 +2,15 @@ import { Request, Response } from "express";
 import { GetMatchResultsUseCase } from "@application/usecase/match-results-usecase/get-match-results.usecase";
 import { GetUserMatchNotificationsUseCase } from "@application/usecase/match-results-usecase/get-user-match-notifications.usecase";
 import { asyncHandler } from "@presentation/handler/async-handler";
+import { inject, injectable } from "tsyringe";
 
+@injectable()
 export class MatchResultsController {
 
     constructor(
+        @inject("GetMatchResultsUseCase")
         private readonly getMatchResultsUseCase: GetMatchResultsUseCase,
+        @inject("GetUserMatchNotificationsUseCase")
         private readonly getUserMatchNotificationsUseCase: GetUserMatchNotificationsUseCase,
     ) { }
 
@@ -15,7 +19,7 @@ export class MatchResultsController {
 
         const publicId = req.params.publicId;
         const matchResults = await this.getMatchResultsUseCase.execute(publicId as string);
-        console.log("reportes", matchResults.length)
+
         res.json(matchResults);
     })
 

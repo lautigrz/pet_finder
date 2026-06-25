@@ -15,22 +15,34 @@ import { UpdateReportInput } from "../schemas/report/update-report.schema";
 import { NotifyNearbyLostOwnersUseCase } from "@application/usecase/notify-nearby-lost-owners/notify-nearby-lost-owners.usecase";
 import { asyncHandler } from "@presentation/handler/async-handler";
 import { UserNotFoundError } from "@domain/errors/UserNotFoundError";
-import logger from "@infrastructure/logger";
+import { logger } from '@pet-alert/shared';
 import { FollowReportUseCase } from "@application/usecase/report-usecase/follow-report.usecase";
 import { UnfollowReportUseCase } from "@application/usecase/report-usecase/unfollow-report.usecase";
 import { IsFollowingReportUseCase } from "@application/usecase/report-usecase/is-following-report.usecase";
+import { inject, injectable } from "tsyringe";
 
+@injectable()
 export class CreateReportController {
     constructor(
+        @inject("CreateReportUseCase")
         private useCase: CreateReportUseCase,
+        @inject("GetReportUseCase")
         private getReportUseCase: GetReportUseCase,
+        @inject("ListUserReportsUseCase")
         private listUserReportsUseCase: ListUserReportsUseCase,
+        @inject("GetFilteredReportsUseCase")
         private filteresUseCase: GetFilteredReportsUseCase,
+        @inject("UpdateStatusUseCase")
         private updateStatusUseCase: UpdateStatus,
+        @inject("UpdateReportUseCase")
         private updateReportUseCase: UpdateReportUseCase,
+        @inject("NotifyNearbyLostOwnersUseCase")
         private notifyNearbyLostOwnersUseCase: NotifyNearbyLostOwnersUseCase,
+        @inject("FollowReportUseCase")
         private followReportUseCase: FollowReportUseCase,
+        @inject("UnfollowReportUseCase")
         private unfollowReportUseCase: UnfollowReportUseCase,
+        @inject("IsFollowingReportUseCase")
         private isFollowingReportUseCase: IsFollowingReportUseCase,
     ) { }
 

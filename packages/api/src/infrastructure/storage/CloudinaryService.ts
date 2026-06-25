@@ -1,8 +1,9 @@
 import { StorageService } from "@application/ports/StorageService";
 import { cloudinary } from "./CloudinaryConfig";
 import { UploadApiResponse, UploadApiErrorResponse } from "cloudinary";
+import { injectable } from "tsyringe";
 
-
+@injectable()
 export class ClaudinaryService implements StorageService {
 
     async upload(buffer: Buffer, folder?: string): Promise<{ url: string; publicId: string }> {
