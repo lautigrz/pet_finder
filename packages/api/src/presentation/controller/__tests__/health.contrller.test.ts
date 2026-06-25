@@ -2,7 +2,7 @@ import "../../../container/index.js";
 import { describe, it, expect, vi } from "vitest";
 import request from "supertest";
 import app from "../../../app.js";
-
+import { container } from "tsyringe";
 vi.mock("@infrastructure/storage/CloudinaryConfig", () => ({
   cloudinary: {
     uploader: {
@@ -14,7 +14,7 @@ vi.mock("@infrastructure/storage/CloudinaryConfig", () => ({
 }));
 
 vi.mock("@infrastructure/prisma/prisma.client", () => {
-  const { container } = require("tsyringe");
+
   const mockPrisma = {
     pet: {
       create: vi.fn().mockResolvedValue({}),
@@ -30,6 +30,7 @@ vi.mock("@infrastructure/prisma/prisma.client", () => {
       findMany: vi.fn(),
     },
   };
+
   container.registerInstance("PrismaClient", mockPrisma);
   return { default: mockPrisma };
 });
