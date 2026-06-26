@@ -4,6 +4,8 @@ interface MatchResultsProps {
     sourceReportId: number;
     candidateReportId: number;
     score: number;
+    imageScore: number;
+    descriptionScore: number;
 }
 
 export class MatchResultsEntity {
@@ -19,4 +21,6 @@ export class MatchResultsEntity {
     get sourceReportId() { return this.props.sourceReportId; }
     get candidateReportId() { return this.props.candidateReportId; }
     get score() { return this.props.score; }
+    get imageScore() { return this.props.imageScore; }
+    get descriptionScore() { return this.props.descriptionScore; }
 }

@@ -14,5 +14,7 @@ export type MatchNotification = {
   matchedReportPublicId: string;
   matchedImage: string | null;
   score: number;
+  imageScore?: number | null;
+  descriptionScore?: number | null;
   createdAt: string;
 };
