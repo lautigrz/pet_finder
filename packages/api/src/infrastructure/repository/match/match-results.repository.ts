@@ -77,7 +77,7 @@ export class PrismaMatchResultsRepository implements MatchResultsRepository {
             const sighting = sourceIsLost ? row.candidate_report : row.source_report;
             if (lost.user.public_id === sighting.user.public_id) return [];
             const rol: MatchRole = lost.user.public_id === userPublicId ? "dueno" : "avistador";
-            return [toMatchNotification(row.public_id, row.score, row.created_at, lost, sighting, rol, userPublicId)];
+            return [toMatchNotification(row.public_id, row.score, row.image_score, row.description_score, row.created_at, lost, sighting, rol, userPublicId)];
         });
     }
 }
@@ -85,6 +85,8 @@ export class PrismaMatchResultsRepository implements MatchResultsRepository {
 function toMatchNotification(
     matchPublicId: string,
     score: number,
+    imageScore: number,
+    descriptionScore: number,
     createdAt: Date,
     lost: NotificationReportRow,
     sighting: NotificationReportRow,
@@ -101,6 +103,8 @@ function toMatchNotification(
         matchedReportPublicId: sighting.public_id,
         matchedImage: sighting.reportImages[0]?.photoUrl ?? null,
         score,
+        imageScore,
+        descriptionScore,
         createdAt: createdAt.toISOString(),
     };
 }

@@ -15,6 +15,8 @@ function makeMatchEntity(overrides: Partial<{
     sourceReportId: number;
     candidateReportId: number;
     score: number;
+    imageScore: number;
+    descriptionScore: number;
 }> = {}): MatchResultsEntity {
     return MatchResultsEntity.create({
         id: 1,
@@ -22,6 +24,8 @@ function makeMatchEntity(overrides: Partial<{
         sourceReportId: 10,
         candidateReportId: 20,
         score: 0.9,
+        imageScore: 0.8,
+        descriptionScore: 0.6,
         ...overrides,
     });
 }
@@ -77,7 +81,7 @@ describe("GetMatchResultsUseCase", () => {
 
             vi.mocked(reportRepository.findByPublicId).mockResolvedValue(sourceReport);
             vi.mocked(matchResultsRepository.findResultsBySourceReportId).mockResolvedValue([
-                makeMatchEntity({ candidateReportId: 20, score: 0.9, publicId: "match-pub-id" }),
+                makeMatchEntity({ candidateReportId: 20, score: 0.9, imageScore: 0.85, descriptionScore: 0.7, publicId: "match-pub-id" }),
             ]);
             vi.mocked(reportRepository.findDetailsByIds).mockResolvedValue([
                 { report: candidateReport, pet: candidatePet },
@@ -90,6 +94,8 @@ describe("GetMatchResultsUseCase", () => {
                 publicId: "match-pub-id",
                 sourceReportPublicId: "source-pub-id",
                 score: 0.9,
+                imageScore: 0.85,
+                descriptionScore: 0.7,
                 details: {
                     publicId: "candidate-pub-id",
                     animalType: "DOG",
