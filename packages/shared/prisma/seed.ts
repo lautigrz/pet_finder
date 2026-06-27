@@ -10,6 +10,9 @@ async function main(): Promise<void> {
   await seedPetSizes()
   await seedColors()
   await seedBreeds()
+  await seedContentReportTargetTypes()
+  await seedContentReportReasons()
+  await seedContentReportStatuses()
 }
 
 const DOG = 1
@@ -161,6 +164,44 @@ async function seedPetSizes(): Promise<void> {
         size_id: 3,
         name: 'LARGE',
       },
+    ],
+    skipDuplicates: true,
+  })
+}
+
+async function seedContentReportTargetTypes(): Promise<void> {
+  await prisma.contentReportTargetType.createMany({
+    data: [
+      { content_report_target_type_id: 1, name: 'CHAT' },
+      { content_report_target_type_id: 2, name: 'POST' },
+    ],
+    skipDuplicates: true,
+  })
+}
+
+async function seedContentReportReasons(): Promise<void> {
+  await prisma.contentReportReason.createMany({
+    data: [
+      { content_report_reason_id: 1, name: 'SUSPICIOUS_BEHAVIOR' },
+      { content_report_reason_id: 2, name: 'FRAUD_OR_SCAM' },
+      { content_report_reason_id: 3, name: 'IMPERSONATION' },
+      { content_report_reason_id: 4, name: 'INAPPROPRIATE_CONTENT' },
+      { content_report_reason_id: 5, name: 'PERSONAL_DATA_EXPOSED' },
+      { content_report_reason_id: 6, name: 'FALSE_INFORMATION' },
+      { content_report_reason_id: 7, name: 'SPAM' },
+      { content_report_reason_id: 8, name: 'DUPLICATE_REPORT' },
+      { content_report_reason_id: 9, name: 'OTHER' },
+    ],
+    skipDuplicates: true,
+  })
+}
+
+async function seedContentReportStatuses(): Promise<void> {
+  await prisma.contentReportStatus.createMany({
+    data: [
+      { content_report_status_id: 1, name: 'PENDING' },
+      { content_report_status_id: 2, name: 'REVIEWED' },
+      { content_report_status_id: 3, name: 'DISMISSED' },
     ],
     skipDuplicates: true,
   })
