@@ -30,7 +30,9 @@
         "GMAIL_USER",
         "GMAIL_APP_PASSWORD",
         "EMAIL_FROM",
-        "APP_BASE_URL"
+        "APP_BASE_URL",
+        "LOG_LEVEL",
+        "LOG_DIR"
       ]
     },
     "test": {
@@ -65,7 +67,9 @@
         "GMAIL_USER",
         "GMAIL_APP_PASSWORD",
         "EMAIL_FROM",
-        "APP_BASE_URL"
+        "APP_BASE_URL",
+        "LOG_LEVEL",
+        "LOG_DIR"
       ]
     }
   }
