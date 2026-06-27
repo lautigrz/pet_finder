@@ -26,7 +26,12 @@ describe("GetContentReportQueueUseCase", () => {
     beforeEach(() => {
         contentReportRepository = {
             findQueueByStatus: vi.fn().mockResolvedValue([
-                { report: fakeReport, reporter: { publicId: "reporter-public-id", username: "reporter" } },
+                {
+                    report: fakeReport,
+                    reporter: { publicId: "reporter-public-id", username: "reporter" },
+                    reportedUser: { username: "reported-user" },
+                    reportCount: 3,
+                },
             ]),
         } as unknown as ContentReportRepository;
 
@@ -58,6 +63,8 @@ describe("GetContentReportQueueUseCase", () => {
             description: "Me pidió dinero",
             autoFlagged: true,
             createdAt: new Date("2026-06-20"),
+            reportCount: 3,
+            reportedUser: { username: "reported-user" },
             reporter: { publicId: "reporter-public-id", username: "reporter" },
         });
     });

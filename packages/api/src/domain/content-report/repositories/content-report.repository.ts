@@ -7,9 +7,15 @@ export interface ContentReportReporter {
     username: string;
 }
 
+export interface ContentReportReportedUser {
+    username: string;
+}
+
 export interface ContentReportQueueItem {
     report: ContentReport;
     reporter: ContentReportReporter;
+    reportedUser: ContentReportReportedUser | null;
+    reportCount: number;
 }
 
 export interface ContentReportRepository {

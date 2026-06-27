@@ -11,6 +11,10 @@ export interface ContentReportQueueItemOutput {
     description: string | null;
     autoFlagged: boolean;
     createdAt: Date;
+    reportCount: number;
+    reportedUser: {
+        username: string;
+    } | null;
     reporter: {
         publicId: string;
         username: string;
