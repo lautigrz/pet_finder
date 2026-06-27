@@ -49,6 +49,7 @@ model User {
   device_tokens             DeviceToken[]
   report_followers          ReportFollower[]
   content_reports           ContentReport[]
+  match_views               MatchView[]
 
   @@map("users")
 }
@@ -148,11 +149,27 @@ model MatchResult {
 
   source_report    Report @relation("SourceReport", fields: [source_report_id], references: [report_id])
   candidate_report Report @relation("CandidateReport", fields: [candidate_report_id], references: [report_id])
+  views            MatchView[]
 
   @@unique([source_report_id, candidate_report_id])
   @@index([source_report_id])
   @@index([score])
   @@map("match_results")
+}
+
+model MatchView {
+  match_view_id   Int      @id @default(autoincrement())
+  user_id         Int
+  match_result_id Int
+  seen_at         DateTime @default(now()) @db.Timestamp(6)
+
+  user         User        @relation(fields: [user_id], references: [user_id], onDelete: Cascade)
+  match_result MatchResult @relation(fields: [match_result_id], references: [match_result_id], onDelete: Cascade)
+
+  @@unique([user_id, match_result_id])
+  @@index([user_id])
+  @@index([match_result_id])
+  @@map("match_views")
 }
 
 model ReportStatus {
