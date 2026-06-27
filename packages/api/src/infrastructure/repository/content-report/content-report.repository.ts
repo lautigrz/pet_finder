@@ -62,9 +62,60 @@ export class PrismaContentReportRepository implements ContentReportRepository {
             orderBy: [{ auto_flagged: "desc" }, { created_at: "asc" }],
         });
 
-        return rows.map((row) => ({
-            report: ContentReportMapper.toDomain(row),
-            reporter: { publicId: row.reporter.public_id, username: row.reporter.username },
-        }));
+        const postTypeId = contentReportTargetTypeMap[ContentReportTargetType.POST];
+        const chatTypeId = contentReportTargetTypeMap[ContentReportTargetType.CHAT];
+
+        const postPublicIds = rows.filter((r) => r.target_type_id === postTypeId).map((r) => r.target_public_id);
+        const chatPublicIds = rows.filter((r) => r.target_type_id === chatTypeId).map((r) => r.target_public_id);
+
+        const [reports, conversations, grouped] = await Promise.all([
+            this.prisma.report.findMany({
+                where: { public_id: { in: postPublicIds } },
+                select: { public_id: true, user: { select: { username: true } } },
+            }),
+            this.prisma.conversation.findMany({
+                where: { public_id: { in: chatPublicIds } },
+                select: {
+                    public_id: true,
+                    user_one_id: true,
+                    user_two_id: true,
+                    user_one: { select: { username: true } },
+                    user_two: { select: { username: true } },
+                },
+            }),
+            this.prisma.contentReport.groupBy({
+                by: ["target_type_id", "target_public_id"],
+                where: { target_public_id: { in: [...postPublicIds, ...chatPublicIds] } },
+                _count: { _all: true },
+            }),
+        ]);
+
+        const ownerByPostPublicId = new Map(reports.map((r) => [r.public_id, r.user.username]));
+        const conversationByPublicId = new Map(conversations.map((c) => [c.public_id, c]));
+        const countByTarget = new Map(
+            grouped.map((g) => [`${g.target_type_id}:${g.target_public_id}`, g._count._all]),
+        );
+
+        return rows.map((row) => {
+            let reportedUsername: string | null = null;
+            if (row.target_type_id === postTypeId) {
+                reportedUsername = ownerByPostPublicId.get(row.target_public_id) ?? null;
+            } else {
+                const conversation = conversationByPublicId.get(row.target_public_id);
+                if (conversation) {
+                    reportedUsername =
+                        conversation.user_one_id === row.reporter_user_id
+                            ? conversation.user_two.username
+                            : conversation.user_one.username;
+                }
+            }
+
+            return {
+                report: ContentReportMapper.toDomain(row),
+                reporter: { publicId: row.reporter.public_id, username: row.reporter.username },
+                reportedUser: reportedUsername ? { username: reportedUsername } : null,
+                reportCount: countByTarget.get(`${row.target_type_id}:${row.target_public_id}`) ?? 1,
+            };
+        });
     }
 }
