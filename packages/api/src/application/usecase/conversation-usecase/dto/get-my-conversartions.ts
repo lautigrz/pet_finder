@@ -10,5 +10,6 @@ export interface ConversationSummaryOutput {
         isRead: boolean;
         createdAt: Date;
     } | null;
+    unreadCount: number;
     createdAt: Date;
 }

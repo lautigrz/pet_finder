@@ -19,4 +19,5 @@ export interface MessageOutput {
     isRead: boolean;
     createdAt: Date;
     images: MessageImagesOutput[];
+    conversationId: string;
 }
