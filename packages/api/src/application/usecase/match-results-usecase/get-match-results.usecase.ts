@@ -46,6 +46,8 @@ export class GetMatchResultsUseCase {
                     publicId: match.publicId,
                     sourceReportPublicId: reportSource.publicId,
                     score: match.score,
+                    imageScore: match.imageScore,
+                    descriptionScore: match.descriptionScore,
                     details: detailsReportDTO,
                 } satisfies MatchResultDetailDTO;
             })
