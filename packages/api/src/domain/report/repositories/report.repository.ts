@@ -26,3 +26,7 @@ export interface ReportRepository {
   findImagesByReportId(publicId: string): Promise<SightingImage[]>;
   updateFields(report: Report, images?: SightingImage[]): Promise<void>;
 }
+
+export interface ReportQueries {
+  getUserNamesByReportIds(reportIds: number[]): Promise<Map<number, string>>;
+}

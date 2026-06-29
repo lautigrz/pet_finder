@@ -9,6 +9,7 @@ import { SightingReportDetails } from "@domain/report/value-objects/sighting-rep
 import { AnimalType } from "@domain/shared/animal-type/animal-type";
 import { InvalidStatusTransitionError } from "@domain/errors/InvalidStatusTransitionError";
 import { InvalidReportDetailsError } from "@domain/errors/InvalidReportDetailsError";
+import { SightingImage } from "@domain/report/value-objects/sighting.images";
 
 const validLocation = Location.create({
   address: "Av. Corrientes 1234",
@@ -22,7 +23,7 @@ const sightingDetails = SightingReportDetails.create({
   hasIdCollar: true,
   color: "brown",
   isInTransit: false,
-  images: []
+  images: [SightingImage.create({ cloudinaryId: "fake-id", photoUrl: "https://fake.com/img.jpg" })]
 });
 
 const baseLostParams = {

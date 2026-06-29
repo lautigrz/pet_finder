@@ -11,6 +11,12 @@ import { SightingReportDetails } from '@domain/report/value-objects/sighting-rep
 import { SightingImage } from '@domain/report/value-objects/sighting.images';
 import { AnimalType } from '@domain/shared/animal-type/animal-type';
 import { UpdateReportDTO } from '@application/usecase/report-usecase/dto/update-report.dto';
+import { enqueueMatchingJob } from '@infrastructure/queue/embedding.queue';
+import { DataChangeType, TypeJob } from '@pet-alert/shared';
+
+vi.mock('@infrastructure/queue/embedding.queue', () => ({
+  enqueueMatchingJob: vi.fn().mockResolvedValue(undefined),
+}));
 
 
 const OWNER_ID = 'user-owner-uuid';
@@ -34,7 +40,11 @@ function makeSightingReport() {
     userPublicId: OWNER_ID,
     reportType: ReportType.SIGHTING,
     details,
-    updateFields: vi.fn(),
+    updateFields: vi.fn((params) => {
+      if (params?.occurredAt && params.occurredAt > new Date()) {
+        throw new InvalidFieldError('occurredAt', 'cannot be in the future');
+      }
+    }),
   };
 }
 
@@ -45,7 +55,11 @@ function makeLostReport() {
     userPublicId: OWNER_ID,
     reportType: ReportType.LOST,
     details: { petId: 10 },
-    updateFields: vi.fn(),
+    updateFields: vi.fn((params) => {
+      if (params?.occurredAt && params.occurredAt > new Date()) {
+        throw new InvalidFieldError('occurredAt', 'cannot be in the future');
+      }
+    }),
   };
 }
 
@@ -60,6 +74,7 @@ function makePet() {
     updateBreed: vi.fn(),
     updateColor: vi.fn(),
     updateCollarStatus: vi.fn(),
+    updateImages: vi.fn(),
   };
 }
 
@@ -77,7 +92,7 @@ describe('UpdateReportUseCase', () => {
   beforeEach(() => {
     reportRepository = {
       findByPublicId: vi.fn(),
-      findImagesByReportId: vi.fn().mockResolvedValue([]),
+      findImagesByReportId: vi.fn().mockResolvedValue([fakeImage]),
       updateFields: vi.fn().mockResolvedValue(undefined),
     } as unknown as ReportRepository;
 
@@ -92,6 +107,7 @@ describe('UpdateReportUseCase', () => {
     } as unknown as StorageService;
 
     useCase = new UpdateReportUseCase(reportRepository, petRepository, storageService);
+    vi.mocked(enqueueMatchingJob).mockClear();
   });
 
 
@@ -168,11 +184,22 @@ describe('UpdateReportUseCase', () => {
       await useCase.execute(baseDTO({
         sightingDetails: { color: 'negro' },
         keepImageIds: [],
+        newImages: [Buffer.from('new-image')],
       }), OWNER_ID);
 
       expect(storageService.delete).toHaveBeenCalledWith('reports/img1');
       const images = vi.mocked(reportRepository.updateFields).mock.calls[0]?.[1] ?? [];
-      expect(images).toHaveLength(0);
+      expect(images).toHaveLength(1);
+    });
+
+    it('lanza InvalidFieldError si se intenta dejar el reporte sin imágenes', async () => {
+      const report = makeSightingReport();
+      vi.mocked(reportRepository.findByPublicId).mockResolvedValue(report as any);
+
+      await expect(useCase.execute(baseDTO({
+        keepImageIds: [],
+        newImages: [],
+      }), OWNER_ID)).rejects.toThrow(InvalidFieldError);
     });
 
     it('sube imágenes nuevas y las incluye en el update', async () => {
@@ -266,11 +293,12 @@ describe('UpdateReportUseCase', () => {
       await useCase.execute(baseDTO({
         lostDetails: { petPublicId: PET_PUB_ID },
         keepImageIds: [],
+        newImages: [Buffer.from('new-image')],
       }), OWNER_ID);
 
       expect(storageService.delete).toHaveBeenCalledWith('reports/lost1');
       const images = vi.mocked(reportRepository.updateFields).mock.calls[0]![1];
-      expect(images).toHaveLength(0);
+      expect(images).toHaveLength(1);
     });
 
     it('sube imágenes nuevas para LOST', async () => {
@@ -297,13 +325,110 @@ describe('UpdateReportUseCase', () => {
     it('actualiza campos base e imágenes sin tocar la mascota', async () => {
       const report = makeLostReport();
       vi.mocked(reportRepository.findByPublicId).mockResolvedValue(report as any);
-      vi.mocked(reportRepository.findImagesByReportId).mockResolvedValue([]);
+      vi.mocked(reportRepository.findImagesByReportId).mockResolvedValue([fakeImage]);
 
       await useCase.execute(baseDTO({ description: 'nueva descripción' }), OWNER_ID);
 
       expect(petRepository.findByPublicId).not.toHaveBeenCalled();
       expect(report.updateFields).toHaveBeenCalledOnce();
       expect(reportRepository.updateFields).toHaveBeenCalledOnce();
+    });
+  });
+
+  describe('Detección de cambios y encolado de Matching Job', () => {
+    it('no encola job si no hay cambios en campos principales ni imágenes', async () => {
+      const report = makeSightingReport();
+      vi.mocked(reportRepository.findByPublicId).mockResolvedValue(report as any);
+
+      await useCase.execute(baseDTO(), OWNER_ID);
+
+      expect(enqueueMatchingJob).not.toHaveBeenCalled();
+    });
+
+    it('encola job con DESCRIPTION si cambia la descripción', async () => {
+      const report = makeSightingReport();
+      vi.mocked(reportRepository.findByPublicId).mockResolvedValue(report as any);
+
+      await useCase.execute(baseDTO({ description: 'Nueva descripción' }), OWNER_ID);
+
+      expect(enqueueMatchingJob).toHaveBeenCalledWith({
+        type: TypeJob.REFRESH_MATCHING,
+        reportId: report.idReport,
+        reportType: 2,
+        reportTypeName: ReportType.SIGHTING,
+        changes: [DataChangeType.DESCRIPTION],
+      });
+    });
+
+    it('encola job con LOCATION si cambia la ubicación', async () => {
+      const report = makeSightingReport();
+      vi.mocked(reportRepository.findByPublicId).mockResolvedValue(report as any);
+
+      await useCase.execute(baseDTO({
+        location: { address: 'Calle Falsa 123', latitude: -34.123, longitude: -58.123 }
+      }), OWNER_ID);
+
+      expect(enqueueMatchingJob).toHaveBeenCalledWith({
+        type: TypeJob.REFRESH_MATCHING,
+        reportId: report.idReport,
+        reportType: 2,
+        reportTypeName: ReportType.SIGHTING,
+        changes: [DataChangeType.LOCATION],
+      });
+    });
+
+    it('encola job con ATTRIBUTES si cambian atributos de SIGHTING', async () => {
+      const report = makeSightingReport();
+      vi.mocked(reportRepository.findByPublicId).mockResolvedValue(report as any);
+
+      await useCase.execute(baseDTO({
+        sightingDetails: { petName: 'NuevoNombre', color: 'blanco' }
+      }), OWNER_ID);
+
+      expect(enqueueMatchingJob).toHaveBeenCalledWith({
+        type: TypeJob.REFRESH_MATCHING,
+        reportId: report.idReport,
+        reportType: 2,
+        reportTypeName: ReportType.SIGHTING,
+        changes: [DataChangeType.ATTRIBUTES],
+      });
+    });
+
+    it('encola job con ATTRIBUTES si cambian atributos del Pet en LOST', async () => {
+      const report = makeLostReport();
+      const pet = makePet();
+      vi.mocked(reportRepository.findByPublicId).mockResolvedValue(report as any);
+      vi.mocked(petRepository.findByPublicId).mockResolvedValue(pet as any);
+
+      await useCase.execute(baseDTO({
+        lostDetails: { petPublicId: PET_PUB_ID, name: 'NuevoNombre' }
+      }), OWNER_ID);
+
+      expect(enqueueMatchingJob).toHaveBeenCalledWith({
+        type: TypeJob.REFRESH_MATCHING,
+        reportId: report.idReport,
+        reportType: 1,
+        reportTypeName: ReportType.LOST,
+        changes: [DataChangeType.ATTRIBUTES],
+      });
+    });
+
+    it('encola job con IMAGE si cambian las imágenes', async () => {
+      const report = makeSightingReport();
+      vi.mocked(reportRepository.findByPublicId).mockResolvedValue(report as any);
+
+      await useCase.execute(baseDTO({
+        keepImageIds: [],
+        newImages: [Buffer.from('new-image')],
+      }), OWNER_ID);
+
+      expect(enqueueMatchingJob).toHaveBeenCalledWith({
+        type: TypeJob.REFRESH_MATCHING,
+        reportId: report.idReport,
+        reportType: 2,
+        reportTypeName: ReportType.SIGHTING,
+        changes: [DataChangeType.IMAGE],
+      });
     });
   });
 });

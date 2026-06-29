@@ -1,1 +1,3 @@
-export type MatchingJobData = { type: 'run_matching'; reportId: number; reportType: number; reportTypeName: string }
+import { DataChangeType, TypeJob } from "../index";
+
+export type MatchingJobData = { type: TypeJob; reportId: number; reportType: number; reportTypeName: string, changes?: DataChangeType[] }

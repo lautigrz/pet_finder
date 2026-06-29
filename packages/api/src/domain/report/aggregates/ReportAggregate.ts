@@ -7,6 +7,7 @@ import { LostReportDetails } from "../value-objects/lost-report-details.vo"
 import { SightingReportDetails } from "../value-objects/sighting-report-details.vo"
 import { InvalidStatusTransitionError } from "../../errors/InvalidStatusTransitionError"
 import { InvalidReportDetailsError } from "../../errors/InvalidReportDetailsError"
+import { InvalidFieldError } from "../../errors/InvalidFieldError"
 
 
 export interface CreateReportParams {
@@ -54,7 +55,8 @@ export class Report {
 
 
     static create(params: CreateReportParams): Report {
-        Report.validateDetails(params.type, params.details)
+        Report.validateOccurredAt(params.occurredAt);
+        Report.validateDetails(params.type, params.details);
 
         return new Report(
             null,
@@ -104,10 +106,19 @@ export class Report {
         details?: ReportDetails;  
     }): void {
         if (params.description !== undefined) this._description = params.description;
-        if (params.occurredAt  !== undefined) this._occurredAt  = params.occurredAt;
+        if (params.occurredAt  !== undefined) {
+            Report.validateOccurredAt(params.occurredAt);
+            this._occurredAt  = params.occurredAt;
+        }
         if (params.location    !== undefined) this._location    = params.location;
         if (params.details     !== undefined) this._details     = params.details;  
         this._updatedAt = new Date();
+    }
+
+    private static validateOccurredAt(occurredAt: Date): void {
+        if (occurredAt > new Date()) {
+            throw new InvalidFieldError('occurredAt', 'cannot be in the future');
+        }
     }
 
     get idReport(): number | null {
