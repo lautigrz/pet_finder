@@ -1,0 +1,28 @@
+FROM node:22-slim
+
+RUN apt-get update && apt-get install -y openssl libgomp1 curl unzip && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+
+COPY package.json package-lock.json turbo.json ./
+COPY packages/shared/package.json ./packages/shared/
+COPY packages/api/package.json ./packages/api/
+COPY packages/pet-matcher/package.json ./packages/pet-matcher/
+RUN npm ci
+
+COPY . .
+
+RUN npx prisma generate --schema=packages/shared/prisma/schema.prisma
+RUN npm run build -w @pet-alert/shared
+RUN npm run build -w @pet-alert/pet-matcher
+RUN npx -y tsc-alias -p packages/pet-matcher/tsconfig.json
+
+RUN mkdir -p packages/pet-matcher/dist/models \
+ && cd packages/pet-matcher/dist/models \
+ && curl -fSL -o dinov2.zip https://github.com/lautigrz/pet-matcher-models/releases/download/v1.0-models/dinov2.zip \
+ && unzip -q dinov2.zip && rm dinov2.zip \
+ && curl -fSL -o e5.zip https://github.com/lautigrz/pet-matcher-models/releases/download/v1.0-models/e5.zip \
+ && unzip -q e5.zip && rm e5.zip
+
+ENV NODE_ENV=production
+CMD ["npm", "run", "start", "-w", "@pet-alert/pet-matcher"]
