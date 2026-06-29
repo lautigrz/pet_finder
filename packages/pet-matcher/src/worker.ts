@@ -1,22 +1,39 @@
-import { embeddingWorker } from "./worker/embedding.worker";
-console.log("Starting embedding worker...");
 
-embeddingWorker.on("ready", () => {
-  console.log("Worker ready");
-});
+import { warmupDescriptionModel } from "./services/embedding-description-services";
+import { warmupModel } from "./services/embedding-images-services";
+import { logger } from "@pet-alert/shared";
+import { ensureModelsExist } from "./infrastructure/repositories/utils/ensure.models";
+logger.info("Starting embedding worker...");
 
-embeddingWorker.on("completed", (job) => {
-  console.log(`Job ${job.id} completed`);
-});
+async function main() {
+  await ensureModelsExist();
+  await warmupModel();
+  await warmupDescriptionModel();
 
-embeddingWorker.on("failed", (job, err) => {
-  console.error(`Job ${job?.id} failed`, err);
-});
+  const { matchingWorker } = await import("./worker/embedding.worker");
 
-process.on("SIGINT", async () => {
-  console.log("Shutting down worker...");
+  matchingWorker.on("ready", () => {
+    logger.info("Worker ready");
+  });
 
-  await embeddingWorker.close();
+  matchingWorker.on("completed", (job) => {
+    logger.info(`Job ${job.id} completed`);
+  });
 
-  process.exit(0);
+  matchingWorker.on("failed", (job, err) => {
+    logger.error(`Job ${job?.id} failed`, err);
+  });
+
+  process.on("SIGINT", async () => {
+    logger.info("Shutting down worker...");
+
+    await matchingWorker.close();
+
+    process.exit(0);
+  });
+}
+
+main().catch(err => {
+  logger.error("Fatal error during startup", err);
+  process.exit(1);
 });

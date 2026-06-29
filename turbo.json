@@ -2,26 +2,77 @@
   "$schema": "https://turbo.build/schema.json",
   "tasks": {
     "build": {
-      "dependsOn": ["^build"],
-      "outputs": ["dist/**"]
+      "dependsOn": [
+        "^build"
+      ],
+      "outputs": [
+        "dist/**"
+      ]
     },
     "dev": {
-      "dependsOn": ["^build"],
+      "dependsOn": [
+        "^build"
+      ],
       "persistent": true,
       "cache": false,
-      "env": ["NODE_ENV", "PORT", "CORS_ORIGIN", "REDIS_HOST", "REDIS_PORT", "DATABASE_URL","REDIS_URL"]
+      "env": [
+        "NODE_ENV",
+        "PORT",
+        "CORS_ORIGIN",
+        "REDIS_HOST",
+        "REDIS_PORT",
+        "DATABASE_URL",
+        "REDIS_URL",
+        "CLOUDINARY_NAME",
+        "CLOUDINARY_API_KEY",
+        "CLOUDINARY_API_SECRET",
+        "EMAIL_PROVIDER",
+        "GMAIL_USER",
+        "GMAIL_APP_PASSWORD",
+        "SENDGRID_API_KEY",
+        "EMAIL_FROM",
+        "APP_BASE_URL",
+        "LOG_LEVEL",
+        "LOG_DIR"
+      ]
     },
     "test": {
-      "dependsOn": ["^build"],
-      "outputs": ["coverage/**"]
+      "dependsOn": [
+        "^build"
+      ],
+      "outputs": []
     },
     "test:coverage": {
-      "dependsOn": ["^build"],
-      "outputs": ["coverage/**"]
+      "dependsOn": [
+        "^build"
+      ],
+      "outputs": [
+        "coverage/**"
+      ]
     },
     "lint": {
       "outputs": [],
-      "env": ["NODE_ENV", "PORT", "CORS_ORIGIN", "REDIS_HOST", "REDIS_PORT", "DATABASE_URL","REDIS_URL"]
+      "env": [
+        "NODE_ENV",
+        "PORT",
+        "CORS_ORIGIN",
+        "REDIS_HOST",
+        "REDIS_PORT",
+        "REDIS_PASSWORD",
+        "DATABASE_URL",
+        "REDIS_URL",
+        "CLOUDINARY_NAME",
+        "CLOUDINARY_API_KEY",
+        "CLOUDINARY_API_SECRET",
+        "EMAIL_PROVIDER",
+        "GMAIL_USER",
+        "GMAIL_APP_PASSWORD",
+        "SENDGRID_API_KEY",
+        "EMAIL_FROM",
+        "APP_BASE_URL",
+        "LOG_LEVEL",
+        "LOG_DIR"
+      ]
     }
   }
 }

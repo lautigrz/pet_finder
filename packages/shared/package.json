@@ -5,6 +5,13 @@
   "description": "",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "require": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
   "scripts": {
     "lint": "eslint src --ext .ts",
     "build": "tsc",
@@ -20,6 +27,7 @@
   },
   "dependencies": {
     "@prisma/client": "^6.19.3",
-    "dotenv": "^17.4.2"
+    "dotenv": "^17.4.2",
+    "winston-daily-rotate-file": "^5.0.0"
   }
 }

@@ -6,3 +6,7 @@ packages/api/.env
 packages/pet-matcher/.env
 
 dist/
+coverage
+logs/
+
+packages/pet-matcher/src/models/*
