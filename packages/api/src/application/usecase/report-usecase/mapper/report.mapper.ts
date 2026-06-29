@@ -16,7 +16,8 @@ export class ReportOutputMapper {
             user: {
                 publicId: user?.id || report.userPublicId,
                 username: user?.username || "",
-                photoUrl: user?.photoUrl || ""
+                photoUrl: user?.photoUrl || "",
+                createdAt: user?.createdAt
             },
             type: report.reportType,
             status: report.status,

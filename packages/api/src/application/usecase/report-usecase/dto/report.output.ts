@@ -31,6 +31,7 @@ export interface ReportOutput {
         publicId: string;
         username: string;
         photoUrl: string;
+        createdAt?: Date;
     };
     type: string;
     status: string;
