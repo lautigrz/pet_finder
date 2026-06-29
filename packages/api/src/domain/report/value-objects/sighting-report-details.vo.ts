@@ -2,6 +2,7 @@ import { GenderType } from "@domain/shared/gender-type/gender.type";
 import { AnimalType } from "../../shared/animal-type/animal-type";
 import { SightingImage } from "./sighting.images";
 import { SizeType } from "@domain/shared/size-type/size.type";
+import { InvalidFieldError } from "../../errors/InvalidFieldError";
 
 
 interface CreateSightingReportDetailsParams {
@@ -32,6 +33,9 @@ export class SightingReportDetails {
   ) { }
 
   static create(params: CreateSightingReportDetailsParams): SightingReportDetails {
+    if (!params.images || params.images.length === 0) {
+      throw new InvalidFieldError('images', 'El reporte debe contener al menos una imagen');
+    }
     return new SightingReportDetails(
       params.petName || null,
       params.animalType,

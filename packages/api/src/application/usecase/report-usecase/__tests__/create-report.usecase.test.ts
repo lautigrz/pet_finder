@@ -162,7 +162,7 @@ describe("CreateReportUseCase", () => {
       occurredAt: new Date("2024-05-01"),
       location: validLocation,
       description: "Vi un perro suelto en el parque",
-      images: []
+      images: [Buffer.from("fake-img")]
     };
 
     it("crea y guarda un reporte SIGHTING correctamente", async () => {
@@ -219,10 +219,10 @@ describe("CreateReportUseCase", () => {
       expect(storageService.upload).toHaveBeenCalledWith(expect.any(Buffer), "reports");
     });
 
-    it("no llama al storage si el SIGHTING no tiene imágenes", async () => {
-      await useCase.execute({ ...sightingDto, images: [] }, TEST_EMAIL);
-
-      expect(storageService.upload).not.toHaveBeenCalled();
+    it("lanza InvalidFieldError si el SIGHTING no tiene imágenes", async () => {
+      await expect(
+        useCase.execute({ ...sightingDto, images: [] }, TEST_EMAIL)
+      ).rejects.toThrow(InvalidFieldError);
     });
 
     it("propaga el error si el storageService falla al subir imágenes", async () => {

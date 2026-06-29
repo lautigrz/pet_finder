@@ -1,4 +1,4 @@
-import type { MatchingJobData } from "@pet-alert/shared";
+import type { MatchingJobData, TypeJob } from "@pet-alert/shared";
 import { Queue } from "bullmq";
 
 export const matchingQueue = new Queue<MatchingJobData>('animal-matching', {
@@ -19,5 +19,5 @@ export const matchingQueue = new Queue<MatchingJobData>('animal-matching', {
 });
 
 export async function enqueueMatchingJob(data: MatchingJobData) {
-    await matchingQueue.add("run_matching", data, { delay: 500 });
+    await matchingQueue.add(data.type, data, { delay: 500 });
 }

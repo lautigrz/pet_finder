@@ -16,6 +16,7 @@ import { SightingImage } from "@domain/report/value-objects/sighting.images";
 import { CreateReportDTO, LocationDTO } from "./dto/create-report.dto";
 import { enqueueMatchingJob } from "@infrastructure/queue/embedding.queue";
 import { inject, injectable } from "tsyringe";
+import { TypeJob } from "@pet-alert/shared";
 
 export type { CreateReportDTO, LocationDTO };
 
@@ -44,8 +45,6 @@ export class CreateReportUseCase {
             petInternalId = pet.idPet;
         }
 
-        this.validateDTO(dto);
-
         const location = this.buildLocation(dto.location);
         const details = await this.buildDetails(dto, petInternalId!);
         const report = this.buildReport(dto, location, details, user);
@@ -53,7 +52,7 @@ export class CreateReportUseCase {
         const reportId = await this.reportRepository.save(report);
 
         if (reportId) {
-            await enqueueMatchingJob({ type: 'run_matching', reportId: reportId, reportType: ReportTypeToNumber[dto.type], reportTypeName: dto.type })
+            await enqueueMatchingJob({ type: TypeJob.RUN_MATCHING, reportId: reportId, reportType: ReportTypeToNumber[dto.type], reportTypeName: dto.type })
         }
 
         return { publicId: report.publicId };
@@ -116,11 +115,5 @@ export class CreateReportUseCase {
             cloudinaryId: res.publicId,
             photoUrl: res.url,
         }));
-    }
-
-    private validateDTO(dto: CreateReportDTO): void {
-        if (dto.occurredAt > new Date()) {
-            throw new InvalidFieldError('occurredAt', 'cannot be in the future');
-        }
     }
 }

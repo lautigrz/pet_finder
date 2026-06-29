@@ -45,7 +45,7 @@ async function preprocessImage(imageBuffer: Buffer): Promise<ort.Tensor> {
 }
 
 
-export async function extractEmbedding(imageBuffer: Buffer): Promise<number[]> {
+export async function extractEmbedding(imageBuffer: Buffer): Promise<number[] | null> {
     const session = await getSession();
 
     const tensor = await preprocessImage(imageBuffer);
@@ -60,6 +60,10 @@ export async function extractEmbedding(imageBuffer: Buffer): Promise<number[]> {
     }
 
     const outputTensor = Array.from(results['features'].data as Float32Array);
+
+    if (outputTensor.every((value) => value === 0)) {
+        return null;
+    }
 
     return l2Normalize(outputTensor);
 

@@ -9,7 +9,9 @@ import { PrismaPetRepository } from "../infrastructure/repositories/prisma-pet.r
 import { MatchingDomainService } from "../domain/services/matching.domain-service";
 import { RedisMatchNotifier } from "../infrastructure/notifications/redis-match-notifier";
 import { redisPublisher } from "../infrastructure/redis/redis.publisher";
-
+import { RefreshMatchingUseCase } from "@application/use-cases/refresh-matching.use-case";
+import { MatchRepository } from "@infrastructure/repositories/match.repository";
+import prisma from "@infrastructure/prisma/prisma.client";
 dotenv.config();
 
 
@@ -17,7 +19,9 @@ const reportRepository = new PrismaReportRepository();
 const petRepository = new PrismaPetRepository();
 const matchingDomainService = new MatchingDomainService();
 const matchNotifier = new RedisMatchNotifier(redisPublisher);
+const matchRepository = new MatchRepository(prisma);
 const runMatchingUseCase = new RunMatchingUseCase(reportRepository, petRepository, matchingDomainService, matchNotifier);
+const runRefreshMatchingUseCase = new RefreshMatchingUseCase(reportRepository, petRepository, matchRepository, matchingDomainService, matchNotifier);
 
 export const matchingWorker = new Worker<MatchingJobData>(
   "animal-matching",
@@ -27,9 +31,16 @@ export const matchingWorker = new Worker<MatchingJobData>(
 
     switch (job.data.type) {
       case 'run_matching': {
-        logger.info(`Processing run_matching job for report ${job.data.reportId}`);
+        logger.info(`Processing ${job.data.type} job for report ${job.data.reportId}`);
         const results = await runMatchingUseCase.execute(job.data.reportId, job.data.reportType);
         logger.info(`Matching completed for report ${job.data.reportId}: ${results.length} candidates ranked`);
+        return results;
+      }
+      case 'refresh_matching': {
+        logger.info(`Processing ${job.data.type} job for report ${job.data.reportId}`);
+
+        const results = await runRefreshMatchingUseCase.execute(job.data.reportId, job.data.reportType, job.data.changes!);
+        logger.info(`Refresh matching completed for report ${job.data.reportId}: ${results.length} candidates ranked`);
         return results;
       }
       default:

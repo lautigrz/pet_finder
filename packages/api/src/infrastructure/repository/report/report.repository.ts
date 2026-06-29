@@ -7,6 +7,7 @@ import { PetMapper } from "../pet/pet.mapper";
 import { reportStatusMap } from "@domain/report/types/report.status";
 import { ReportType } from '@domain/report/types/report.type';
 import { SightingReportDetails } from '@domain/report/value-objects/sighting-report-details.vo';
+import { LostReportDetails } from '@domain/report/value-objects/lost-report-details.vo';
 import { AnimalTypeMap } from '@domain/shared/animal-type/animal-type-map';
 import { GenderTypeMap } from '@domain/shared/gender-type/gender-map';
 import { SizeTypeMap } from '@domain/shared/size-type/size-map';
@@ -172,12 +173,23 @@ export class PrismaReportRepository implements ReportRepository {
 
         const isSighting = report.reportType === ReportType.SIGHTING;
         const details = isSighting ? report.details as SightingReportDetails : null;
+        const lostDetails = !isSighting ? report.details as LostReportDetails : null;
 
         const colorId = details ? await this.catalog.colorId(details.color) : undefined;
         const breedId = details ? await this.catalog.breedId(details.breed, details.animalType) : undefined;
 
-        await this.prisma.$transaction([
 
+        const dbImages = isSighting
+            ? await this.prisma.reportImage.findMany({ where: { reportId: report.idReport } })
+            : await this.prisma.petImage.findMany({ where: { petId: lostDetails!.petId } });
+
+        const targetIds = new Set((images ?? []).map(img => img.cloudinaryId));
+        const toDelete = dbImages.filter(img => !targetIds.has(img.cloudinaryId));
+
+        const dbIds = new Set(dbImages.map(img => img.cloudinaryId));
+        const toInsert = (images ?? []).filter(img => !dbIds.has(img.cloudinaryId));
+
+        await this.prisma.$transaction([
             this.prisma.report.update({
                 where: { report_id: report.idReport },
                 data: {
@@ -209,32 +221,76 @@ export class PrismaReportRepository implements ReportRepository {
                     } : {}),
                 },
             }),
-
-            this.prisma.reportImage.deleteMany({
-                where: { reportId: report.idReport },
-            }),
-
-            ...((images ?? []).length > 0
-                ? [this.prisma.reportImage.createMany({
-                    data: (images ?? []).map(img => ({
-                        reportId: report.idReport!,
-                        cloudinaryId: img.cloudinaryId,
-                        photoUrl: img.photoUrl,
-                    })),
-                })]
+            ...(toDelete.length > 0
+                ? [
+                    isSighting
+                        ? this.prisma.reportImage.deleteMany({
+                            where: {
+                                reportId: report.idReport,
+                                cloudinaryId: { in: toDelete.map(img => img.cloudinaryId) },
+                            },
+                        })
+                        : this.prisma.petImage.deleteMany({
+                            where: {
+                                petId: lostDetails!.petId,
+                                cloudinaryId: { in: toDelete.map(img => img.cloudinaryId) },
+                            },
+                        })
+                ]
+                : []),
+            ...(toInsert.length > 0
+                ? [
+                    isSighting
+                        ? this.prisma.reportImage.createMany({
+                            data: toInsert.map(img => ({
+                                reportId: report.idReport!,
+                                cloudinaryId: img.cloudinaryId,
+                                photoUrl: img.photoUrl,
+                            })),
+                        })
+                        : this.prisma.petImage.createMany({
+                            data: toInsert.map(img => ({
+                                petId: lostDetails!.petId,
+                                cloudinaryId: img.cloudinaryId,
+                                photoUrl: img.photoUrl,
+                            })),
+                        })
+                ]
                 : []),
         ]);
     }
 
 
     async findImagesByReportId(publicId: string): Promise<SightingImage[]> {
-        const raw = await this.prisma.report.findUnique({
+        const report = await this.prisma.report.findUnique({
             where: { public_id: publicId },
-            select: { reportImages: true },
+            select: {
+                report_type_id: true,
+                reportImages: true,
+                lost_report_detail: {
+                    select: {
+                        pet: {
+                            select: {
+                                petImages: true
+                            }
+                        }
+                    }
+                }
+            }
         });
-        return (raw?.reportImages ?? []).map(img =>
-            SightingImage.create({ cloudinaryId: img.cloudinaryId, photoUrl: img.photoUrl })
-        );
+
+        if (!report) return [];
+
+        if (report.report_type_id === 2) {
+            return (report.reportImages ?? []).map(img =>
+                SightingImage.create({ cloudinaryId: img.cloudinaryId, photoUrl: img.photoUrl })
+            );
+        } else {
+            const petImages = report.lost_report_detail?.pet?.petImages ?? [];
+            return petImages.map(img =>
+                SightingImage.create({ cloudinaryId: img.cloudinaryId, photoUrl: img.photoUrl })
+            );
+        }
     }
 
     async findDetailByPublicId(publicId: string): Promise<ReportWithPet | null> {

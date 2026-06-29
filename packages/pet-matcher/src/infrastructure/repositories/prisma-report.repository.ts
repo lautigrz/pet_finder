@@ -154,10 +154,14 @@ export class PrismaReportRepository implements IReportRepository {
   async findMatchNotifications(sourceReportId: number, candidateReportIds: number[]): Promise<MatchNotification[]> {
     if (candidateReportIds.length === 0) return [];
 
+    const pairs = candidateReportIds.map(candId => ({
+      source_report_id: Math.min(sourceReportId, candId),
+      candidate_report_id: Math.max(sourceReportId, candId),
+    }));
+
     const rows = await prisma.matchResult.findMany({
       where: {
-        source_report_id: sourceReportId,
-        candidate_report_id: { in: candidateReportIds },
+        OR: pairs,
       },
       include: {
         source_report: { include: MATCH_NOTIFICATION_INCLUDE },
@@ -217,11 +221,14 @@ function buildMatchResultUpsert(
   sourceReportId: number,
   result: MatchResult,
 ) {
+  const sourceId = Math.min(sourceReportId, result.reportId);
+  const candidateId = Math.max(sourceReportId, result.reportId);
+
   return tx.matchResult.upsert({
     where: {
       source_report_id_candidate_report_id: {
-        source_report_id: sourceReportId,
-        candidate_report_id: result.reportId,
+        source_report_id: sourceId,
+        candidate_report_id: candidateId,
       },
     },
     update: {
@@ -232,8 +239,8 @@ function buildMatchResultUpsert(
       structured_score: result.structuredScore,
     },
     create: {
-      source_report_id: sourceReportId,
-      candidate_report_id: result.reportId,
+      source_report_id: sourceId,
+      candidate_report_id: candidateId,
       score: result.score,
       image_score: result.imageScore,
       description_score: result.descriptionScore,
