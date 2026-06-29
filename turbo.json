@@ -29,8 +29,11 @@
         "EMAIL_PROVIDER",
         "GMAIL_USER",
         "GMAIL_APP_PASSWORD",
+        "SENDGRID_API_KEY",
         "EMAIL_FROM",
-        "APP_BASE_URL"
+        "APP_BASE_URL",
+        "LOG_LEVEL",
+        "LOG_DIR"
       ]
     },
     "test": {
@@ -64,8 +67,11 @@
         "EMAIL_PROVIDER",
         "GMAIL_USER",
         "GMAIL_APP_PASSWORD",
+        "SENDGRID_API_KEY",
         "EMAIL_FROM",
-        "APP_BASE_URL"
+        "APP_BASE_URL",
+        "LOG_LEVEL",
+        "LOG_DIR"
       ]
     }
   }

@@ -2,6 +2,8 @@ export interface MatchResultDetailDTO {
     publicId: string;
     sourceReportPublicId: string;
     score: number;
+    imageScore: number;
+    descriptionScore: number;
     details: DetailsReportDTO;
 }
 

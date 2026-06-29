@@ -28,6 +28,7 @@ function withDbTimeout<T>(promise: Promise<T>, ms: number, context: string): Pro
 
 const DB_TIMEOUT_MS = 10_000;
 const SEARCH_RADIUS_METERS = 5000;
+const ACTIVE_REPORT_STATUS_ID = 1;
 
 export class PrismaReportRepository implements IReportRepository {
 
@@ -174,6 +175,7 @@ export class PrismaReportRepository implements IReportRepository {
       if (!pair) return [];
 
       const { lost, sighting } = pair;
+      if (lost.report_status_id !== ACTIVE_REPORT_STATUS_ID || sighting.report_status_id !== ACTIVE_REPORT_STATUS_ID) return [];
       if (lost.user.public_id === sighting.user.public_id) return [];
 
       const base = {

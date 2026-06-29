@@ -38,41 +38,51 @@ export class ListMyConversationsUseCase {
             lastMessages.map((message) => [message.conversationId!, message])
         )
 
-        const results = conversations.map((conversation) => {
-            const otherUserId = conversation.getOtherParticipant(user.internalId!);
+      const results = await Promise.all(
+    conversations.map(async (conversation) => {
+        const otherUserId = conversation.getOtherParticipant(user.internalId!);
 
-            const otherUser = userMap.get(otherUserId);
+        const otherUser = userMap.get(otherUserId);
 
-            const otherUseData = otherUser ? {
+        const otherUseData = otherUser
+            ? {
                 publicId: otherUser.public_id,
                 username: otherUser.username,
                 photoUrl: otherUser.photoUrl,
-            } : {
+            }
+            : {
                 publicId: null,
                 username: 'Usuario no encontrado',
                 photoUrl: null,
             };
 
-            const message = lastMessageMap.get(conversation.conversationId!);
+        const message = lastMessageMap.get(conversation.conversationId!);
 
-            return {
-                publicId: conversation.publicId,
-                otherUser: {
-                    publicId: otherUseData.publicId,
-                    username: otherUseData.username,
-                    photoUrl: otherUseData.photoUrl,
-                },
-                lastMessage: message
-                    ? {
-                        text: message.text.getValue(),
-                        isRead: message.isRead,
-                        createdAt: message.createdAt,
-                    }
-                    : null,
-                createdAt: conversation.createdAt,
-            };
-        });
+        const unreadCount =
+            await this.messageRepository.countUnreadByConversationId(
+                conversation.conversationId!,
+                user.internalId!
+            );
 
-        return results;
-    }
-}
+        return {
+            publicId: conversation.publicId,
+            otherUser: {
+                publicId: otherUseData.publicId,
+                username: otherUseData.username,
+                photoUrl: otherUseData.photoUrl,
+            },
+            lastMessage: message
+                ? {
+                    text: message.text.getValue(),
+                    isRead: message.isRead,
+                    createdAt: message.createdAt,
+                }
+                : null,
+            unreadCount,
+            createdAt: conversation.createdAt,
+        };
+    })
+);
+
+return results;
+    }}

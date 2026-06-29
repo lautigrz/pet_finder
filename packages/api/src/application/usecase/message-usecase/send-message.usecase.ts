@@ -72,6 +72,7 @@ export class SendMessageUseCase {
 
         return {
             publicId: saved.publicId,
+             conversationId: request.publicConversationId,
             text: saved.text.getValue(),
             senderId: user.id,
             receiverId: receiver.id,

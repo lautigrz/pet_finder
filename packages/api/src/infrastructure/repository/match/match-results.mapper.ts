@@ -7,6 +7,8 @@ interface PrismaMatchResult {
     source_report_id: number;
     candidate_report_id: number;
     score: number;
+    image_score: number;
+    description_score: number;
 }
 
 export class MatchResultsMapper {
@@ -18,6 +20,8 @@ export class MatchResultsMapper {
             sourceReportId: raw.source_report_id,
             candidateReportId: raw.candidate_report_id,
             score: raw.score,
+            imageScore: raw.image_score,
+            descriptionScore: raw.description_score,
         });
     }
 }

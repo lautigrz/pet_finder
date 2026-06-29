@@ -82,12 +82,34 @@ export class PrismaMessageRepository implements MessageRepository {
     }
 
 
-    async findUnreadByUserId(userId: number): Promise<Message[]> {
-        throw new Error("Method not implemented.");
-    }
-    async countUnreadByConversationId(conversationId: number, userId: number): Promise<number> {
-        throw new Error("Method not implemented.");
-    }
+   async findUnreadByUserId(userId: number): Promise<Message[]> {
+
+    const messages = await this.prisma.message.findMany({
+        where: {
+            receiver_user_id: userId,
+            is_read: false
+        },
+        include: {
+            images: true
+        }
+    });
+
+    return messages.map(MessageMapper.toDomain);
+}
+    async countUnreadByConversationId(
+    conversationId: number,
+    userId: number
+): Promise<number> {
+
+    return this.prisma.message.count({
+        where: {
+            conversation_id: conversationId,
+            receiver_user_id: userId,
+            is_read: false
+        }
+    });
+
+}
 
     async save(message: Message): Promise<Message> {
 
@@ -111,6 +133,10 @@ export class PrismaMessageRepository implements MessageRepository {
         return MessageMapper.toDomain(saveMessage);
     }
     async markAsRead(conversationId: number, userId: number): Promise<void> {
+         console.log("MARK AS READ", {
+        conversationId,
+        userId
+    });
 
         await this.prisma.message.updateMany({
             where: {

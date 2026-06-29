@@ -37,6 +37,10 @@ import { ReportFollowerRepository } from "@domain/report/repositories/report-fol
 import { PrismaReportFollowerRepository } from "@infrastructure/repository/report/report-follower.repository";
 import { CatalogRepository } from "@domain/catalog/catalog.repository";
 import { PrismaCatalogRepository } from "@infrastructure/repository/catalog/catalog.repository";
+import { ContentReportRepository } from "@domain/content-report/repositories/content-report.repository";
+import { PrismaContentReportRepository } from "@infrastructure/repository/content-report/content-report.repository";
+import { MatchViewsRepository } from "@domain/match/repositories/match-views.repository";
+import { PrismaMatchViewsRepository } from "@infrastructure/repository/match/match-views.repository";
 
 container.registerSingleton<IUserRepository>("UserRepository", PrismaUserRepository);
 container.registerSingleton<IDeviceTokenRepository>("DeviceTokenRepository", PrismaDeviceTokenRepository);
@@ -51,6 +55,8 @@ container.registerSingleton<PetRepository>("PetRepository", PrismaPetRepository)
 container.registerSingleton<ReportRepository>("ReportRepository", PrismaReportRepository);
 container.registerSingleton<ReportFollowerRepository>("ReportFollowerRepository", PrismaReportFollowerRepository);
 container.registerSingleton<CatalogRepository>("CatalogRepository", PrismaCatalogRepository);
+container.registerSingleton<ContentReportRepository>("ContentReportRepository", PrismaContentReportRepository);
+container.registerSingleton<MatchViewsRepository>("MatchViewsRepository", PrismaMatchViewsRepository);
 
 // ─── Services ──────────────────────────────────────────────────────────────────
 import { ITokenSigner } from "@domain/services/ITokenSigner";
@@ -134,6 +140,12 @@ import { GetUserMatchNotificationsUseCase } from "@application/usecase/match-res
 container.registerSingleton("GetMatchResultsUseCase", GetMatchResultsUseCase);
 container.registerSingleton("GetUserMatchNotificationsUseCase", GetUserMatchNotificationsUseCase);
 
+import { MarkMatchSeenUseCase } from "@application/usecase/match-views-usecase/mark-match-seen.usecase";
+import { GetSeenMatchesUseCase } from "@application/usecase/match-views-usecase/get-seen-matches.usecase";
+
+container.registerSingleton("MarkMatchSeenUseCase", MarkMatchSeenUseCase);
+container.registerSingleton("GetSeenMatchesUseCase", GetSeenMatchesUseCase);
+
 // Pets
 import { CreatePetUseCase } from "@application/usecase/pet-usecase/create-pet.usecase";
 import { GetPetsUseCase } from "@application/usecase/pet-usecase/get-user-pets.usecase";
@@ -163,6 +175,13 @@ container.registerSingleton("FollowReportUseCase", FollowReportUseCase);
 container.registerSingleton("UnfollowReportUseCase", UnfollowReportUseCase);
 container.registerSingleton("IsFollowingReportUseCase", IsFollowingReportUseCase);
 container.registerSingleton("NotifyReportFollowersOfStatusChangeUseCase", NotifyReportFollowersOfStatusChangeUseCase);
+
+// Content reports (moderation)
+import { CreateContentReportUseCase } from "@application/usecase/content-report-usecase/create-content-report.usecase";
+import { GetContentReportQueueUseCase } from "@application/usecase/content-report-usecase/get-content-report-queue.usecase";
+
+container.registerSingleton("CreateContentReportUseCase", CreateContentReportUseCase);
+container.registerSingleton("GetContentReportQueueUseCase", GetContentReportQueueUseCase);
 
 // Notifications (push)
 import { NotifyNearbyLostOwnersUseCase } from "@application/usecase/notify-nearby-lost-owners/notify-nearby-lost-owners.usecase";
