@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { Request, Response } from "express";
-import { PetController } from "../pet.controller";
+import { CreatePetController } from "../pet/create-pet.controller";
+import { GetUserPetsController } from "../pet/get-user-pets.controller";
 import { CreatePetUseCase } from "@application/usecase/pet-usecase/create-pet.usecase";
 import { GetPetsUseCase } from "@application/usecase/pet-usecase/get-user-pets.usecase";
 import { InvalidPetNameError } from "@domain/errors/InvalidPetNameError";
@@ -66,12 +67,14 @@ const makePet = (name: string) =>
 describe("PetController", () => {
   let createPetUseCase: CreatePetUseCase;
   let getPetsUseCase: GetPetsUseCase;
-  let controller: PetController;
+  let createPetController: CreatePetController;
+  let getUserPetsController: GetUserPetsController;
 
   beforeEach(() => {
     createPetUseCase = { execute: vi.fn() } as unknown as CreatePetUseCase;
     getPetsUseCase = { execute: vi.fn() } as unknown as GetPetsUseCase;
-    controller = new PetController(createPetUseCase, getPetsUseCase);
+    createPetController = new CreatePetController(createPetUseCase);
+    getUserPetsController = new GetUserPetsController(getPetsUseCase);
   });
 
   describe("create — cuando el body es válido", () => {
@@ -79,7 +82,7 @@ describe("PetController", () => {
       vi.mocked(createPetUseCase.execute).mockResolvedValue({ publicId: "new-pet-uuid" });
       const req = buildReq(validPetBody);
       const res = buildRes();
-      await invoke(controller.create, req, res);
+      await invoke(createPetController.handle, req, res);
 
       expect(res.status).toHaveBeenCalledWith(201);
       expect(res.json).toHaveBeenCalledWith({
@@ -121,7 +124,7 @@ describe("PetController", () => {
 
       const req = buildReq(validPetBody);
       const res = buildRes();
-      await invoke(controller.create, req, res);
+      await invoke(createPetController.handle, req, res);
 
       expect(res.status).toHaveBeenCalledWith(400);
     });
@@ -131,7 +134,7 @@ describe("PetController", () => {
 
       const req = buildReq(validPetBody);
       const res = buildRes();
-      await invoke(controller.create, req, res);
+      await invoke(createPetController.handle, req, res);
 
       expect(res.status).toHaveBeenCalledWith(500);
     });
@@ -146,7 +149,7 @@ describe("PetController", () => {
 
       const req = buildReq({});
       const res = buildRes();
-      await invoke(controller.getAllByUserId, req, res);
+      await invoke(getUserPetsController.handle, req, res);
 
       expect(res.status).toHaveBeenCalledWith(200);
       const body = vi.mocked(res.json)!.mock.lastCall![0] as unknown[];
@@ -160,7 +163,7 @@ describe("PetController", () => {
 
       const req = buildReq({});
       const res = buildRes();
-      await invoke(controller.getAllByUserId, req, res);
+      await invoke(getUserPetsController.handle, req, res);
 
       expect(res.status).toHaveBeenCalledWith(200);
       expect(res.json).toHaveBeenCalledWith([]);
@@ -173,7 +176,7 @@ describe("PetController", () => {
 
       const req = buildReq({});
       const res = buildRes();
-      await invoke(controller.getAllByUserId, req, res);
+      await invoke(getUserPetsController.handle, req, res);
 
       expect(res.status).toHaveBeenCalledWith(500);
     });
