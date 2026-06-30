@@ -26,6 +26,7 @@ export function errorToHttpStatus(error: Error): HttpError {
             case 'INVALID_REPORT_DETAILS': return { statusCode: 400, code: error.code, message: error.message };
             case 'INVALID_REPORT_DESCRIPTION': return { statusCode: 400, code: error.code, message: error.message };
             case 'EMAIL_VERIFICATION_REQUIRED': return { statusCode: 403, code: error.code, message: error.message };
+            case 'ADMIN_ACCESS_REQUIRED': return { statusCode: 403, code: error.code, message: error.message };
             case 'EMAIL_VERIFICATION_NOT_FOUND': return { statusCode: 400, code: error.code, message: error.message };
             case 'EMAIL_VERIFICATION_EXPIRED': return { statusCode: 400, code: error.code, message: error.message };
             case 'INVALID_COORDINATES': return { statusCode: 400, code: error.code, message: error.message };

@@ -11,6 +11,7 @@ describe("GetProfileUseCase", () => {
   beforeEach(() => {
     userRepository = {
       findByPublicId: vi.fn(),
+      findRoleByPublicId: vi.fn(),
     } as unknown as IUserRepository;
 
     useCase = new GetProfileUseCase(userRepository);
@@ -18,15 +19,16 @@ describe("GetProfileUseCase", () => {
 
   describe("when the user exists", () => {
     it("returns the user profile", async () => {
-      // Given un usuario existente
+      // Given un usuario existente con rol
       vi.mocked(userRepository.findByPublicId).mockResolvedValue(
         User.reconstruct(1, "user-123", "facu@test.com", "facu_updated", "hashed-password", true, new Date(), "Facundo", "Pereira", null),
       );
+      vi.mocked(userRepository.findRoleByPublicId).mockResolvedValue("ADMIN");
 
       // When ejecuto el use case
       const result = await useCase.execute("user-123");
 
-      // Then devuelve el perfil correctamente
+      // Then devuelve el perfil con su rol
       expect(result).toEqual({
         id: "user-123",
         email: "facu@test.com",
@@ -34,6 +36,7 @@ describe("GetProfileUseCase", () => {
         name: "Facundo",
         lastname: "Pereira",
         photoUrl: undefined,
+        role: "ADMIN",
       });
 
       expect(userRepository.findByPublicId).toHaveBeenCalledWith(

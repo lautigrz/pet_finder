@@ -38,7 +38,7 @@ describe("CreateConversationUseCase", () => {
     };
     userRepository = {
       save: vi.fn(),
-      findByEmail: vi.fn(),
+      findByEmail: vi.fn(), findRoleByPublicId: vi.fn(),
       markVerified: vi.fn(),
       findByPublicId: vi.fn(),
       findByIds: vi.fn(),

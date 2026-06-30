@@ -6,5 +6,6 @@ export class GetProfileOutput {
     public readonly name?: string,
     public readonly lastname?: string,
     public readonly photoUrl?: string,
+    public readonly role?: string,
   ) {}
 }
