@@ -4,7 +4,7 @@ import { ReportMapper } from "./report.mapper";
 import { Prisma, PrismaClient } from "@prisma/client";
 import { ReportQuery } from "@application/usecase/report-usecase/report-query";
 import { PetMapper } from "../pet/pet.mapper";
-import { reportStatusMap } from "@domain/report/types/report.status";
+import { ReportStatus, reportStatusMap } from "@domain/report/types/report.status";
 import { ReportType } from '@domain/report/types/report.type';
 import { SightingReportDetails } from '@domain/report/value-objects/sighting-report-details.vo';
 import { LostReportDetails } from '@domain/report/value-objects/lost-report-details.vo';
@@ -387,8 +387,10 @@ export class PrismaReportRepository implements ReportRepository {
             };
         }
 
-        if (query.status) {
+        if (query.status && query.status !== ReportStatus.CLOSED) {
             where.reportStatus = { name: query.status }
+        } else {
+            where.reportStatus = { name: { not: ReportStatus.CLOSED } }
         }
 
         if (query.reportType) {

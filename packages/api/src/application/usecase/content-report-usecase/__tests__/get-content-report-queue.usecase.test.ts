@@ -15,6 +15,7 @@ const fakeReport = ContentReport.restore({
     reason: ContentReportReason.SUSPICIOUS_BEHAVIOR,
     status: ContentReportStatus.PENDING,
     description: "Me pidió dinero",
+    suspensionReason: null,
     autoFlagged: true,
     createdAt: new Date("2026-06-20"),
 });
@@ -61,6 +62,7 @@ describe("GetContentReportQueueUseCase", () => {
             reason: ContentReportReason.SUSPICIOUS_BEHAVIOR,
             status: ContentReportStatus.PENDING,
             description: "Me pidió dinero",
+            suspensionReason: null,
             autoFlagged: true,
             createdAt: new Date("2026-06-20"),
             reportCount: 3,

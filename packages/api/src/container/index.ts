@@ -179,9 +179,11 @@ container.registerSingleton("NotifyReportFollowersOfStatusChangeUseCase", Notify
 // Content reports (moderation)
 import { CreateContentReportUseCase } from "@application/usecase/content-report-usecase/create-content-report.usecase";
 import { GetContentReportQueueUseCase } from "@application/usecase/content-report-usecase/get-content-report-queue.usecase";
+import { ResolveContentReportUseCase } from "@application/usecase/content-report-usecase/resolve-content-report.usecase";
 
 container.registerSingleton("CreateContentReportUseCase", CreateContentReportUseCase);
 container.registerSingleton("GetContentReportQueueUseCase", GetContentReportQueueUseCase);
+container.registerSingleton("ResolveContentReportUseCase", ResolveContentReportUseCase);
 
 // Notifications (push)
 import { NotifyNearbyLostOwnersUseCase } from "@application/usecase/notify-nearby-lost-owners/notify-nearby-lost-owners.usecase";

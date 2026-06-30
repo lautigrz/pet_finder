@@ -213,6 +213,7 @@ async function seedContentReportStatuses(): Promise<void> {
       { content_report_status_id: 1, name: 'PENDING' },
       { content_report_status_id: 2, name: 'REVIEWED' },
       { content_report_status_id: 3, name: 'DISMISSED' },
+      { content_report_status_id: 4, name: 'SUSPENDED' },
     ],
     skipDuplicates: true,
   })

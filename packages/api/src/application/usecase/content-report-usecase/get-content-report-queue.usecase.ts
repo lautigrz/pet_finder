@@ -20,6 +20,7 @@ export class GetContentReportQueueUseCase {
             reason: report.reason,
             status: report.status,
             description: report.description,
+            suspensionReason: report.suspensionReason,
             autoFlagged: report.autoFlagged,
             createdAt: report.createdAt,
             reportCount,

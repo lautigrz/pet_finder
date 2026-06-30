@@ -19,6 +19,23 @@ export class PrismaContentReportRepository implements ContentReportRepository {
         return created.content_report_id;
     }
 
+    async findByPublicId(publicId: string): Promise<ContentReport | null> {
+        const raw = await this.prisma.contentReport.findUnique({
+            where: { public_id: publicId },
+        });
+        return raw ? ContentReportMapper.toDomain(raw) : null;
+    }
+
+    async update(report: ContentReport): Promise<void> {
+        await this.prisma.contentReport.update({
+            where: { public_id: report.publicId },
+            data: {
+                status: { connect: { content_report_status_id: contentReportStatusMap[report.status] } },
+                suspension_reason: report.suspensionReason,
+            },
+        });
+    }
+
     async findByReporterAndTarget(
         reporterUserId: number,
         targetType: ContentReportTargetType,
