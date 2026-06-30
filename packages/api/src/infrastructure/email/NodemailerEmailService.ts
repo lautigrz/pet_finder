@@ -21,6 +21,11 @@ export class NodemailerEmailService implements IEmailService {
     await this.send(toEmail, "Restablecé tu contraseña en PetFinder", this.resetHtml(link));
   }
 
+  async sendMatchAlert(toEmail: string, petName: string, scorePercentage: number, lostReportPublicId: string): Promise<void> {
+    const link = `${this.appBaseUrl}/reports/${lostReportPublicId}/matches`;
+    await this.send(toEmail, "Encontramos una posible coincidencia en PetFinder", this.matchAlertHtml(petName, scorePercentage, link));
+  }
+
   private async send(toEmail: string, subject: string, html: string): Promise<void> {
     const recipient = EmailAddress.create(toEmail);
     await this.transporter.sendMail({ from: this.from, to: recipient.value, subject, html });
@@ -41,6 +46,15 @@ export class NodemailerEmailService implements IEmailService {
       "<p>Hacé clic en el siguiente enlace para elegir una nueva:</p>",
       `<p><a href="${link}">Restablecer mi contraseña</a></p>`,
       "<p>Si no pediste esto, ignorá este correo.</p>",
+    ].join("");
+  }
+
+  private matchAlertHtml(petName: string, scorePercentage: number, link: string): string {
+    return [
+      `<p>Encontramos una posible coincidencia del ${scorePercentage}% con ${petName}.</p>`,
+      "<p>Entrá para compararla y decidir si es tu mascota:</p>",
+      `<p><a href="${link}">Ver la coincidencia</a></p>`,
+      "<p>Es un resultado aproximado de nuestra IA: la decisión final es tuya.</p>",
     ].join("");
   }
 }

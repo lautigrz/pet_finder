@@ -39,6 +39,21 @@ describe("NodemailerEmailService", () => {
     );
   });
 
+  it("coincidencia: manda con el porcentaje, el nombre y el link a las coincidencias del reporte", async () => {
+    await service.sendMatchAlert("juan@example.com", "Pupo", 80, "lost-1");
+
+    expect(sendMail).toHaveBeenCalledWith(
+      expect.objectContaining({
+        to: "juan@example.com",
+        subject: expect.stringContaining("coincidencia"),
+        html: expect.stringContaining("http://localhost:4200/reports/lost-1/matches"),
+      }),
+    );
+    const html = sendMail.mock.calls[0]![0].html;
+    expect(html).toContain("80%");
+    expect(html).toContain("Pupo");
+  });
+
   it("email inválido: lanza InvalidEmailError y no manda", async () => {
     const accion = () => service.sendVerificationLink("no-es-email", "tok");
 

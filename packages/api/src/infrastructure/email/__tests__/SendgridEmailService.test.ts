@@ -44,6 +44,19 @@ describe("SendgridEmailService", () => {
     expect(body.content[0].value).toContain("https://front.vercel.app/reset-password?token=tok456");
   });
 
+  it("postea la alerta de coincidencia con el porcentaje, el nombre y el link a las coincidencias", async () => {
+    const fetchMock = mockFetch({ ok: true });
+    const service = new SendgridEmailService("SG.key", "x@mail.com", "https://front.vercel.app");
+
+    await service.sendMatchAlert("dest@mail.com", "Pupo", 80, "lost-1");
+
+    const body = JSON.parse(fetchMock.mock.calls[0]![1].body);
+    expect(body.personalizations[0].to[0].email).toBe("dest@mail.com");
+    expect(body.content[0].value).toContain("80%");
+    expect(body.content[0].value).toContain("Pupo");
+    expect(body.content[0].value).toContain("https://front.vercel.app/reports/lost-1/matches");
+  });
+
   it("tira error si SendGrid no responde OK", async () => {
     mockFetch({ ok: false, status: 401, text: "unauthorized" });
     const service = new SendgridEmailService("SG.bad", "x@mail.com", "https://front.vercel.app");
