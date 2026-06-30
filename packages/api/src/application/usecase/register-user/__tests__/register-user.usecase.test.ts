@@ -25,7 +25,7 @@ describe("RegisterUserUseCase", () => {
 
   beforeEach(() => {
     userRepository = {
-      save: vi.fn(), findByEmail: vi.fn(), markVerified: vi.fn(),
+      save: vi.fn(), findByEmail: vi.fn(), findRoleByPublicId: vi.fn(), markVerified: vi.fn(),
       findByPublicId: vi.fn(), updateProfile: vi.fn(), findById: vi.fn(),
       updatePassword: vi.fn(), findByIds: vi.fn(), deleteById: vi.fn(),
     };

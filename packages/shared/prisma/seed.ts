@@ -3,6 +3,7 @@ import { PrismaClient } from '@prisma/client'
 const prisma = new PrismaClient()
 
 async function main(): Promise<void> {
+  await seedRoles()
   await seedReportStatuses()
   await seedReportTypes()
   await seedAnimalTypes()
@@ -17,6 +18,16 @@ async function main(): Promise<void> {
 
 const DOG = 1
 const CAT = 2
+
+async function seedRoles(): Promise<void> {
+  await prisma.role.createMany({
+    data: [
+      { role_id: 1, name: 'ADMIN' },
+      { role_id: 2, name: 'USER' },
+    ],
+    skipDuplicates: true,
+  })
+}
 
 async function seedColors(): Promise<void> {
   const colors = [

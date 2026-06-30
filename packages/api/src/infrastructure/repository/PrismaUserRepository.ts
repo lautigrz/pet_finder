@@ -50,6 +50,14 @@ export class PrismaUserRepository implements IUserRepository {
     return record ? UserMapper.toDomain(record) : null;
   }
 
+  async findRoleByPublicId(publicId: string): Promise<string | null> {
+    const record = await this.prisma.user.findUnique({
+      where: { public_id: publicId },
+      select: { role: { select: { name: true } } },
+    });
+    return record?.role?.name.trim() ?? null;
+  }
+
   async updateProfile(
     publicId: string,
     data: {

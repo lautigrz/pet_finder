@@ -17,6 +17,7 @@ export class GetProfileUseCase {
             throw new UserNotFoundError();
         }
 
-        return new GetProfileOutput(user.id, user.email, user.username, user.name ?? undefined, user.lastname ?? undefined, user.photoUrl ?? undefined);
+        const role = await this.userRepository.findRoleByPublicId(publicId);
+        return new GetProfileOutput(user.id, user.email, user.username, user.name ?? undefined, user.lastname ?? undefined, user.photoUrl ?? undefined, role ?? undefined);
     }
 }

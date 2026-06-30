@@ -29,7 +29,7 @@ describe("SendMessageUseCase", () => {
   beforeEach(() => {
     convRepo = { findAllByUserId: vi.fn(), findByPublicId: vi.fn(), findByParticipants: vi.fn(), findById: vi.fn(), save: vi.fn(), delete: vi.fn() };
     msgRepo = { findById: vi.fn(), findByPublicId: vi.fn(), findByConversationId: vi.fn(), findLastMessageByConversationIds: vi.fn(), findUnreadByUserId: vi.fn(), countUnreadByConversationId: vi.fn(), save: vi.fn(), markAsRead: vi.fn(), delete: vi.fn() };
-    userRepo = { save: vi.fn(), findByEmail: vi.fn(), markVerified: vi.fn(), findByPublicId: vi.fn(), findByIds: vi.fn(), findById: vi.fn(), updateProfile: vi.fn(), updatePassword: vi.fn(), deleteById: vi.fn() };
+    userRepo = { save: vi.fn(), findByEmail: vi.fn(), findRoleByPublicId: vi.fn(), markVerified: vi.fn(), findByPublicId: vi.fn(), findByIds: vi.fn(), findById: vi.fn(), updateProfile: vi.fn(), updatePassword: vi.fn(), deleteById: vi.fn() };
     storageService = { upload: vi.fn(), delete: vi.fn() };
     useCase = new SendMessageUseCase(convRepo, msgRepo, userRepo, storageService);
   });
