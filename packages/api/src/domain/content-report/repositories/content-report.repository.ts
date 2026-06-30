@@ -22,6 +22,10 @@ export interface ContentReportRepository {
 
     save(report: ContentReport): Promise<number>;
 
+    findByPublicId(publicId: string): Promise<ContentReport | null>;
+
+    update(report: ContentReport): Promise<void>;
+
     findByReporterAndTarget(
         reporterUserId: number,
         targetType: ContentReportTargetType,

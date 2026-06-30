@@ -175,6 +175,33 @@ describe("GetReportUseCase", () => {
     });
   });
 
+  describe("reporte suspendido (CLOSED)", () => {
+    it("lanza ReportNotFoundError si el reporte está CLOSED", async () => {
+      const closedReport = Report.restore({
+        idReport: 3,
+        publicId: "report-closed-uuid",
+        userId: 5,
+        userPublicId: "user-pub-id",
+        type: ReportType.LOST,
+        currentStatus: ReportStatus.CLOSED,
+        description: null,
+        details: LostReportDetails.create({ petId: 10 }),
+        location: validLocation,
+        occurredAt: new Date("2024-05-01"),
+        createdAt: new Date("2024-05-01"),
+        updatedAt: null,
+      });
+      vi.mocked(reportRepository.findDetailByPublicId).mockResolvedValue({
+        report: closedReport,
+        pet: fakePet,
+      });
+
+      await expect(useCase.execute("report-closed-uuid")).rejects.toThrow(
+        ReportNotFoundError
+      );
+    });
+  });
+
   describe("usuario no encontrado", () => {
     it("lanza Error si el usuario asociado al reporte no existe", async () => {
       vi.mocked(reportRepository.findDetailByPublicId).mockResolvedValue({

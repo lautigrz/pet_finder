@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import { isValidContentReportTargetType } from '@domain/content-report/types/content-report-target-type';
 import { isValidContentReportReason } from '@domain/content-report/types/content-report-reason';
-import { isValidContentReportStatus } from '@domain/content-report/types/content-report-status';
+import { isValidContentReportStatus, ContentReportStatus } from '@domain/content-report/types/content-report-status';
 
 export const createContentReportSchema = z.object({
     targetType: z.string().transform(val => val.toUpperCase()).refine(val => isValidContentReportTargetType(val)),
@@ -24,5 +24,27 @@ export const contentReportQueueSchema = z.object({
     params: z.object({}).optional(),
 });
 
+const resolvableStatuses: ContentReportStatus[] = [
+    ContentReportStatus.PENDING,
+    ContentReportStatus.REVIEWED,
+    ContentReportStatus.DISMISSED,
+    ContentReportStatus.SUSPENDED,
+];
+
+export const resolveContentReportSchema = z.object({
+    status: z.string().transform(val => val.toUpperCase()).refine(val => resolvableStatuses.includes(val as ContentReportStatus)),
+    suspensionReason: z.string().trim().min(1).max(500).optional(),
+}).refine(
+    data => data.status !== ContentReportStatus.SUSPENDED || !!data.suspensionReason,
+    { path: ['suspensionReason'], message: 'suspensionReason is required when status is SUSPENDED' },
+);
+
+export const resolveContentReportRequestSchema = z.object({
+    body: resolveContentReportSchema,
+    query: z.object({}).optional(),
+    params: z.object({ publicId: z.string().uuid() }),
+});
+
 export type CreateContentReportInput = z.infer<typeof createContentReportSchema>;
 export type ContentReportQueueQuery = z.infer<typeof contentReportQueueSchema>['query'];
+export type ResolveContentReportInput = z.infer<typeof resolveContentReportSchema>;

@@ -9,6 +9,7 @@ export interface ContentReportQueueItemOutput {
     reason: ContentReportReason;
     status: ContentReportStatus;
     description: string | null;
+    suspensionReason: string | null;
     autoFlagged: boolean;
     createdAt: Date;
     reportCount: number;
