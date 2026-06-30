@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { Request, Response } from "express";
-import { MatchResultsController } from "../match-results.controller";
+import { GetMatchResultsController } from "../match/get-match-results.controller";
+import { GetMatchNotificationsController } from "../match/get-match-notifications.controller";
 import { GetMatchResultsUseCase } from "@application/usecase/match-results-usecase/get-match-results.usecase";
 import { GetUserMatchNotificationsUseCase } from "@application/usecase/match-results-usecase/get-user-match-notifications.usecase";
 import { ReportNotFoundError } from "@domain/errors/ReportNotFoundError";
@@ -61,7 +62,8 @@ const fakeNotifications = [
 
 let getMatchResultsUseCase: GetMatchResultsUseCase;
 let getUserMatchNotificationsUseCase: GetUserMatchNotificationsUseCase;
-let controller: MatchResultsController;
+let getMatchResultsController: GetMatchResultsController;
+let getMatchNotificationsController: GetMatchNotificationsController;
 
 beforeEach(() => {
     getMatchResultsUseCase = {
@@ -72,7 +74,8 @@ beforeEach(() => {
         execute: vi.fn().mockResolvedValue(fakeNotifications),
     } as unknown as GetUserMatchNotificationsUseCase;
 
-    controller = new MatchResultsController(getMatchResultsUseCase, getUserMatchNotificationsUseCase);
+    getMatchResultsController = new GetMatchResultsController(getMatchResultsUseCase);
+    getMatchNotificationsController = new GetMatchNotificationsController(getUserMatchNotificationsUseCase);
 });
 
 
@@ -83,7 +86,7 @@ describe("MatchResultsController", () => {
             const req = buildReq({ publicId: "source-report-uuid" });
             const res = buildRes();
 
-            await invoke(controller.getMatchResults, req, res);
+            await invoke(getMatchResultsController.handle, req, res);
 
             expect(getMatchResultsUseCase.execute).toHaveBeenCalledWith("source-report-uuid");
             expect(res.json).toHaveBeenCalledWith(fakeMatchResults);
@@ -93,7 +96,7 @@ describe("MatchResultsController", () => {
             const req = buildReq({ publicId: "my-specific-report-id" });
             const res = buildRes();
 
-            await invoke(controller.getMatchResults, req, res);
+            await invoke(getMatchResultsController.handle, req, res);
 
             expect(getMatchResultsUseCase.execute).toHaveBeenCalledWith("my-specific-report-id");
         });
@@ -103,7 +106,7 @@ describe("MatchResultsController", () => {
             const req = buildReq({ publicId: "source-report-uuid" });
             const res = buildRes();
 
-            await invoke(controller.getMatchResults, req, res);
+            await invoke(getMatchResultsController.handle, req, res);
 
             expect(res.json).toHaveBeenCalledWith([]);
         });
@@ -117,7 +120,7 @@ describe("MatchResultsController", () => {
             const req = buildReq({ publicId: "unknown-id" });
             const res = buildRes();
 
-            await invoke(controller.getMatchResults, req, res);
+            await invoke(getMatchResultsController.handle, req, res);
 
             expect(res.status).toHaveBeenCalledWith(404);
             expect(res.json).toHaveBeenCalledWith(
@@ -136,7 +139,7 @@ describe("MatchResultsController", () => {
             const req = buildReq({ publicId: "source-report-uuid" });
             const res = buildRes();
 
-            await invoke(controller.getMatchResults, req, res);
+            await invoke(getMatchResultsController.handle, req, res);
 
             expect(res.status).toHaveBeenCalledWith(500);
         });
@@ -147,7 +150,7 @@ describe("MatchResultsController", () => {
             const req = buildReq({});
             const res = buildRes();
 
-            await invoke(controller.getMyNotifications, req, res);
+            await invoke(getMatchNotificationsController.handle, req, res);
 
             expect(getUserMatchNotificationsUseCase.execute).toHaveBeenCalledWith("user-public-id");
             expect(res.json).toHaveBeenCalledWith(fakeNotifications);

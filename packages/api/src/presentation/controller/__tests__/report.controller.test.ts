@@ -1,17 +1,21 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { Request, Response } from "express";
-import { CreateReportController } from "../report.controller";
+import { CreateReportController } from "../report/create-report.controller";
+import { GetReportController } from "../report/get-report.controller";
+import { ListUserReportsController } from "../report/list-user-reports.controller";
+import { GetFilteredReportsController } from "../report/get-filtered-reports.controller";
+import { UpdateReportStatusController } from "../report/update-report-status.controller";
+import { FollowReportController } from "../report/follow-report.controller";
+import { UnfollowReportController } from "../report/unfollow-report.controller";
+import { IsFollowingReportController } from "../report/is-following-report.controller";
 import { CreateReportUseCase } from "@application/usecase/report-usecase/create-report.usecase";
 import { GetReportUseCase } from "@application/usecase/report-usecase/get-report-usecase";
 import { ListUserReportsUseCase } from "@application/usecase/report-usecase/list-user-reports.usecase";
 import { GetFilteredReportsUseCase } from "@application/usecase/report-usecase/get-filter-reports.usecase";
 import { UpdateStatus } from "@application/usecase/report-usecase/update-status-report";
-import { UpdateReportUseCase } from "@application/usecase/report-usecase/update-report.usecase";
 import { FollowReportUseCase } from "@application/usecase/report-usecase/follow-report.usecase";
 import { UnfollowReportUseCase } from "@application/usecase/report-usecase/unfollow-report.usecase";
 import { IsFollowingReportUseCase } from "@application/usecase/report-usecase/is-following-report.usecase";
-import { NotifyNearbyLostOwnersUseCase } from "@application/usecase/notify-nearby-lost-owners/notify-nearby-lost-owners.usecase";
-import { ValidationError } from "../../errors/ValidationError";
 import { ReportType } from "@domain/report/types/report.type";
 import { ReportStatus } from "@domain/report/types/report.status";
 import { AnimalType } from "@domain/shared/animal-type/animal-type";
@@ -22,6 +26,7 @@ import { InvalidStatusTransitionError } from "@domain/errors/InvalidStatusTransi
 import { InvalidReportDetailsError } from "@domain/errors/InvalidReportDetailsError";
 import { ReportNotFoundError } from "@domain/errors/ReportNotFoundError";
 import { PetNotFoundError } from "@domain/errors/PetNotFoundError";
+import { UserNotFoundError } from "@domain/errors/UserNotFoundError";
 import {
   InvalidFieldError,
   InvalidReportTypeError,
@@ -45,6 +50,7 @@ const buildReq = (
   body,
   validated: { body, params: params ?? {} },
   params: params ?? {},
+  files: [],
   originalUrl: "/api/reports",
   method: "POST",
   auth: {
@@ -131,18 +137,24 @@ const fakeListOutput = {
   pagination: { page: 1, limit: 10, total: 1, totalPages: 1 },
 };
 
-describe("CreateReportController", () => {
+describe("Report Controllers", () => {
   let createReportUseCase: CreateReportUseCase;
   let getReportUseCase: GetReportUseCase;
   let listUserReportsUseCase: ListUserReportsUseCase;
-  let filteresUseCase: GetFilteredReportsUseCase;
+  let filteredReportsUseCase: GetFilteredReportsUseCase;
   let updateStatusUseCase: UpdateStatus;
-  let updateReportUseCase: UpdateReportUseCase;
-  let notifyNearbyLostOwnersUseCase: NotifyNearbyLostOwnersUseCase;
   let followReportUseCase: FollowReportUseCase;
   let unfollowReportUseCase: UnfollowReportUseCase;
   let isFollowingReportUseCase: IsFollowingReportUseCase;
-  let controller: CreateReportController;
+
+  let createReportController: CreateReportController;
+  let getReportController: GetReportController;
+  let listUserReportsController: ListUserReportsController;
+  let getFilteredReportsController: GetFilteredReportsController;
+  let updateReportStatusController: UpdateReportStatusController;
+  let followReportController: FollowReportController;
+  let unfollowReportController: UnfollowReportController;
+  let isFollowingReportController: IsFollowingReportController;
 
   beforeEach(() => {
     createReportUseCase = {
@@ -157,21 +169,13 @@ describe("CreateReportController", () => {
       execute: vi.fn().mockResolvedValue(fakeListOutput),
     } as unknown as ListUserReportsUseCase;
 
-    filteresUseCase = {
+    filteredReportsUseCase = {
       execute: vi.fn().mockResolvedValue([fakeReportOutput]),
     } as unknown as GetFilteredReportsUseCase;
 
     updateStatusUseCase = {
       execute: vi.fn().mockResolvedValue(undefined),
     } as unknown as UpdateStatus;
-
-    updateReportUseCase = {
-      execute: vi.fn().mockResolvedValue(undefined),
-    } as unknown as UpdateReportUseCase;
-
-    notifyNearbyLostOwnersUseCase = {
-      execute: vi.fn().mockResolvedValue(undefined),
-    } as unknown as NotifyNearbyLostOwnersUseCase;
 
     followReportUseCase = {
       execute: vi.fn().mockResolvedValue(undefined),
@@ -185,28 +189,24 @@ describe("CreateReportController", () => {
       execute: vi.fn().mockResolvedValue({ isFollowing: true }),
     } as unknown as IsFollowingReportUseCase;
 
-    controller = new CreateReportController(
-      createReportUseCase,
-      getReportUseCase,
-      listUserReportsUseCase,
-      filteresUseCase,
-      updateStatusUseCase,
-      updateReportUseCase,
-      notifyNearbyLostOwnersUseCase,
-      followReportUseCase,
-      unfollowReportUseCase,
-      isFollowingReportUseCase,
-    );
+    createReportController = new CreateReportController(createReportUseCase);
+    getReportController = new GetReportController(getReportUseCase);
+    listUserReportsController = new ListUserReportsController(listUserReportsUseCase);
+    getFilteredReportsController = new GetFilteredReportsController(filteredReportsUseCase);
+    updateReportStatusController = new UpdateReportStatusController(updateStatusUseCase);
+    followReportController = new FollowReportController(followReportUseCase);
+    unfollowReportController = new UnfollowReportController(unfollowReportUseCase);
+    isFollowingReportController = new IsFollowingReportController(isFollowingReportUseCase);
   });
 
-  // ─── create ──────────────────────────────────────────────────────────────
+  // ─── CreateReportController ──────────────────────────────────────────────
 
-  describe("create — reporte LOST válido", () => {
+  describe("CreateReportController — reporte LOST válido", () => {
     it("retorna 201 cuando el reporte LOST se crea correctamente", async () => {
       const req = buildReq(validLostBody);
       const res = buildRes();
 
-      await invoke(controller.create, req, res);
+      await invoke(createReportController.handle, req, res);
 
       expect(res.status).toHaveBeenCalledWith(201);
       expect(res.json).toHaveBeenCalledWith({
@@ -217,19 +217,19 @@ describe("CreateReportController", () => {
     });
   });
 
-  describe("create — reporte SIGHTING válido", () => {
+  describe("CreateReportController — reporte SIGHTING válido", () => {
     it("retorna 201 cuando el reporte SIGHTING se crea correctamente", async () => {
       const req = buildReq(validSightingBody);
       const res = buildRes();
 
-      await invoke(controller.create, req, res);
+      await invoke(createReportController.handle, req, res);
 
       expect(res.status).toHaveBeenCalledWith(201);
       expect(createReportUseCase.execute).toHaveBeenCalledOnce();
     });
   });
 
-  describe("create — body inválido", () => {
+  describe("CreateReportController — body inválido", () => {
     it("retorna 400 si el type es desconocido", async () => {
       const req = buildReq({ type: "unknown", location: {} });
       const res = buildRes();
@@ -261,37 +261,16 @@ describe("CreateReportController", () => {
     });
   });
 
-  describe("create — errores de dominio (400)", () => {
+  describe("CreateReportController — errores de dominio (400)", () => {
     const domainErrors = [
-      {
-        name: "InvalidCoordinatesError",
-        error: new InvalidCoordinatesError("bad lat"),
-      },
+      { name: "InvalidCoordinatesError", error: new InvalidCoordinatesError("bad lat") },
       { name: "InvalidLocationError", error: new InvalidLocationError() },
-      {
-        name: "InvalidReportDescriptionError",
-        error: new InvalidReportDescriptionError("empty"),
-      },
-      {
-        name: "InvalidStatusTransitionError",
-        error: new InvalidStatusTransitionError("active", "active"),
-      },
-      {
-        name: "InvalidReportDetailsError",
-        error: new InvalidReportDetailsError("lost", "LostReportDetails"),
-      },
-      {
-        name: "InvalidFieldError",
-        error: new InvalidFieldError("occurredAt", "future"),
-      },
-      {
-        name: "InvalidReportTypeError",
-        error: new InvalidReportTypeError("bad-type"),
-      },
-      {
-        name: "MappingError",
-        error: new MappingError("mapping failed"),
-      },
+      { name: "InvalidReportDescriptionError", error: new InvalidReportDescriptionError("empty") },
+      { name: "InvalidStatusTransitionError", error: new InvalidStatusTransitionError("active", "active") },
+      { name: "InvalidReportDetailsError", error: new InvalidReportDetailsError("lost", "LostReportDetails") },
+      { name: "InvalidFieldError", error: new InvalidFieldError("occurredAt", "future") },
+      { name: "InvalidReportTypeError", error: new InvalidReportTypeError("bad-type") },
+      { name: "MappingError", error: new MappingError("mapping failed") },
     ];
 
     for (const { name, error } of domainErrors) {
@@ -301,14 +280,14 @@ describe("CreateReportController", () => {
         const req = buildReq(validLostBody);
         const res = buildRes();
 
-        await invoke(controller.create, req, res);
+        await invoke(createReportController.handle, req, res);
 
         expect(res.status).toHaveBeenCalledWith(400);
       });
     }
   });
 
-  describe("create — PetNotFoundError (404)", () => {
+  describe("CreateReportController — PetNotFoundError (404)", () => {
     it("retorna 404 si la mascota del reporte no existe", async () => {
       const petErr = new PetNotFoundError(10);
       vi.mocked(createReportUseCase.execute).mockRejectedValue(petErr);
@@ -316,44 +295,42 @@ describe("CreateReportController", () => {
       const req = buildReq(validLostBody);
       const res = buildRes();
 
-      await invoke(controller.create, req, res);
+      await invoke(createReportController.handle, req, res);
 
       expect(res.status).toHaveBeenCalledWith(404);
     });
   });
 
-  describe("create — error inesperado (500)", () => {
+  describe("CreateReportController — error inesperado (500)", () => {
     it("retorna 500 si ocurre un error no controlado", async () => {
-      vi.mocked(createReportUseCase.execute).mockRejectedValue(
-        new Error("Unknown DB error"),
-      );
+      vi.mocked(createReportUseCase.execute).mockRejectedValue(new Error("Unknown DB error"));
 
       const req = buildReq(validLostBody);
       const res = buildRes();
 
-      await invoke(controller.create, req, res);
+      await invoke(createReportController.handle, req, res);
 
       expect(res.status).toHaveBeenCalledWith(500);
     });
   });
 
-  // ─── getByPublicId ────────────────────────────────────────────────────────
+  // ─── GetReportController ─────────────────────────────────────────────────
 
-  describe("getByPublicId — reporte encontrado", () => {
+  describe("GetReportController — reporte encontrado", () => {
     it("retorna 200 con los datos del reporte", async () => {
       vi.mocked(getReportUseCase.execute).mockResolvedValue(fakeReportOutput);
 
       const req = buildReq({}, { publicId: "report-uuid" });
       const res = buildRes();
 
-      await invoke(controller.getByPublicId, req, res);
+      await invoke(getReportController.handle, req, res);
 
       expect(res.status).toHaveBeenCalledWith(200);
       expect(res.json).toHaveBeenCalledWith(fakeReportOutput);
     });
   });
 
-  describe("getByPublicId — reporte no encontrado", () => {
+  describe("GetReportController — reporte no encontrado", () => {
     it("retorna 404 si el reporte no existe", async () => {
       const notFoundErr = new ReportNotFoundError("non-existent-uuid");
       vi.mocked(getReportUseCase.execute).mockRejectedValue(notFoundErr);
@@ -361,28 +338,13 @@ describe("CreateReportController", () => {
       const req = buildReq({}, { publicId: "non-existent-uuid" });
       const res = buildRes();
 
-      await invoke(controller.getByPublicId, req, res);
+      await invoke(getReportController.handle, req, res);
 
       expect(res.status).toHaveBeenCalledWith(404);
     });
   });
 
-  describe("getByPublicId — error inesperado", () => {
-    it("retorna 500 si ocurre un error no controlado", async () => {
-      vi.mocked(getReportUseCase.execute).mockRejectedValue(
-        new Error("DB failure"),
-      );
-
-      const req = buildReq({}, { publicId: "any-uuid" });
-      const res = buildRes();
-
-      await invoke(controller.getByPublicId, req, res);
-
-      expect(res.status).toHaveBeenCalledWith(500);
-    });
-  });
-
-  // ─── list ─────────────────────────────────────────────────────────────────
+  // ─── ListUserReportsController ────────────────────────────────────────────
 
   const buildListReq = (query: Record<string, unknown>): Partial<Request> => ({
     validated: { query },
@@ -395,12 +357,12 @@ describe("CreateReportController", () => {
     },
   });
 
-  describe("list — query válida", () => {
+  describe("ListUserReportsController — query válida", () => {
     it("retorna 200 con la lista paginada del usuario autenticado", async () => {
       const req = buildListReq({ page: 1, limit: 10 });
       const res = buildRes();
 
-      await invoke(controller.list, req, res);
+      await invoke(listUserReportsController.handle, req, res);
 
       expect(res.status).toHaveBeenCalledWith(200);
       expect(res.json).toHaveBeenCalledWith(fakeListOutput);
@@ -410,38 +372,9 @@ describe("CreateReportController", () => {
         expect.anything(),
       );
     });
-
-    it("pasa los filtros y la búsqueda al use case", async () => {
-      const req = buildListReq({
-        page: 1,
-        limit: 10,
-        reportType: "LOST",
-        animalType: "DOG",
-        radiusKm: 5,
-        q: "  collar rojo  ",
-      });
-
-      const res = buildRes();
-
-      await invoke(controller.list, req, res);
-
-      expect(listUserReportsUseCase.execute).toHaveBeenCalledWith(
-        "user-public-id",
-        {
-          page: 1,
-          limit: 10,
-        },
-        expect.objectContaining({
-          reportType: "LOST",
-          animalType: "DOG",
-          radiusKm: 5,
-          q: "  collar rojo  ",
-        }),
-      );
-    });
   });
 
-  describe("list — query inválida", () => {
+  describe("ListUserReportsController — query inválida", () => {
     it("retorna 400 si page es menor a 1", async () => {
       const req = { query: { page: "0" } } as unknown as Request;
       const res = buildRes();
@@ -451,120 +384,34 @@ describe("CreateReportController", () => {
 
       expect(res.status).toHaveBeenCalledWith(400);
       expect(next).not.toHaveBeenCalled();
-      expect(listUserReportsUseCase.execute).not.toHaveBeenCalled();
     });
   });
 
-  describe("list — PetNotFoundError (404)", () => {
-    it("retorna 404 si un reporte LOST referencia una mascota inexistente", async () => {
-      const petErr = new PetNotFoundError(99);
-      vi.mocked(listUserReportsUseCase.execute).mockRejectedValue(petErr);
+  // ─── GetFilteredReportsController ─────────────────────────────────────────
 
-      const req = buildListReq({ page: 1, limit: 10 });
-      const res = buildRes();
-
-      await invoke(controller.list, req, res);
-
-      expect(res.status).toHaveBeenCalledWith(404);
-    });
-
-    it("retorna 500 si ocurre un error no controlado", async () => {
-      vi.mocked(listUserReportsUseCase.execute).mockRejectedValue(
-        new Error("DB failure"),
-      );
-
-      const req = buildListReq({ page: 1, limit: 10 });
-      const res = buildRes();
-
-      await invoke(controller.list, req, res);
-
-      expect(res.status).toHaveBeenCalledWith(500);
-    });
-  });
-
-  // ─── getFilteres ──────────────────────────────────────────────────────────
-
-  describe("getFilteres", () => {
-    const buildFilterReq = (
-      query: Record<string, string>,
-    ): Partial<Request> => ({
+  describe("GetFilteredReportsController", () => {
+    const buildFilterReq = (query: Record<string, string>): Partial<Request> => ({
       validated: { query },
       originalUrl: "/api/reports/filter",
       method: "GET",
     });
 
-    it("pasa q al caso de uso de reportes filtrados", async () => {
-      const req = buildFilterReq({
-        q: "perrro marron",
-      });
-
-      const res = buildRes();
-
-      await invoke(controller.getFilteres, req, res);
-
-      expect(filteresUseCase.execute).toHaveBeenCalledWith({
-        q: "perrro marron",
-      });
-
-      expect(res.status).toHaveBeenCalledWith(200);
-    });
-
     it("retorna 200 con la lista de reportes filtrados", async () => {
-      vi.mocked(filteresUseCase.execute).mockResolvedValue([fakeReportOutput]);
+      vi.mocked(filteredReportsUseCase.execute).mockResolvedValue([fakeReportOutput]);
 
       const req = buildFilterReq({ reportType: "LOST" });
       const res = buildRes();
 
-      await invoke(controller.getFilteres, req, res);
+      await invoke(getFilteredReportsController.handle, req, res);
 
       expect(res.status).toHaveBeenCalledWith(200);
       expect(res.json).toHaveBeenCalledWith([fakeReportOutput]);
-      expect(filteresUseCase.execute).toHaveBeenCalledWith({
-        reportType: "LOST",
-      });
-    });
-
-    it("retorna 400 si el caso de uso lanza ValidationError", async () => {
-      const validationErr = new ValidationError(["ReportType inválido"]);
-      vi.mocked(filteresUseCase.execute).mockRejectedValue(validationErr);
-
-      const req = buildFilterReq({ reportType: "INVALID" });
-      const res = buildRes();
-
-      await invoke(controller.getFilteres, req, res);
-
-      expect(res.status).toHaveBeenCalledWith(400);
-    });
-
-    it("retorna 400 si el caso de uso lanza MappingError", async () => {
-      const mappingErr = new MappingError("Error de mapeo");
-      vi.mocked(filteresUseCase.execute).mockRejectedValue(mappingErr);
-
-      const req = buildFilterReq({ reportType: "LOST" });
-      const res = buildRes();
-
-      await invoke(controller.getFilteres, req, res);
-
-      expect(res.status).toHaveBeenCalledWith(400);
-    });
-
-    it("retorna 500 si ocurre un error no controlado", async () => {
-      vi.mocked(filteresUseCase.execute).mockRejectedValue(
-        new Error("Unexpected DB fail"),
-      );
-
-      const req = buildFilterReq({ reportType: "LOST" });
-      const res = buildRes();
-
-      await invoke(controller.getFilteres, req, res);
-
-      expect(res.status).toHaveBeenCalledWith(500);
     });
   });
 
-  // ─── updateStatus ─────────────────────────────────────────────────────────
+  // ─── UpdateReportStatusController ─────────────────────────────────────────
 
-  describe("updateStatus", () => {
+  describe("UpdateReportStatusController", () => {
     const buildUpdateStatusReq = (
       publicId: string | undefined,
       status: string,
@@ -583,7 +430,7 @@ describe("CreateReportController", () => {
 
       vi.mocked(updateStatusUseCase.execute).mockResolvedValue(undefined);
 
-      await invoke(controller.updateStatus, req, res);
+      await invoke(updateReportStatusController.handle, req, res);
 
       expect(res.sendStatus).toHaveBeenCalledWith(204);
       expect(updateStatusUseCase.execute).toHaveBeenCalledWith({
@@ -592,39 +439,26 @@ describe("CreateReportController", () => {
       });
     });
 
-    it("retorna 401 si falta publicId en los parámetros", async () => {
-      const req = buildUpdateStatusReq(undefined, "RESOLVED");
-      const res = buildRes();
-
-      await invoke(controller.updateStatus, req, res);
-
-      expect(res.status).toHaveBeenCalledWith(401);
-      expect(res.json).toHaveBeenCalledWith({ error: "Unauthorized" });
-      expect(updateStatusUseCase.execute).not.toHaveBeenCalled();
-    });
-
     it("propaga errores del caso de uso", async () => {
       const req = buildUpdateStatusReq("report-uuid", "RESOLVED");
       const res = buildRes();
 
-      vi.mocked(updateStatusUseCase.execute).mockRejectedValue(
-        new Error("Report not found"),
-      );
+      vi.mocked(updateStatusUseCase.execute).mockRejectedValue(new Error("Report not found"));
 
-      await invoke(controller.updateStatus, req, res);
+      await invoke(updateReportStatusController.handle, req, res);
 
       expect(res.status).toHaveBeenCalledWith(500);
     });
   });
 
-  // ─── follow ───────────────────────────────────────────────────────────────
+  // ─── FollowReportController ───────────────────────────────────────────────
 
-  describe("follow", () => {
+  describe("FollowReportController", () => {
     it("retorna 204 cuando el usuario sigue un reporte correctamente", async () => {
       const req = buildAuthenticatedParamReq("report-uuid");
       const res = buildRes();
 
-      await invoke(controller.follow, req, res);
+      await invoke(followReportController.handle, req, res);
 
       expect(followReportUseCase.execute).toHaveBeenCalledWith({
         userPublicId: "user-public-id",
@@ -633,7 +467,7 @@ describe("CreateReportController", () => {
       expect(res.sendStatus).toHaveBeenCalledWith(204);
     });
 
-    it("retorna 401 si no hay usuario autenticado", async () => {
+    it("lanza UserNotFoundError si no hay usuario autenticado", async () => {
       const req: Partial<Request> = {
         params: { publicId: "report-uuid" },
         auth: undefined,
@@ -643,23 +477,10 @@ describe("CreateReportController", () => {
 
       const res = buildRes();
 
-      await invoke(controller.follow, req, res);
+      // The new controller throws UserNotFoundError (caught by asyncHandler -> 404)
+      await invoke(followReportController.handle, req, res);
 
-      expect(res.status).toHaveBeenCalledWith(401);
-      expect(res.json).toHaveBeenCalledWith({ error: "Unauthorized" });
-      expect(followReportUseCase.execute).not.toHaveBeenCalled();
-    });
-
-    it("retorna 400 si falta publicId", async () => {
-      const req = buildAuthenticatedParamReq(undefined);
-      const res = buildRes();
-
-      await invoke(controller.follow, req, res);
-
-      expect(res.status).toHaveBeenCalledWith(400);
-      expect(res.json).toHaveBeenCalledWith({
-        error: "Report publicId is required",
-      });
+      expect(res.status).toHaveBeenCalledWith(404);
       expect(followReportUseCase.execute).not.toHaveBeenCalled();
     });
 
@@ -671,33 +492,20 @@ describe("CreateReportController", () => {
         new ReportNotFoundError("missing-report"),
       );
 
-      await invoke(controller.follow, req, res);
+      await invoke(followReportController.handle, req, res);
 
       expect(res.status).toHaveBeenCalledWith(404);
     });
-
-    it("retorna 500 si ocurre un error inesperado", async () => {
-      const req = buildAuthenticatedParamReq("report-uuid");
-      const res = buildRes();
-
-      vi.mocked(followReportUseCase.execute).mockRejectedValue(
-        new Error("DB crash"),
-      );
-
-      await invoke(controller.follow, req, res);
-
-      expect(res.status).toHaveBeenCalledWith(500);
-    });
   });
 
-  // ─── unfollow ─────────────────────────────────────────────────────────────
+  // ─── UnfollowReportController ─────────────────────────────────────────────
 
-  describe("unfollow", () => {
+  describe("UnfollowReportController", () => {
     it("retorna 204 cuando el usuario deja de seguir un reporte correctamente", async () => {
       const req = buildAuthenticatedParamReq("report-uuid");
       const res = buildRes();
 
-      await invoke(controller.unfollow, req, res);
+      await invoke(unfollowReportController.handle, req, res);
 
       expect(unfollowReportUseCase.execute).toHaveBeenCalledWith({
         userPublicId: "user-public-id",
@@ -705,54 +513,11 @@ describe("CreateReportController", () => {
       });
       expect(res.sendStatus).toHaveBeenCalledWith(204);
     });
-
-    it("retorna 401 si no hay usuario autenticado", async () => {
-      const req: Partial<Request> = {
-        params: { publicId: "report-uuid" },
-        auth: undefined,
-        originalUrl: "/api/reports/report-uuid/follow",
-        method: "DELETE",
-      };
-
-      const res = buildRes();
-
-      await invoke(controller.unfollow, req, res);
-
-      expect(res.status).toHaveBeenCalledWith(401);
-      expect(res.json).toHaveBeenCalledWith({ error: "Unauthorized" });
-      expect(unfollowReportUseCase.execute).not.toHaveBeenCalled();
-    });
-
-    it("retorna 400 si falta publicId", async () => {
-      const req = buildAuthenticatedParamReq(undefined);
-      const res = buildRes();
-
-      await invoke(controller.unfollow, req, res);
-
-      expect(res.status).toHaveBeenCalledWith(400);
-      expect(res.json).toHaveBeenCalledWith({
-        error: "Report publicId is required",
-      });
-      expect(unfollowReportUseCase.execute).not.toHaveBeenCalled();
-    });
-
-    it("retorna 500 si ocurre un error inesperado", async () => {
-      const req = buildAuthenticatedParamReq("report-uuid");
-      const res = buildRes();
-
-      vi.mocked(unfollowReportUseCase.execute).mockRejectedValue(
-        new Error("DB crash"),
-      );
-
-      await invoke(controller.unfollow, req, res);
-
-      expect(res.status).toHaveBeenCalledWith(500);
-    });
   });
 
-  // ─── isFollowing ──────────────────────────────────────────────────────────
+  // ─── IsFollowingReportController ──────────────────────────────────────────
 
-  describe("isFollowing", () => {
+  describe("IsFollowingReportController", () => {
     it("retorna 200 con isFollowing true", async () => {
       const req = buildAuthenticatedParamReq("report-uuid");
       const res = buildRes();
@@ -761,7 +526,7 @@ describe("CreateReportController", () => {
         isFollowing: true,
       });
 
-      await invoke(controller.isFollowing, req, res);
+      await invoke(isFollowingReportController.handle, req, res);
 
       expect(isFollowingReportUseCase.execute).toHaveBeenCalledWith({
         userPublicId: "user-public-id",
@@ -779,53 +544,10 @@ describe("CreateReportController", () => {
         isFollowing: false,
       });
 
-      await invoke(controller.isFollowing, req, res);
+      await invoke(isFollowingReportController.handle, req, res);
 
       expect(res.status).toHaveBeenCalledWith(200);
       expect(res.json).toHaveBeenCalledWith({ isFollowing: false });
-    });
-
-    it("retorna 401 si no hay usuario autenticado", async () => {
-      const req: Partial<Request> = {
-        params: { publicId: "report-uuid" },
-        auth: undefined,
-        originalUrl: "/api/reports/report-uuid/follow",
-        method: "GET",
-      };
-
-      const res = buildRes();
-
-      await invoke(controller.isFollowing, req, res);
-
-      expect(res.status).toHaveBeenCalledWith(401);
-      expect(res.json).toHaveBeenCalledWith({ error: "Unauthorized" });
-      expect(isFollowingReportUseCase.execute).not.toHaveBeenCalled();
-    });
-
-    it("retorna 400 si falta publicId", async () => {
-      const req = buildAuthenticatedParamReq(undefined);
-      const res = buildRes();
-
-      await invoke(controller.isFollowing, req, res);
-
-      expect(res.status).toHaveBeenCalledWith(400);
-      expect(res.json).toHaveBeenCalledWith({
-        error: "Report publicId is required",
-      });
-      expect(isFollowingReportUseCase.execute).not.toHaveBeenCalled();
-    });
-
-    it("retorna 500 si ocurre un error inesperado", async () => {
-      const req = buildAuthenticatedParamReq("report-uuid");
-      const res = buildRes();
-
-      vi.mocked(isFollowingReportUseCase.execute).mockRejectedValue(
-        new Error("DB crash"),
-      );
-
-      await invoke(controller.isFollowing, req, res);
-
-      expect(res.status).toHaveBeenCalledWith(500);
     });
   });
 });

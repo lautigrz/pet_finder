@@ -19,5 +19,32 @@ export const verifyEmailRequestSchema = z.object({
     }),
 });
 
+export const updateProfileRequestSchema = z.object({
+    body: z.object({
+        name: z.string().optional(),
+        lastname: z.string().optional(),
+        username: z.string().optional(),
+        photoUrl: z.string().optional(),
+    }).refine(
+        (data) => Object.values(data).some(v => v !== undefined),
+        { message: 'At least one field is required' },
+    ),
+});
+
+export const updateNotificationPreferencesRequestSchema = z.object({
+    body: z.object({
+        notificationRadius: z.number().int().min(1).max(100).optional(),
+        lostReportsEnabled: z.boolean().optional(),
+        sightingReportsEnabled: z.boolean().optional(),
+        matchesEnabled: z.boolean().optional(),
+        mutedUntil: z.string().datetime().nullable().optional(),
+    }).refine(
+        (data) => Object.values(data).some(v => v !== undefined),
+        { message: 'At least one preference is required' },
+    ),
+});
+
 export type CreateUserBody = z.infer<typeof createUserRequestSchema>['body'];
 export type VerifyEmailBody = z.infer<typeof verifyEmailRequestSchema>['body'];
+export type UpdateProfileBody = z.infer<typeof updateProfileRequestSchema>['body'];
+export type UpdateNotificationPreferencesBody = z.infer<typeof updateNotificationPreferencesRequestSchema>['body'];

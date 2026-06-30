@@ -1,4 +1,4 @@
-import { InvalidFieldError, InvalidReportTypeError } from "@application/errors/errors";
+import { InvalidReportTypeError } from "@application/errors/errors";
 import { User } from "@domain/entities/User";
 import { Pet } from "@domain/pet/aggregates/PetAggregate";
 import { Report } from "@domain/report/aggregates/ReportAggregate";
@@ -16,7 +16,8 @@ import { SightingImage } from "@domain/report/value-objects/sighting.images";
 import { CreateReportDTO, LocationDTO } from "./dto/create-report.dto";
 import { enqueueMatchingJob } from "@infrastructure/queue/embedding.queue";
 import { inject, injectable } from "tsyringe";
-import { TypeJob } from "@pet-alert/shared";
+import { TypeJob, logger } from "@pet-alert/shared";
+import type { NotifyNearbyLostOwnersUseCase } from "@application/usecase/notify-nearby-lost-owners/notify-nearby-lost-owners.usecase";
 
 export type { CreateReportDTO, LocationDTO };
 
@@ -31,6 +32,8 @@ export class CreateReportUseCase {
         private petRepository: PetRepository,
         @inject("StorageService")
         private storageService: StorageService,
+        @inject("NotifyNearbyLostOwnersUseCase")
+        private notifyNearbyLostOwnersUseCase: NotifyNearbyLostOwnersUseCase,
     ) { }
 
     async execute(dto: CreateReportDTO, userId: string): Promise<{ publicId: string }> {
@@ -52,7 +55,13 @@ export class CreateReportUseCase {
         const reportId = await this.reportRepository.save(report);
 
         if (reportId) {
-            await enqueueMatchingJob({ type: TypeJob.RUN_MATCHING, reportId: reportId, reportType: ReportTypeToNumber[dto.type], reportTypeName: dto.type })
+            await enqueueMatchingJob({ type: TypeJob.RUN_MATCHING, reportId: reportId, reportType: ReportTypeToNumber[dto.type], reportTypeName: dto.type });
+        }
+
+        if (dto.type === ReportType.SIGHTING) {
+            void this.notifyNearbyLostOwnersUseCase
+                .execute(report.publicId)
+                .catch((error) => logger.error("Failed to notify nearby lost owners", { error }));
         }
 
         return { publicId: report.publicId };

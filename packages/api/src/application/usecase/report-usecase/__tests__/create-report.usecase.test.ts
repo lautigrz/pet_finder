@@ -15,6 +15,8 @@ import { PetRepository } from "@domain/pet/repositories/pet.repository";
 import { StorageService } from "@application/ports/StorageService";
 import { PetImage } from "@domain/pet/value-objects/image.vo";
 
+import { NotifyNearbyLostOwnersUseCase } from "@application/usecase/notify-nearby-lost-owners/notify-nearby-lost-owners.usecase";
+
 const TEST_EMAIL = "test.user@example.com";
 
 const fakeUser = User.reconstruct(
@@ -58,6 +60,7 @@ describe("CreateReportUseCase", () => {
   let petRepository: PetRepository;
   let useCase: CreateReportUseCase;
   let storageService: StorageService;
+  let notifyNearbyLostOwnersUseCase: NotifyNearbyLostOwnersUseCase;
 
   beforeEach(() => {
     reportRepository = {
@@ -84,8 +87,17 @@ describe("CreateReportUseCase", () => {
       }),
     } as unknown as StorageService;
 
+    notifyNearbyLostOwnersUseCase = {
+      execute: vi.fn().mockResolvedValue(undefined),
+    } as unknown as NotifyNearbyLostOwnersUseCase;
 
-    useCase = new CreateReportUseCase(reportRepository, userRepository, petRepository, storageService);
+    useCase = new CreateReportUseCase(
+      reportRepository,
+      userRepository,
+      petRepository,
+      storageService,
+      notifyNearbyLostOwnersUseCase
+    );
   });
 
   describe("reporte LOST", () => {

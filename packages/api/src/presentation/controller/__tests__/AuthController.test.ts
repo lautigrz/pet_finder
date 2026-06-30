@@ -1,6 +1,10 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { Request, Response } from "express";
-import { AuthController } from "../AuthController";
+import { LoginController } from "../auth/login.controller";
+import { LogoutController } from "../auth/logout.controller";
+import { RefreshTokenController } from "../auth/refresh-token.controller";
+import { ForgotPasswordController } from "../auth/forgot-password.controller";
+import { ResetPasswordController } from "../auth/reset-password.controller";
 import { LoginUserUseCase } from "../../../application/usecase/login-user/login-user.usecase";
 import { LoginUserOutput } from "../../../application/usecase/login-user/login-user.output";
 import { InvalidCredentialsError } from "../../../domain/errors/InvalidCredentialsError";
@@ -18,7 +22,11 @@ describe("AuthController", () => {
   let refreshUseCase: RefreshAccessTokenUseCase;
   let requestResetUseCase: RequestPasswordResetUseCase;
   let resetPasswordUseCase: ResetPasswordUseCase;
-  let controller: AuthController;
+  let loginController: LoginController;
+  let logoutController: LogoutController;
+  let refreshController: RefreshTokenController;
+  let forgotPasswordController: ForgotPasswordController;
+  let resetPasswordController: ResetPasswordController;
   let res: Partial<Response>;
 
   beforeEach(() => {
@@ -27,13 +35,11 @@ describe("AuthController", () => {
     refreshUseCase = { execute: vi.fn() } as unknown as RefreshAccessTokenUseCase;
     requestResetUseCase = { execute: vi.fn() } as unknown as RequestPasswordResetUseCase;
     resetPasswordUseCase = { execute: vi.fn() } as unknown as ResetPasswordUseCase;
-    controller = new AuthController(
-      useCase,
-      logoutUseCase,
-      refreshUseCase,
-      requestResetUseCase,
-      resetPasswordUseCase,
-    );
+    loginController = new LoginController(useCase);
+    logoutController = new LogoutController(logoutUseCase);
+    refreshController = new RefreshTokenController(refreshUseCase);
+    forgotPasswordController = new ForgotPasswordController(requestResetUseCase);
+    resetPasswordController = new ResetPasswordController(resetPasswordUseCase);
     res = {
       status: vi.fn().mockReturnThis(),
       json: vi.fn().mockReturnThis(),
@@ -48,7 +54,7 @@ describe("AuthController", () => {
       vi.mocked(useCase.execute).mockResolvedValue(new LoginUserOutput("jwt-access", "refresh-string"));
 
       const req = buildReq({ email: "juan@example.com", password: "miPass123" });
-      await invoke(controller.login, req, res);
+      await invoke(loginController.handle, req, res);
 
       expect(res.status).toHaveBeenCalledWith(200);
       expect(res.json).toHaveBeenCalledWith({
@@ -63,7 +69,7 @@ describe("AuthController", () => {
       vi.mocked(useCase.execute).mockRejectedValue(new InvalidCredentialsError());
 
       const req = buildReq({ email: "juan@example.com", password: "passEquivocada" });
-      await invoke(controller.login, req, res);
+      await invoke(loginController.handle, req, res);
 
       expect(res.status).toHaveBeenCalledWith(401);
     });
@@ -74,7 +80,7 @@ describe("AuthController", () => {
       vi.mocked(useCase.execute).mockRejectedValue(new Error("db is down"));
 
       const req = buildReq({ email: "juan@example.com", password: "miPass123" });
-      await invoke(controller.login, req, res);
+      await invoke(loginController.handle, req, res);
 
       expect(res.status).toHaveBeenCalledWith(500);
     });
@@ -83,7 +89,7 @@ describe("AuthController", () => {
   describe("logout", () => {
     it("returns 204 and runs the use case when the body has a refreshToken", async () => {
       const req = buildReq({ refreshToken: "a-refresh-token" });
-      await invoke(controller.logout, req, res);
+      await invoke(logoutController.handle, req, res);
 
       expect(logoutUseCase.execute).toHaveBeenCalled();
       expect(res.status).toHaveBeenCalledWith(204);
@@ -95,7 +101,7 @@ describe("AuthController", () => {
       vi.mocked(refreshUseCase.execute).mockResolvedValue(new RefreshAccessTokenOutput("new-access"));
 
       const req = buildReq({ refreshToken: "a-refresh-token" });
-      await invoke(controller.refresh, req, res);
+      await invoke(refreshController.handle, req, res);
 
       expect(res.status).toHaveBeenCalledWith(200);
       expect(res.json).toHaveBeenCalledWith({ accessToken: "new-access" });
@@ -105,7 +111,7 @@ describe("AuthController", () => {
   describe("forgotPassword", () => {
     it("returns 200 and runs the use case with a valid email", async () => {
       const req = buildReq({ email: "juan@example.com" });
-      await invoke(controller.forgotPassword, req, res);
+      await invoke(forgotPasswordController.handle, req, res);
 
       expect(requestResetUseCase.execute).toHaveBeenCalled();
       expect(res.status).toHaveBeenCalledWith(200);
@@ -115,7 +121,7 @@ describe("AuthController", () => {
   describe("resetPassword", () => {
     it("returns 200 and runs the use case with token + newPassword", async () => {
       const req = buildReq({ token: "tok-123", newPassword: "nuevaPass123" });
-      await invoke(controller.resetPassword, req, res);
+      await invoke(resetPasswordController.handle, req, res);
 
       expect(resetPasswordUseCase.execute).toHaveBeenCalled();
       expect(res.status).toHaveBeenCalledWith(200);
@@ -126,7 +132,7 @@ describe("AuthController", () => {
         new InvalidPasswordResetTokenError("expired"),
       );
       const req = buildReq({ token: "tok-123", newPassword: "nuevaPass123" });
-      await invoke(controller.resetPassword, req, res);
+      await invoke(resetPasswordController.handle, req, res);
 
       expect(res.status).toHaveBeenCalledWith(400);
     });

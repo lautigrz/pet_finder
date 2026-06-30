@@ -1,9 +1,10 @@
 import { Router } from "express";
-import { HealthyController } from "../../controller/health.controller";
+import { container } from "tsyringe";
+import { HealthController } from "@presentation/controller/health/health.controller";
 
 const router = Router();
 
-const healthyController = new HealthyController();
-router.get("/", healthyController.health);
+const healthController = container.resolve(HealthController);
+router.get("/", healthController.handle);
 
 export default router;
