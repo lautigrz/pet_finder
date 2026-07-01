@@ -31,14 +31,14 @@ function fakeContentReport(targetType: ContentReportTargetType = ContentReportTa
   });
 }
 
-function fakeReport(): Report {
+function fakeReport(currentStatus: ReportStatus = ReportStatus.ACTIVE): Report {
   return Report.restore({
     idReport: 1,
     publicId: "reporte-uuid",
     userId: 5,
     userPublicId: "user-pub-id",
     type: ReportType.LOST,
-    currentStatus: ReportStatus.ACTIVE,
+    currentStatus,
     description: null,
     details: LostReportDetails.create({ petId: 10 }),
     location: Location.create({ address: "Calle 1", latitude: -34.6, longitude: -58.4 }),
@@ -57,6 +57,8 @@ describe("ResolveContentReportUseCase", () => {
     contentReportRepository = {
       findByPublicId: vi.fn(),
       update: vi.fn(),
+      countApprovedByTarget: vi.fn().mockResolvedValue(1),
+      suspendOpenByTarget: vi.fn(),
     } as unknown as ContentReportRepository;
 
     reportRepository = {
@@ -75,15 +77,17 @@ describe("ResolveContentReportUseCase", () => {
     ).rejects.toThrow(ContentReportNotFoundError);
   });
 
-  it("aprobar marca la denuncia como REVIEWED sin tocar el reporte", async () => {
+  it("aprobar marca la denuncia como REVIEWED sin suspender el reporte", async () => {
     const denuncia = fakeContentReport();
     vi.mocked(contentReportRepository.findByPublicId).mockResolvedValue(denuncia);
+    vi.mocked(reportRepository.findByPublicId).mockResolvedValue(fakeReport());
 
     await useCase.execute({ publicId: "denuncia-uuid", status: ContentReportStatus.REVIEWED });
 
     expect(denuncia.status).toBe(ContentReportStatus.REVIEWED);
     expect(contentReportRepository.update).toHaveBeenCalledWith(denuncia);
-    expect(reportRepository.findByPublicId).not.toHaveBeenCalled();
+    expect(reportRepository.update).not.toHaveBeenCalled();
+    expect(contentReportRepository.suspendOpenByTarget).not.toHaveBeenCalled();
   });
 
   it("eliminar marca la denuncia como DISMISSED sin tocar el reporte", async () => {
@@ -107,7 +111,7 @@ describe("ResolveContentReportUseCase", () => {
     expect(reportRepository.findByPublicId).not.toHaveBeenCalled();
   });
 
-  it("suspender marca la denuncia SUSPENDED + motivo y suspende el reporte (CLOSED)", async () => {
+  it("suspender manualmente cierra el reporte y suspende todas sus denuncias abiertas con el motivo", async () => {
     const denuncia = fakeContentReport();
     const reporte = fakeReport();
     vi.mocked(contentReportRepository.findByPublicId).mockResolvedValue(denuncia);
@@ -119,10 +123,13 @@ describe("ResolveContentReportUseCase", () => {
       suspensionReason: "Contenido fraudulento",
     });
 
-    expect(denuncia.status).toBe(ContentReportStatus.SUSPENDED);
-    expect(denuncia.suspensionReason).toBe("Contenido fraudulento");
     expect(reporte.status).toBe(ReportStatus.CLOSED);
     expect(reportRepository.update).toHaveBeenCalledWith(reporte);
+    expect(contentReportRepository.suspendOpenByTarget).toHaveBeenCalledWith(
+      ContentReportTargetType.POST,
+      "reporte-uuid",
+      expect.stringContaining("Contenido fraudulento"),
+    );
   });
 
   it("suspender sin motivo lanza SuspensionReasonRequiredError", async () => {
@@ -146,5 +153,91 @@ describe("ResolveContentReportUseCase", () => {
         suspensionReason: "x",
       }),
     ).rejects.toThrow(ReportedContentNotFoundError);
+  });
+
+  it("aprobar por debajo del umbral no suspende la publicación", async () => {
+    const denuncia = fakeContentReport();
+    vi.mocked(contentReportRepository.findByPublicId).mockResolvedValue(denuncia);
+    vi.mocked(reportRepository.findByPublicId).mockResolvedValue(fakeReport());
+    vi.mocked(contentReportRepository.countApprovedByTarget).mockResolvedValue(4);
+
+    await useCase.execute({ publicId: "denuncia-uuid", status: ContentReportStatus.REVIEWED });
+
+    expect(reportRepository.update).not.toHaveBeenCalled();
+    expect(contentReportRepository.suspendOpenByTarget).not.toHaveBeenCalled();
+  });
+
+  it("al alcanzar el umbral suspende la publicación (CLOSED) y suspende todas las denuncias abiertas", async () => {
+    const denuncia = fakeContentReport();
+    const reporte = fakeReport();
+    vi.mocked(contentReportRepository.findByPublicId).mockResolvedValue(denuncia);
+    vi.mocked(contentReportRepository.countApprovedByTarget).mockResolvedValue(5);
+    vi.mocked(reportRepository.findByPublicId).mockResolvedValue(reporte);
+
+    const result = await useCase.execute({ publicId: "denuncia-uuid", status: ContentReportStatus.REVIEWED });
+
+    expect(reporte.status).toBe(ReportStatus.CLOSED);
+    expect(reportRepository.update).toHaveBeenCalledWith(reporte);
+    expect(contentReportRepository.suspendOpenByTarget).toHaveBeenCalledWith(
+      ContentReportTargetType.POST,
+      "reporte-uuid",
+      expect.stringContaining("5"),
+    );
+    expect(result.autoSuspended).toBe(true);
+  });
+
+  it("editar una denuncia de descartada a aprobada también cuenta para el umbral y suspende", async () => {
+    const denuncia = fakeContentReport();
+    denuncia.dismiss();
+    const reporte = fakeReport();
+    vi.mocked(contentReportRepository.findByPublicId).mockResolvedValue(denuncia);
+    vi.mocked(contentReportRepository.countApprovedByTarget).mockResolvedValue(5);
+    vi.mocked(reportRepository.findByPublicId).mockResolvedValue(reporte);
+
+    const result = await useCase.execute({ publicId: "denuncia-uuid", status: ContentReportStatus.REVIEWED });
+
+    expect(denuncia.status).toBe(ContentReportStatus.REVIEWED);
+    expect(reporte.status).toBe(ReportStatus.CLOSED);
+    expect(result.autoSuspended).toBe(true);
+  });
+
+  it("editar una denuncia de aprobada a descartada no suspende la publicación", async () => {
+    const denuncia = fakeContentReport();
+    denuncia.approve();
+    vi.mocked(contentReportRepository.findByPublicId).mockResolvedValue(denuncia);
+
+    const result = await useCase.execute({ publicId: "denuncia-uuid", status: ContentReportStatus.DISMISSED });
+
+    expect(denuncia.status).toBe(ContentReportStatus.DISMISSED);
+    expect(reportRepository.findByPublicId).not.toHaveBeenCalled();
+    expect(contentReportRepository.suspendOpenByTarget).not.toHaveBeenCalled();
+    expect(result.autoSuspended).toBe(false);
+  });
+
+  it("si la publicación ya está cerrada, no la re-cierra pero mantiene las denuncias suspendidas", async () => {
+    const denuncia = fakeContentReport();
+    const reporte = fakeReport(ReportStatus.CLOSED);
+    vi.mocked(contentReportRepository.findByPublicId).mockResolvedValue(denuncia);
+    vi.mocked(reportRepository.findByPublicId).mockResolvedValue(reporte);
+
+    const result = await useCase.execute({ publicId: "denuncia-uuid", status: ContentReportStatus.REVIEWED });
+
+    expect(reportRepository.update).not.toHaveBeenCalled();
+    expect(contentReportRepository.suspendOpenByTarget).toHaveBeenCalledWith(
+      ContentReportTargetType.POST,
+      "reporte-uuid",
+      expect.stringContaining("5"),
+    );
+    expect(result.autoSuspended).toBe(false);
+  });
+
+  it("aprobar una denuncia de chat no dispara la auto-suspensión", async () => {
+    const denuncia = fakeContentReport(ContentReportTargetType.CHAT);
+    vi.mocked(contentReportRepository.findByPublicId).mockResolvedValue(denuncia);
+
+    await useCase.execute({ publicId: "denuncia-uuid", status: ContentReportStatus.REVIEWED });
+
+    expect(contentReportRepository.countApprovedByTarget).not.toHaveBeenCalled();
+    expect(reportRepository.findByPublicId).not.toHaveBeenCalled();
   });
 });

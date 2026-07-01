@@ -17,7 +17,7 @@ export class ResolveContentReportController {
     const { publicId } = req.validated?.params as { publicId: string };
     const body = req.validated?.body as ResolveContentReportInput;
 
-    await this.resolveContentReportUseCase.execute({
+    const result = await this.resolveContentReportUseCase.execute({
       publicId,
       status: body.status as ContentReportStatus,
       suspensionReason: body.suspensionReason,
@@ -25,6 +25,6 @@ export class ResolveContentReportController {
 
     logger.info("Content report resolved successfully", { publicId, status: body.status });
 
-    res.status(204).send();
+    res.status(200).json(result);
   });
 }
