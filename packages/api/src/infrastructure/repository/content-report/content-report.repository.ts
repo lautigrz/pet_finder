@@ -2,6 +2,7 @@ import { ContentReport } from "@domain/content-report/ContentReport";
 import { ContentReportQueueItem, ContentReportRepository } from "@domain/content-report/repositories/content-report.repository";
 import { ContentReportStatus, contentReportStatusMap } from "@domain/content-report/types/content-report-status";
 import { ContentReportTargetType, contentReportTargetTypeMap } from "@domain/content-report/types/content-report-target-type";
+import { ReportType, ReportTypeToNumber } from "@domain/report/types/report.type";
 import { PrismaClient } from "@prisma/client";
 import { inject, injectable } from "tsyringe";
 import { ContentReportMapper } from "./content-report.mapper";
@@ -62,6 +63,16 @@ export class PrismaContentReportRepository implements ContentReportRepository {
         });
     }
 
+    async countApprovedByTarget(targetType: ContentReportTargetType, targetPublicId: string): Promise<number> {
+        return this.prisma.contentReport.count({
+            where: {
+                target_type_id: contentReportTargetTypeMap[targetType],
+                target_public_id: targetPublicId,
+                status_id: contentReportStatusMap[ContentReportStatus.REVIEWED],
+            },
+        });
+    }
+
     async flagTarget(targetType: ContentReportTargetType, targetPublicId: string): Promise<void> {
         await this.prisma.contentReport.updateMany({
             where: {
@@ -69,6 +80,29 @@ export class PrismaContentReportRepository implements ContentReportRepository {
                 target_public_id: targetPublicId,
             },
             data: { auto_flagged: true },
+        });
+    }
+
+    async suspendOpenByTarget(
+        targetType: ContentReportTargetType,
+        targetPublicId: string,
+        reason: string,
+    ): Promise<void> {
+        await this.prisma.contentReport.updateMany({
+            where: {
+                target_type_id: contentReportTargetTypeMap[targetType],
+                target_public_id: targetPublicId,
+                status_id: {
+                    in: [
+                        contentReportStatusMap[ContentReportStatus.PENDING],
+                        contentReportStatusMap[ContentReportStatus.REVIEWED],
+                    ],
+                },
+            },
+            data: {
+                status_id: contentReportStatusMap[ContentReportStatus.SUSPENDED],
+                suspension_reason: reason,
+            },
         });
     }
 
@@ -90,7 +124,13 @@ export class PrismaContentReportRepository implements ContentReportRepository {
         const [reports, conversations, reportedUsers, grouped] = await Promise.all([
             this.prisma.report.findMany({
                 where: { public_id: { in: postPublicIds } },
-                select: { public_id: true, user: { select: { username: true } } },
+                select: {
+                    public_id: true,
+                    report_type_id: true,
+                    user: { select: { username: true } },
+                    lost_report_detail: { select: { pet: { select: { pet_name: true } } } },
+                    sighting_report_detail: { select: { pet_name: true } },
+                },
             }),
             this.prisma.conversation.findMany({
                 where: { public_id: { in: chatPublicIds } },
@@ -114,6 +154,18 @@ export class PrismaContentReportRepository implements ContentReportRepository {
         ]);
 
         const ownerByPostPublicId = new Map(reports.map((r) => [r.public_id, r.user.username]));
+        const contentByPostPublicId = new Map(
+            reports.map((r) => [
+                r.public_id,
+                {
+                    petName: r.lost_report_detail?.pet?.pet_name ?? r.sighting_report_detail?.pet_name ?? null,
+                    reportType:
+                        r.report_type_id === ReportTypeToNumber[ReportType.LOST]
+                            ? ReportType.LOST
+                            : ReportType.SIGHTING,
+                },
+            ]),
+        );
         const conversationByPublicId = new Map(conversations.map((c) => [c.public_id, c]));
         const usernameByUserPublicId = new Map(reportedUsers.map((u) => [u.public_id, u.username]));
         const countByTarget = new Map(
@@ -140,6 +192,10 @@ export class PrismaContentReportRepository implements ContentReportRepository {
                 report: ContentReportMapper.toDomain(row),
                 reporter: { publicId: row.reporter.public_id, username: row.reporter.username },
                 reportedUser: reportedUsername ? { username: reportedUsername } : null,
+                reportedContent:
+                    row.target_type_id === postTypeId
+                        ? contentByPostPublicId.get(row.target_public_id) ?? null
+                        : null,
                 reportCount: countByTarget.get(`${row.target_type_id}:${row.target_public_id}`) ?? 1,
             };
         });

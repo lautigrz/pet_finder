@@ -66,10 +66,12 @@ export class ContentReport {
 
     approve(): void {
         this.props.status = ContentReportStatus.REVIEWED;
+        this.props.suspensionReason = null;
     }
 
     dismiss(): void {
         this.props.status = ContentReportStatus.DISMISSED;
+        this.props.suspensionReason = null;
     }
 
     suspend(reason: string): void {
@@ -79,5 +81,6 @@ export class ContentReport {
 
     markPending(): void {
         this.props.status = ContentReportStatus.PENDING;
+        this.props.suspensionReason = null;
     }
 }

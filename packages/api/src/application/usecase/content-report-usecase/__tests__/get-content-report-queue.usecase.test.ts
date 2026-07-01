@@ -31,6 +31,7 @@ describe("GetContentReportQueueUseCase", () => {
                     report: fakeReport,
                     reporter: { publicId: "reporter-public-id", username: "reporter" },
                     reportedUser: { username: "reported-user" },
+                    reportedContent: null,
                     reportCount: 3,
                 },
             ]),
@@ -67,6 +68,7 @@ describe("GetContentReportQueueUseCase", () => {
             createdAt: new Date("2026-06-20"),
             reportCount: 3,
             reportedUser: { username: "reported-user" },
+            reportedContent: null,
             reporter: { publicId: "reporter-public-id", username: "reporter" },
         });
     });

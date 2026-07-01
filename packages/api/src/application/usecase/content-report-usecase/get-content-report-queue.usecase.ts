@@ -13,7 +13,7 @@ export class GetContentReportQueueUseCase {
     async execute(status: ContentReportStatus = ContentReportStatus.PENDING): Promise<ContentReportQueueItemOutput[]> {
         const items = await this.contentReportRepository.findQueueByStatus(status);
 
-        return items.map(({ report, reporter, reportedUser, reportCount }) => ({
+        return items.map(({ report, reporter, reportedUser, reportedContent, reportCount }) => ({
             publicId: report.publicId,
             targetType: report.targetType,
             targetPublicId: report.targetPublicId,
@@ -25,6 +25,7 @@ export class GetContentReportQueueUseCase {
             createdAt: report.createdAt,
             reportCount,
             reportedUser,
+            reportedContent,
             reporter: {
                 publicId: reporter.publicId,
                 username: reporter.username,

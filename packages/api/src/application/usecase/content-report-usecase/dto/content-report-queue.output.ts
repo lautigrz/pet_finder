@@ -1,6 +1,7 @@
 import { ContentReportReason } from "@domain/content-report/types/content-report-reason";
 import { ContentReportStatus } from "@domain/content-report/types/content-report-status";
 import { ContentReportTargetType } from "@domain/content-report/types/content-report-target-type";
+import { ReportType } from "@domain/report/types/report.type";
 
 export interface ContentReportQueueItemOutput {
     publicId: string;
@@ -15,6 +16,10 @@ export interface ContentReportQueueItemOutput {
     reportCount: number;
     reportedUser: {
         username: string;
+    } | null;
+    reportedContent: {
+        petName: string | null;
+        reportType: ReportType;
     } | null;
     reporter: {
         publicId: string;

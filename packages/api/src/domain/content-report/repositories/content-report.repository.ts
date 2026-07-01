@@ -1,6 +1,7 @@
 import { ContentReport } from "../ContentReport";
 import { ContentReportStatus } from "../types/content-report-status";
 import { ContentReportTargetType } from "../types/content-report-target-type";
+import { ReportType } from "../../report/types/report.type";
 
 export interface ContentReportReporter {
     publicId: string;
@@ -11,10 +12,16 @@ export interface ContentReportReportedUser {
     username: string;
 }
 
+export interface ContentReportReportedContent {
+    petName: string | null;
+    reportType: ReportType;
+}
+
 export interface ContentReportQueueItem {
     report: ContentReport;
     reporter: ContentReportReporter;
     reportedUser: ContentReportReportedUser | null;
+    reportedContent: ContentReportReportedContent | null;
     reportCount: number;
 }
 
@@ -34,7 +41,15 @@ export interface ContentReportRepository {
 
     countByTarget(targetType: ContentReportTargetType, targetPublicId: string): Promise<number>;
 
+    countApprovedByTarget(targetType: ContentReportTargetType, targetPublicId: string): Promise<number>;
+
     flagTarget(targetType: ContentReportTargetType, targetPublicId: string): Promise<void>;
+
+    suspendOpenByTarget(
+        targetType: ContentReportTargetType,
+        targetPublicId: string,
+        reason: string,
+    ): Promise<void>;
 
     findQueueByStatus(status: ContentReportStatus): Promise<ContentReportQueueItem[]>;
 }
