@@ -28,6 +28,16 @@ describe("NodemailerEmailService", () => {
     );
   });
 
+  it("adjunta el logo inline y lo referencia por cid en el header", async () => {
+    await service.sendVerificationLink("juan@example.com", "tok");
+
+    const call = sendMail.mock.calls[0]![0];
+    expect(call.html).toContain('src="cid:petfinder-logo"');
+    expect(call.attachments).toEqual([
+      expect.objectContaining({ cid: "petfinder-logo", filename: "petfinder-logo.png" }),
+    ]);
+  });
+
   it("reset: manda con el link de reset y el token", async () => {
     await service.sendPasswordResetLink("juan@example.com", "tok-2");
 
@@ -39,8 +49,8 @@ describe("NodemailerEmailService", () => {
     );
   });
 
-  it("coincidencia: manda con el porcentaje, el nombre y el link a las coincidencias del reporte", async () => {
-    await service.sendMatchAlert("juan@example.com", "Pupo", 80, "lost-1");
+  it("coincidencia: manda con el porcentaje, el nombre, la foto y el link a las coincidencias del reporte", async () => {
+    await service.sendMatchAlert("juan@example.com", "Pupo", 80, "lost-1", "https://img/milo.jpg");
 
     expect(sendMail).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -52,6 +62,18 @@ describe("NodemailerEmailService", () => {
     const html = sendMail.mock.calls[0]![0].html;
     expect(html).toContain("80%");
     expect(html).toContain("Pupo");
+    expect(html).toContain("https://img/milo.jpg");
+  });
+
+  it("coincidencia sin foto: usa el isotipo y lo adjunta inline", async () => {
+    await service.sendMatchAlert("juan@example.com", "Pupo", 80, "lost-1", null);
+
+    const call = sendMail.mock.calls[0]![0];
+    expect(call.html).toContain('src="cid:petfinder-isotipo"');
+    expect(call.attachments).toEqual([
+      expect.objectContaining({ cid: "petfinder-logo" }),
+      expect.objectContaining({ cid: "petfinder-isotipo", filename: "petfinder-isotipo.png" }),
+    ]);
   });
 
   it("email inválido: lanza InvalidEmailError y no manda", async () => {

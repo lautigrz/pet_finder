@@ -29,10 +29,10 @@ describe("NotifyOwnerOfMatchUseCase", () => {
     rol: "dueno",
     lostReportPublicId: "lost-1",
     lostPetName: "Pupo",
-    lostPetImage: null,
+    lostPetImage: "https://img/milo.jpg",
     matchPublicId: "match-1",
     matchedReportPublicId: "sighting-1",
-    matchedImage: null,
+    matchedImage: "https://img/sighting.jpg",
     score: 0.8,
     createdAt: "2026-06-20T00:00:00.000Z",
   };
@@ -55,17 +55,23 @@ describe("NotifyOwnerOfMatchUseCase", () => {
     expect(input.notification.body).toContain("tu mascota");
   });
 
-  it("emails the owner with the match score and pet name", async () => {
+  it("emails the owner with their own lost pet photo", async () => {
     await useCase.execute(notification);
 
     expect(emailService.sendMatchAlert).toHaveBeenCalledTimes(1);
-    expect(emailService.sendMatchAlert).toHaveBeenCalledWith("owner@example.com", "Pupo", 80, "lost-1");
+    expect(emailService.sendMatchAlert).toHaveBeenCalledWith("owner@example.com", "Pupo", 80, "lost-1", "https://img/milo.jpg");
+  });
+
+  it("emails the sighting reporter with the photo from their own report", async () => {
+    await useCase.execute({ ...notification, rol: "avistador" });
+
+    expect(emailService.sendMatchAlert).toHaveBeenCalledWith("owner@example.com", "Pupo", 80, "lost-1", "https://img/sighting.jpg");
   });
 
   it("emails the fallback name when the lost pet has no name", async () => {
     await useCase.execute({ ...notification, lostPetName: null });
 
-    expect(emailService.sendMatchAlert).toHaveBeenCalledWith("owner@example.com", "tu mascota", 80, "lost-1");
+    expect(emailService.sendMatchAlert).toHaveBeenCalledWith("owner@example.com", "tu mascota", 80, "lost-1", "https://img/milo.jpg");
   });
 
   it("skips the email but still pushes when the owner is not found", async () => {

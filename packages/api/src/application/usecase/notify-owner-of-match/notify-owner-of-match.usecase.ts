@@ -32,7 +32,12 @@ export class NotifyOwnerOfMatchUseCase {
             notification.lostPetName ?? "tu mascota",
             Math.round(notification.score * 100),
             notification.lostReportPublicId,
+            this.recipientImage(notification),
         );
+    }
+
+    private recipientImage(notification: MatchNotification): string | null {
+        return notification.rol === "dueno" ? notification.lostPetImage : notification.matchedImage;
     }
 
     private buildPush(notification: MatchNotification): PushNotification {

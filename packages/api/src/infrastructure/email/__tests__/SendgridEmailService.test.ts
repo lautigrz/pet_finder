@@ -33,6 +33,19 @@ describe("SendgridEmailService", () => {
     expect(body.content[0].value).toContain("https://front.vercel.app/verify-email?token=tok123");
   });
 
+  it("incluye el logo como adjunto inline referenciado por cid", async () => {
+    const fetchMock = mockFetch({ ok: true });
+    const service = new SendgridEmailService("SG.key", "x@mail.com", "https://front.vercel.app");
+
+    await service.sendVerificationLink("dest@mail.com", "tok");
+
+    const body = JSON.parse(fetchMock.mock.calls[0]![1].body);
+    expect(body.content[0].value).toContain('src="cid:petfinder-logo"');
+    expect(body.attachments).toEqual([
+      expect.objectContaining({ content_id: "petfinder-logo", disposition: "inline", filename: "petfinder-logo.png" }),
+    ]);
+  });
+
   it("usa el endpoint de reset con su link", async () => {
     const fetchMock = mockFetch({ ok: true });
     const service = new SendgridEmailService("SG.key", "x@mail.com", "https://front.vercel.app");
@@ -48,12 +61,13 @@ describe("SendgridEmailService", () => {
     const fetchMock = mockFetch({ ok: true });
     const service = new SendgridEmailService("SG.key", "x@mail.com", "https://front.vercel.app");
 
-    await service.sendMatchAlert("dest@mail.com", "Pupo", 80, "lost-1");
+    await service.sendMatchAlert("dest@mail.com", "Pupo", 80, "lost-1", "https://img/milo.jpg");
 
     const body = JSON.parse(fetchMock.mock.calls[0]![1].body);
     expect(body.personalizations[0].to[0].email).toBe("dest@mail.com");
     expect(body.content[0].value).toContain("80%");
     expect(body.content[0].value).toContain("Pupo");
+    expect(body.content[0].value).toContain("https://img/milo.jpg");
     expect(body.content[0].value).toContain("https://front.vercel.app/reports/lost-1/matches");
   });
 
