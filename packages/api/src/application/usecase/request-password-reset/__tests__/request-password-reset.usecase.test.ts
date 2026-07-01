@@ -24,7 +24,7 @@ describe("RequestPasswordResetUseCase", () => {
     userRepository = { findByEmail: vi.fn() } as unknown as IUserRepository;
     tokenRepository = { save: vi.fn(), findByValue: vi.fn(), markAsUsed: vi.fn() };
     tokenGenerator = { generate: vi.fn() };
-    emailService = { sendVerificationLink: vi.fn(), sendPasswordResetLink: vi.fn() };
+    emailService = { sendVerificationLink: vi.fn(), sendPasswordResetLink: vi.fn(), sendMatchAlert: vi.fn() };
     useCase = new RequestPasswordResetUseCase(
       userRepository,
       tokenRepository,
