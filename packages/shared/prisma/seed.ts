@@ -185,6 +185,7 @@ async function seedContentReportTargetTypes(): Promise<void> {
     data: [
       { content_report_target_type_id: 1, name: 'CHAT' },
       { content_report_target_type_id: 2, name: 'POST' },
+      { content_report_target_type_id: 3, name: 'USER' },
     ],
     skipDuplicates: true,
   })
