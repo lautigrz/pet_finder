@@ -99,11 +99,13 @@ container.registerSingleton("ResetPasswordUseCase", ResetPasswordUseCase);
 
 // User / Profile
 import { GetProfileUseCase } from "@application/usecase/get-profile/get-profile.usecase";
+import { GetPublicProfileUseCase } from "@application/usecase/get-public-profile/get-public-profile.usecase";
 import { UpdateProfileUseCase } from "@application/usecase/update-profile/update-profile.usecase";
 import { GetNotificationPreferencesUseCase } from "@application/usecase/get-notification-preferences/get-notification-preferences.usecase";
 import { UpdateNotificationPreferencesUseCase } from "@application/usecase/update-notification-preferences/update-notification-preferences.usecase";
 
 container.registerSingleton("GetProfileUseCase", GetProfileUseCase);
+container.registerSingleton("GetPublicProfileUseCase", GetPublicProfileUseCase);
 container.registerSingleton("UpdateProfileUseCase", UpdateProfileUseCase);
 container.registerSingleton("GetNotificationPreferencesUseCase", GetNotificationPreferencesUseCase);
 container.registerSingleton("UpdateNotificationPreferencesUseCase", UpdateNotificationPreferencesUseCase);
@@ -158,6 +160,7 @@ import { CreateReportUseCase } from "@application/usecase/report-usecase/create-
 import { GetReportUseCase } from "@application/usecase/report-usecase/get-report-usecase";
 import { GetFilteredReportsUseCase } from "@application/usecase/report-usecase/get-filter-reports.usecase";
 import { ListUserReportsUseCase } from "@application/usecase/report-usecase/list-user-reports.usecase";
+import { ListReportsByUserUseCase } from "@application/usecase/report-usecase/list-reports-by-user.usecase";
 import { UpdateReportUseCase } from "@application/usecase/report-usecase/update-report.usecase";
 import { UpdateStatus } from "@application/usecase/report-usecase/update-status-report";
 import { FollowReportUseCase } from "@application/usecase/report-usecase/follow-report.usecase";
@@ -169,6 +172,7 @@ container.registerSingleton("CreateReportUseCase", CreateReportUseCase);
 container.registerSingleton("GetReportUseCase", GetReportUseCase);
 container.registerSingleton("GetFilteredReportsUseCase", GetFilteredReportsUseCase);
 container.registerSingleton("ListUserReportsUseCase", ListUserReportsUseCase);
+container.registerSingleton("ListReportsByUserUseCase", ListReportsByUserUseCase);
 container.registerSingleton("UpdateReportUseCase", UpdateReportUseCase);
 container.registerSingleton("UpdateStatusUseCase", UpdateStatus);
 container.registerSingleton("FollowReportUseCase", FollowReportUseCase);
