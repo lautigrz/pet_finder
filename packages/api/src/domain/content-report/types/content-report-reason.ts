@@ -54,6 +54,15 @@ export const contentReportReasonsByTarget: Record<ContentReportTargetType, Conte
     ContentReportReason.DUPLICATE_REPORT,
     ContentReportReason.OTHER,
   ],
+  [ContentReportTargetType.USER]: [
+    ContentReportReason.SUSPICIOUS_BEHAVIOR,
+    ContentReportReason.FRAUD_OR_SCAM,
+    ContentReportReason.IMPERSONATION,
+    ContentReportReason.INAPPROPRIATE_CONTENT,
+    ContentReportReason.PERSONAL_DATA_EXPOSED,
+    ContentReportReason.SPAM,
+    ContentReportReason.OTHER,
+  ],
 }
 
 export const isValidContentReportReason = (value: string): value is ContentReportReason =>

@@ -115,11 +115,13 @@ export class PrismaContentReportRepository implements ContentReportRepository {
 
         const postTypeId = contentReportTargetTypeMap[ContentReportTargetType.POST];
         const chatTypeId = contentReportTargetTypeMap[ContentReportTargetType.CHAT];
+        const userTypeId = contentReportTargetTypeMap[ContentReportTargetType.USER];
 
         const postPublicIds = rows.filter((r) => r.target_type_id === postTypeId).map((r) => r.target_public_id);
         const chatPublicIds = rows.filter((r) => r.target_type_id === chatTypeId).map((r) => r.target_public_id);
+        const userPublicIds = rows.filter((r) => r.target_type_id === userTypeId).map((r) => r.target_public_id);
 
-        const [reports, conversations, grouped] = await Promise.all([
+        const [reports, conversations, reportedUsers, grouped] = await Promise.all([
             this.prisma.report.findMany({
                 where: { public_id: { in: postPublicIds } },
                 select: {
@@ -140,9 +142,13 @@ export class PrismaContentReportRepository implements ContentReportRepository {
                     user_two: { select: { username: true } },
                 },
             }),
+            this.prisma.user.findMany({
+                where: { public_id: { in: userPublicIds } },
+                select: { public_id: true, username: true },
+            }),
             this.prisma.contentReport.groupBy({
                 by: ["target_type_id", "target_public_id"],
-                where: { target_public_id: { in: [...postPublicIds, ...chatPublicIds] } },
+                where: { target_public_id: { in: [...postPublicIds, ...chatPublicIds, ...userPublicIds] } },
                 _count: { _all: true },
             }),
         ]);
@@ -161,6 +167,7 @@ export class PrismaContentReportRepository implements ContentReportRepository {
             ]),
         );
         const conversationByPublicId = new Map(conversations.map((c) => [c.public_id, c]));
+        const usernameByUserPublicId = new Map(reportedUsers.map((u) => [u.public_id, u.username]));
         const countByTarget = new Map(
             grouped.map((g) => [`${g.target_type_id}:${g.target_public_id}`, g._count._all]),
         );
@@ -169,6 +176,8 @@ export class PrismaContentReportRepository implements ContentReportRepository {
             let reportedUsername: string | null = null;
             if (row.target_type_id === postTypeId) {
                 reportedUsername = ownerByPostPublicId.get(row.target_public_id) ?? null;
+            } else if (row.target_type_id === userTypeId) {
+                reportedUsername = usernameByUserPublicId.get(row.target_public_id) ?? null;
             } else {
                 const conversation = conversationByPublicId.get(row.target_public_id);
                 if (conversation) {

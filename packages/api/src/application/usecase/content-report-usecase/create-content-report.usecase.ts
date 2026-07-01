@@ -79,6 +79,13 @@ export class CreateContentReportUseCase {
             return;
         }
 
+        if (targetType === ContentReportTargetType.USER) {
+            const target = await this.userRepository.findByPublicId(targetPublicId);
+            if (!target) throw new ReportedContentNotFoundError();
+            if (target.internalId === reporterUserId) throw new CannotReportOwnContentError();
+            return;
+        }
+
         const conversation = await this.conversationRepository.findByPublicId(targetPublicId);
         if (!conversation) throw new ReportedContentNotFoundError();
         if (!conversation.hasParticipant(reporterUserId)) throw new NotChatParticipantError();

@@ -14,6 +14,7 @@ import { CreateUserController } from "@presentation/controller/user/create-user.
 import { VerifyEmailController } from "@presentation/controller/user/verify-email.controller";
 import { UpdateProfileController } from "@presentation/controller/user/update-profile.controller";
 import { GetProfileController } from "@presentation/controller/user/get-profile.controller";
+import { GetPublicProfileController } from "@presentation/controller/user/get-public-profile.controller";
 import { UploadProfilePhotoController } from "@presentation/controller/user/upload-profile-photo.controller";
 import { GetNotificationPreferencesController } from "@presentation/controller/user/get-notification-preferences.controller";
 import { UpdateNotificationPreferencesController } from "@presentation/controller/user/update-notification-preferences.controller";
@@ -25,6 +26,7 @@ const createUserController = container.resolve(CreateUserController);
 const verifyEmailController = container.resolve(VerifyEmailController);
 const updateProfileController = container.resolve(UpdateProfileController);
 const getProfileController = container.resolve(GetProfileController);
+const getPublicProfileController = container.resolve(GetPublicProfileController);
 const uploadProfilePhotoController = container.resolve(UploadProfilePhotoController);
 const getNotificationPreferencesController = container.resolve(GetNotificationPreferencesController);
 const updateNotificationPreferencesController = container.resolve(UpdateNotificationPreferencesController);
@@ -36,5 +38,6 @@ router.get("/me", requireAuth(tokenSigner), getProfileController.handle);
 router.post("/me/photo", requireAuth(tokenSigner), upload.single("photo"), uploadProfilePhotoController.handle);
 router.get("/preferences", requireAuth(tokenSigner), getNotificationPreferencesController.handle);
 router.patch("/preferences", requireAuth(tokenSigner), validateRequest(updateNotificationPreferencesRequestSchema), updateNotificationPreferencesController.handle);
+router.get("/:publicId", requireAuth(tokenSigner), getPublicProfileController.handle);
 
 export default router;
