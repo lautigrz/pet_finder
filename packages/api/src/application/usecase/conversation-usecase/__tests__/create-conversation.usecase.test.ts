@@ -34,6 +34,7 @@ describe("CreateConversationUseCase", () => {
       findByParticipants: vi.fn(),
       findById: vi.fn(),
       save: vi.fn(),
+      update: vi.fn(),
       delete: vi.fn(),
     };
     userRepository = {

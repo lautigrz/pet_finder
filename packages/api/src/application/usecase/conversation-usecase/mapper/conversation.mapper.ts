@@ -14,6 +14,7 @@ export class ConversationOutputMapper {
         return {
             publicId: conversation.publicId,
             createdAt: conversation.createdAt,
+            isSuspended: conversation.isSuspended,
             otherUser: {
                 publicId: otherUser.id!,
                 username: otherUser.username,

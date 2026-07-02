@@ -6,6 +6,7 @@ interface PrismaConversation {
     user_one_id: number;
     user_two_id: number;
     created_at: Date;
+    is_suspended: boolean;
 }
 
 export class ConversationMapper {
@@ -17,6 +18,7 @@ export class ConversationMapper {
             userOneId: raw.user_one_id,
             userTwoId: raw.user_two_id,
             createdAt: raw.created_at,
+            isSuspended: raw.is_suspended,
         })
     }
 
@@ -26,6 +28,7 @@ export class ConversationMapper {
             user_one_id: raw.userOneId,
             user_two_id: raw.userTwoId,
             created_at: raw.createdAt,
+            is_suspended: raw.isSuspended,
         }
     }
 
