@@ -1,6 +1,7 @@
 import { inject, injectable } from "tsyringe";
 import type { ContentReportRepository } from "@domain/content-report/repositories/content-report.repository";
 import type { ReportRepository } from "@domain/report/repositories/report.repository";
+import type { ConversationRepository } from "@domain/conversation/repositories/conversation.repository";
 import { ContentReportStatus } from "@domain/content-report/types/content-report-status";
 import { ContentReportTargetType } from "@domain/content-report/types/content-report-target-type";
 import { ContentReportNotFoundError } from "@domain/content-report/errors/ContentReportNotFoundError";
@@ -18,6 +19,8 @@ export class ResolveContentReportUseCase {
         private contentReportRepository: ContentReportRepository,
         @inject("ReportRepository")
         private reportRepository: ReportRepository,
+        @inject("ConversationRepository")
+        private conversationRepository: ConversationRepository,
     ) { }
 
     async execute(dto: ResolveContentReportDTO): Promise<ResolveContentReportResult> {
@@ -38,7 +41,8 @@ export class ResolveContentReportUseCase {
             const motive = dto.suspensionReason?.trim();
             if (!motive) throw new SuspensionReasonRequiredError();
             await this.suspendReportedContent(contentReport.targetType, contentReport.targetPublicId);
-            const reason = `Suspensión manual: un administrador suspendió la publicación. Motivo: ${motive}`;
+            const contentLabel = contentReport.targetType === ContentReportTargetType.CHAT ? "el chat" : "la publicación";
+            const reason = `Suspensión manual: un administrador suspendió ${contentLabel}. Motivo: ${motive}`;
             await this.contentReportRepository.suspendOpenByTarget(
                 contentReport.targetType,
                 contentReport.targetPublicId,
@@ -89,13 +93,23 @@ export class ResolveContentReportUseCase {
         targetType: ContentReportTargetType,
         targetPublicId: string,
     ): Promise<void> {
-        if (targetType !== ContentReportTargetType.POST) return;
+        if (targetType === ContentReportTargetType.POST) {
+            const report = await this.reportRepository.findByPublicId(targetPublicId);
+            if (!report) throw new ReportedContentNotFoundError();
+            if (report.status === ReportStatus.CLOSED) return;
 
-        const report = await this.reportRepository.findByPublicId(targetPublicId);
-        if (!report) throw new ReportedContentNotFoundError();
-        if (report.status === ReportStatus.CLOSED) return;
+            report.suspend();
+            await this.reportRepository.update(report);
+            return;
+        }
 
-        report.suspend();
-        await this.reportRepository.update(report);
+        if (targetType === ContentReportTargetType.CHAT) {
+            const conversation = await this.conversationRepository.findByPublicId(targetPublicId);
+            if (!conversation) throw new ReportedContentNotFoundError();
+            if (conversation.isSuspended) return;
+
+            conversation.suspend();
+            await this.conversationRepository.update(conversation);
+        }
     }
 }

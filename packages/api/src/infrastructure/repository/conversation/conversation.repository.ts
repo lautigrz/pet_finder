@@ -58,6 +58,12 @@ export class PrismaConversationRepository implements ConversationRepository {
 
         return ConversationMapper.toDomain(createConversation);
     }
+    async update(conversation: Conversation): Promise<void> {
+        await this.prisma.conversation.update({
+            where: { public_id: conversation.publicId },
+            data: { is_suspended: conversation.isSuspended },
+        });
+    }
     async delete(conversationId: number): Promise<void> {
         throw new Error("Method not implemented.");
     }

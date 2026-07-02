@@ -14,6 +14,8 @@ import { ReportType } from "@domain/report/types/report.type";
 import { ReportStatus } from "@domain/report/types/report.status";
 import { Location } from "@domain/report/value-objects/location.vo";
 import { LostReportDetails } from "@domain/report/value-objects/lost-report-details.vo";
+import { ConversationRepository } from "@domain/conversation/repositories/conversation.repository";
+import { Conversation } from "@domain/conversation/Conversation";
 
 function fakeContentReport(targetType: ContentReportTargetType = ContentReportTargetType.POST): ContentReport {
   return ContentReport.restore({
@@ -48,9 +50,21 @@ function fakeReport(currentStatus: ReportStatus = ReportStatus.ACTIVE): Report {
   });
 }
 
+function fakeConversation(isSuspended = false): Conversation {
+  return Conversation.create({
+    conversationId: 1,
+    publicId: "chat-uuid",
+    userOneId: 5,
+    userTwoId: 7,
+    createdAt: new Date("2026-06-20"),
+    isSuspended,
+  });
+}
+
 describe("ResolveContentReportUseCase", () => {
   let contentReportRepository: ContentReportRepository;
   let reportRepository: ReportRepository;
+  let conversationRepository: ConversationRepository;
   let useCase: ResolveContentReportUseCase;
 
   beforeEach(() => {
@@ -66,7 +80,12 @@ describe("ResolveContentReportUseCase", () => {
       update: vi.fn(),
     } as unknown as ReportRepository;
 
-    useCase = new ResolveContentReportUseCase(contentReportRepository, reportRepository);
+    conversationRepository = {
+      findByPublicId: vi.fn(),
+      update: vi.fn(),
+    } as unknown as ConversationRepository;
+
+    useCase = new ResolveContentReportUseCase(contentReportRepository, reportRepository, conversationRepository);
   });
 
   it("lanza ContentReportNotFoundError si la denuncia no existe", async () => {
@@ -239,5 +258,27 @@ describe("ResolveContentReportUseCase", () => {
 
     expect(contentReportRepository.countApprovedByTarget).not.toHaveBeenCalled();
     expect(reportRepository.findByPublicId).not.toHaveBeenCalled();
+  });
+
+  it("suspender una denuncia de chat suspende la conversación y sus denuncias abiertas", async () => {
+    const denuncia = fakeContentReport(ContentReportTargetType.CHAT);
+    const conversation = fakeConversation();
+    vi.mocked(contentReportRepository.findByPublicId).mockResolvedValue(denuncia);
+    vi.mocked(conversationRepository.findByPublicId).mockResolvedValue(conversation);
+
+    await useCase.execute({
+      publicId: "denuncia-uuid",
+      status: ContentReportStatus.SUSPENDED,
+      suspensionReason: "Comportamiento sospechoso",
+    });
+
+    expect(conversation.isSuspended).toBe(true);
+    expect(conversationRepository.update).toHaveBeenCalledWith(conversation);
+    expect(reportRepository.findByPublicId).not.toHaveBeenCalled();
+    expect(contentReportRepository.suspendOpenByTarget).toHaveBeenCalledWith(
+      ContentReportTargetType.CHAT,
+      "reporte-uuid",
+      expect.stringContaining("Comportamiento sospechoso"),
+    );
   });
 });
