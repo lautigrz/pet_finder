@@ -1,11 +1,12 @@
 import { PrismaClient } from "@prisma/client";
 import { User } from "../../domain/entities/User";
 import { IUserRepository } from "../../domain/repositories/IUserRepository";
+import { IUserExperienceRepository } from "../../domain/repositories/IUserExperienceRepository";
 import { UserMapper } from "./UserMapper";
 import { inject, injectable } from "tsyringe";
 
 @injectable()
-export class PrismaUserRepository implements IUserRepository {
+export class PrismaUserRepository implements IUserRepository, IUserExperienceRepository {
 
   constructor(
     @inject("PrismaClient")
@@ -42,6 +43,15 @@ export class PrismaUserRepository implements IUserRepository {
       where: { user_id: internalUserId },
       data: { is_suspended: true },
     });
+  }
+
+  async addExp(publicId: string, amount: number): Promise<User> {
+    const record = await this.prisma.user.update({
+      where: { public_id: publicId },
+      data: { exp: { increment: amount } },
+    });
+
+    return UserMapper.toDomain(record);
   }
 
   async findById(internalUserId: number): Promise<User | null> {

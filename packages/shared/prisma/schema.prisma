@@ -35,6 +35,7 @@ model User {
 
   is_verified  Boolean @default(false)
   is_suspended Boolean @default(false)
+  exp          Int     @default(0)
   photo_url    String? @db.VarChar
 
   refresh_tokens            RefreshToken[]
