@@ -76,6 +76,42 @@ describe("NodemailerEmailService", () => {
     ]);
   });
 
+  it("publicación dada de baja: manda al dueño con el asunto correspondiente", async () => {
+    await service.sendPublicationRemovedNotice("juan@example.com");
+
+    expect(sendMail).toHaveBeenCalledWith(
+      expect.objectContaining({
+        to: "juan@example.com",
+        subject: expect.stringContaining("dada de baja"),
+        html: expect.stringContaining("dio de baja"),
+      }),
+    );
+  });
+
+  it("cuenta suspendida: incluye el motivo del admin en el cuerpo", async () => {
+    await service.sendAccountSuspendedNotice("juan@example.com", "Contenido fraudulento");
+
+    const html = sendMail.mock.calls[0]![0].html;
+    expect(html).toContain("suspendió tu cuenta");
+    expect(html).toContain("Motivo:");
+    expect(html).toContain("Contenido fraudulento");
+  });
+
+  it("cuenta suspendida: escapa el HTML del motivo", async () => {
+    await service.sendAccountSuspendedNotice("juan@example.com", "<script>alert(1)</script>");
+
+    const html = sendMail.mock.calls[0]![0].html;
+    expect(html).toContain("&lt;script&gt;");
+    expect(html).not.toContain("<script>alert(1)</script>");
+  });
+
+  it("cuenta suspendida sin motivo: no incluye la caja de motivo", async () => {
+    await service.sendAccountSuspendedNotice("juan@example.com", null);
+
+    const html = sendMail.mock.calls[0]![0].html;
+    expect(html).not.toContain("Motivo:");
+  });
+
   it("email inválido: lanza InvalidEmailError y no manda", async () => {
     const accion = () => service.sendVerificationLink("no-es-email", "tok");
 

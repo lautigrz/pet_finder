@@ -18,4 +18,12 @@ export class LogEmailService implements IEmailService {
     const link = `${APP_BASE_URL}/reports/${lostReportPublicId}/matches`;
     logger.info(`[EMAIL MOCK] Coincidencia ${scorePercentage}% con ${petName} (img: ${imageUrl ?? "sin foto"}) para ${toEmail}: ${link}`);
   }
+
+  async sendPublicationRemovedNotice(toEmail: string): Promise<void> {
+    logger.info(`[EMAIL MOCK] Publicación dada de baja para ${toEmail}`);
+  }
+
+  async sendAccountSuspendedNotice(toEmail: string, motive: string | null): Promise<void> {
+    logger.info(`[EMAIL MOCK] Cuenta suspendida para ${toEmail}. Motivo: ${motive ?? "sin especificar"}`);
+  }
 }

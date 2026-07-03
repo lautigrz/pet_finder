@@ -39,6 +39,21 @@ export function matchAlertEmail(appBaseUrl: string, petName: string, scorePercen
     note("Es un resultado aproximado de nuestra IA: la decisión final es tuya."));
 }
 
+export function publicationRemovedEmail(): string {
+  return shell(
+    heading("Tu publicación fue dada de baja") +
+    text("Un administrador de PetFinder dio de baja una de tus publicaciones porque no cumplía con las normas de la comunidad.") +
+    note("Si creés que se trata de un error, respondé a este correo y lo revisamos."));
+}
+
+export function accountSuspendedEmail(motive: string | null): string {
+  return shell(
+    heading("Tu cuenta fue suspendida") +
+    text("Un administrador de PetFinder suspendió tu cuenta por incumplir las normas de la comunidad.") +
+    (motive ? reasonBox(motive) : "") +
+    note("Si creés que se trata de un error, respondé a este correo y lo revisamos."));
+}
+
 function shell(bodyHtml: string): string {
   return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:${BG};padding:22px 0;"><tr><td align="center">` +
     `<table role="presentation" width="600" cellpadding="0" cellspacing="0" style="width:600px;max-width:600px;background:${CARD};border:1px solid ${LINE};border-radius:16px;overflow:hidden;">` +
@@ -91,4 +106,16 @@ function scoreBox(scorePercentage: number, petName: string): string {
     `<div style="font-family:${FONT};font-size:40px;font-weight:800;color:${ORANGE};line-height:1;">${scorePercentage}%</div>` +
     `<div style="font-family:${FONT};font-size:14px;color:${BLUE};margin-top:4px;">de coincidencia con <strong style="color:${NAVY};">${petName}</strong></div>` +
     `</td></tr></table></td></tr>`;
+}
+
+function reasonBox(motive: string): string {
+  return `<tr><td align="center" style="padding:16px 44px 0 44px;">` +
+    `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f6f9fb;border:1px solid #e3edf4;border-radius:12px;"><tr>` +
+    `<td style="padding:14px 18px;font-family:${FONT};font-size:14px;line-height:1.5;color:${INK};">` +
+    `<strong style="color:${NAVY};">Motivo:</strong> ${escapeHtml(motive)}` +
+    `</td></tr></table></td></tr>`;
+}
+
+function escapeHtml(value: string): string {
+  return value.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 }

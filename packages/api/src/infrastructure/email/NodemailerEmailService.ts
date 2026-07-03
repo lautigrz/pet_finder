@@ -1,7 +1,7 @@
 import { Transporter } from "nodemailer";
 import { IEmailService } from "@domain/services/IEmailService";
 import { EmailAddress } from "@domain/shared/email/email-address.vo";
-import { verificationEmail, passwordResetEmail, matchAlertEmail } from "./email-templates";
+import { verificationEmail, passwordResetEmail, matchAlertEmail, publicationRemovedEmail, accountSuspendedEmail } from "./email-templates";
 import { PETFINDER_LOGO_BASE64, PETFINDER_LOGO_CID, PETFINDER_ISOTIPO_BASE64, PETFINDER_ISOTIPO_CID } from "./email-logo-asset";
 
 type MailSender = Pick<Transporter, "sendMail">;
@@ -26,6 +26,14 @@ export class NodemailerEmailService implements IEmailService {
     const html = matchAlertEmail(this.appBaseUrl, petName, scorePercentage, lostReportPublicId, imageUrl);
     const extras = imageUrl ? [] : [inlineImage(PETFINDER_ISOTIPO_BASE64, "petfinder-isotipo.png", PETFINDER_ISOTIPO_CID)];
     await this.send(toEmail, "Encontramos una posible coincidencia en PetFinder", html, extras);
+  }
+
+  async sendPublicationRemovedNotice(toEmail: string): Promise<void> {
+    await this.send(toEmail, "Tu publicación fue dada de baja en PetFinder", publicationRemovedEmail());
+  }
+
+  async sendAccountSuspendedNotice(toEmail: string, motive: string | null): Promise<void> {
+    await this.send(toEmail, "Tu cuenta fue suspendida en PetFinder", accountSuspendedEmail(motive));
   }
 
   private async send(toEmail: string, subject: string, html: string, extraImages: InlineImage[] = []): Promise<void> {

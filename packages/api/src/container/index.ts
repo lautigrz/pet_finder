@@ -194,12 +194,14 @@ container.registerSingleton("CreateContentReportUseCase", CreateContentReportUse
 container.registerSingleton("GetContentReportQueueUseCase", GetContentReportQueueUseCase);
 container.registerSingleton("ResolveContentReportUseCase", ResolveContentReportUseCase);
 
-// Notifications (push)
+// Notifications (push + email)
 import { NotifyNearbyLostOwnersUseCase } from "@application/usecase/notify-nearby-lost-owners/notify-nearby-lost-owners.usecase";
 import { NotifyOwnerOfMatchUseCase } from "@application/usecase/notify-owner-of-match/notify-owner-of-match.usecase";
+import { NotifyOwnerOfContentSentenceUseCase } from "@application/usecase/notify-owner-of-content-sentence/notify-owner-of-content-sentence.usecase";
 
 container.registerSingleton("NotifyNearbyLostOwnersUseCase", NotifyNearbyLostOwnersUseCase);
 container.registerSingleton("NotifyOwnerOfMatchUseCase", NotifyOwnerOfMatchUseCase);
+container.registerSingleton("NotifyOwnerOfContentSentenceUseCase", NotifyOwnerOfContentSentenceUseCase);
 
 // Catalog
 import { GetBreedsUseCase } from "@application/usecase/catalog/get-breeds.usecase";

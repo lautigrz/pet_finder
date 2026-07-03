@@ -12,6 +12,11 @@ import { AUTO_SUSPEND_APPROVED_PUBLICATIONS_THRESHOLD } from "@domain/content-re
 import { ReportStatus } from "@domain/report/types/report.status";
 import { ResolveContentReportDTO } from "./dto/resolve-content-report.dto";
 import { ResolveContentReportResult } from "./dto/resolve-content-report.output";
+import { NotifyOwnerOfContentSentenceUseCase } from "../notify-owner-of-content-sentence/notify-owner-of-content-sentence.usecase";
+import { NotifyOwnerOfContentSentenceInput } from "../notify-owner-of-content-sentence/notify-owner-of-content-sentence.input";
+import { logger } from "@pet-alert/shared";
+
+const AUTO_SUSPENSION_MOTIVE = "Acumulaste varias publicaciones dadas de baja por moderación.";
 
 @injectable()
 export class ResolveContentReportUseCase {
@@ -24,6 +29,8 @@ export class ResolveContentReportUseCase {
         private conversationRepository: ConversationRepository,
         @inject("UserRepository")
         private userRepository: IUserRepository,
+        @inject("NotifyOwnerOfContentSentenceUseCase")
+        private notifyOwnerOfContentSentence: NotifyOwnerOfContentSentenceUseCase,
     ) { }
 
     async execute(dto: ResolveContentReportDTO): Promise<ResolveContentReportResult> {
@@ -44,6 +51,7 @@ export class ResolveContentReportUseCase {
                     contentReport.targetPublicId,
                 );
                 const suspendedCount = await this.autoSuspendAuthorIfManyApproved(userId, userPublicId);
+                this.notifyPostSentence(userPublicId, suspendedCount);
                 return { autoSuspended: suspendedCount > 0, approvedCount, suspendedCount };
             }
             return { autoSuspended: false, approvedCount: 0, suspendedCount: 0 };
@@ -65,11 +73,12 @@ export class ResolveContentReportUseCase {
             }
 
             const reason = `Suspensión manual: se suspendió el perfil del usuario. Motivo: ${motive}`;
-            const suspendedCount = await this.suspendReportedUser(
+            const { suspendedCount, userPublicId } = await this.suspendReportedUser(
                 contentReport.targetType,
                 contentReport.targetPublicId,
                 reason,
             );
+            this.dispatchNotification(new NotifyOwnerOfContentSentenceInput(userPublicId, "ACCOUNT_SUSPENDED", motive));
             return { autoSuspended: false, approvedCount: 0, suspendedCount };
         }
 
@@ -120,14 +129,28 @@ export class ResolveContentReportUseCase {
         targetType: ContentReportTargetType,
         targetPublicId: string,
         reason: string,
-    ): Promise<number> {
+    ): Promise<{ suspendedCount: number; userPublicId: string }> {
         const { userId, userPublicId } = await this.resolveReportedUser(targetType, targetPublicId);
 
         await this.userRepository.markSuspended(userId);
         await this.reportRepository.closeAllByUserId(userId);
 
         const reportPublicIds = await this.reportRepository.findPublicIdsByUserId(userId);
-        return this.contentReportRepository.suspendOpenForUser(userPublicId, reportPublicIds, reason);
+        const suspendedCount = await this.contentReportRepository.suspendOpenForUser(userPublicId, reportPublicIds, reason);
+        return { suspendedCount, userPublicId };
+    }
+
+    private notifyPostSentence(userPublicId: string, suspendedCount: number): void {
+        const input = suspendedCount > 0
+            ? new NotifyOwnerOfContentSentenceInput(userPublicId, "ACCOUNT_SUSPENDED", AUTO_SUSPENSION_MOTIVE)
+            : new NotifyOwnerOfContentSentenceInput(userPublicId, "PUBLICATION_REMOVED");
+        this.dispatchNotification(input);
+    }
+
+    private dispatchNotification(input: NotifyOwnerOfContentSentenceInput): void {
+        void this.notifyOwnerOfContentSentence
+            .execute(input)
+            .catch((error) => logger.error("Failed to notify owner of content sentence", { error }));
     }
 
     private async resolveReportedUser(
