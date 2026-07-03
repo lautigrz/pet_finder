@@ -1,16 +1,10 @@
-// packages/api/vitest.config.ts
+
 import { defineConfig } from "vitest/config";
-import path from "path";
+import { sharedAlias } from "./vitest.shared";
 
 export default defineConfig({
     resolve: {
-        alias: {
-            "@domain": path.resolve(__dirname, "src/domain"),
-            "@application": path.resolve(__dirname, "src/application"),
-            "@infrastructure": path.resolve(__dirname, "src/infrastructure"),
-            "@presentation": path.resolve(__dirname, "src/presentation"),
-            "src": path.resolve(__dirname, "src"),
-        },
+        alias: sharedAlias,
     },
     test: {
         globals: true,
@@ -22,5 +16,6 @@ export default defineConfig({
             reportsDirectory: "coverage",
         },
         include: ["src/**/*.test.ts", "e2e/**/*.test.ts"],
+        exclude: ["**/*.integration.test.ts"],
     },
 });

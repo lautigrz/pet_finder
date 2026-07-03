@@ -12,18 +12,19 @@ container.registerInstance("RefreshTtlMs", refreshTtlMs);
 
 // ─── Repositories ──────────────────────────────────────────────────────────────
 import { IUserRepository } from "@domain/repositories/IUserRepository";
+import { PrismaUserRepository } from "@infrastructure/repository/user/user.repository";
+
 import { IUserExperienceRepository } from "@domain/repositories/IUserExperienceRepository";
-import { PrismaUserRepository } from "@infrastructure/repository/PrismaUserRepository";
 import { IDeviceTokenRepository } from "@domain/repositories/IDeviceTokenRepository";
-import { PrismaDeviceTokenRepository } from "@infrastructure/repository/PrismaDeviceTokenRepository";
+import { PrismaDeviceTokenRepository } from "@infrastructure/repository/device-token/device-token.repository";
 import { IEmailVerificationTokenRepository } from "@domain/repositories/IEmailVerificationTokenRepository";
-import { PrismaEmailVerificationTokenRepository } from "@infrastructure/repository/PrismaEmailVerificationTokenRepository";
+import { PrismaEmailVerificationTokenRepository } from "@infrastructure/repository/email-verification-token/email-verification-token.repository";
 import { INotificationPreferencesRepository } from "@domain/repositories/INotificationPreferencesRepository";
-import { PrismaNotificationPreferencesRepository } from "@infrastructure/repository/PrismaNotificationPreferencesRepository";
+import { PrismaNotificationPreferencesRepository } from "@infrastructure/repository/notification-preferences/notification-preferences.repository";
 import { IPasswordResetTokenRepository } from "@domain/repositories/IPasswordResetTokenRepository";
-import { PrismaPasswordResetTokenRepository } from "@infrastructure/repository/PrismaPasswordResetTokenRepository";
+import { PrismaPasswordResetTokenRepository } from "@infrastructure/repository/password-reset-token/password-reset-token.repository";
 import { IRefreshTokenRepository } from "@domain/repositories/IRefreshTokenRepository";
-import { PrismaRefreshTokenRepository } from "@infrastructure/repository/PrismaRefreshTokenRepository";
+import { PrismaRefreshTokenRepository } from "@infrastructure/repository/refresh-token/refresh-token.repository";
 import { ConversationRepository } from "@domain/conversation/repositories/conversation.repository";
 import { PrismaConversationRepository } from "@infrastructure/repository/conversation/conversation.repository";
 import { MessageRepository } from "@domain/message/repositories/message.repository";

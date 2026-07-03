@@ -1,6 +1,6 @@
-import { INotificationPreferencesRepository, UpdateNotificationPreferencesData } from "../../domain/repositories/INotificationPreferencesRepository";
-import { NotificationPreference } from "../../domain/entities/NotificationPreference";
-import { NotificationPreferencesMapper } from "./NotificationPreferencesMapper";
+import { INotificationPreferencesRepository, UpdateNotificationPreferencesData } from "../../../domain/repositories/INotificationPreferencesRepository";
+import { NotificationPreference } from "../../../domain/entities/NotificationPreference";
+import { NotificationPreferencesMapper } from "./notification-preferences.mapper";
 import { inject, injectable } from "tsyringe";
 import { PrismaClient } from "@prisma/client";
 

@@ -16,6 +16,7 @@
     "test": "turbo run test",
     "lint": "turbo run lint",
     "test:coverage": "turbo run test:coverage",
+    "test:integration": "turbo run test:integration",
     "prisma:reset": "dotenv -e .env -- prisma migrate reset --schema packages/shared/prisma/schema.prisma",
     "prisma:generate": "dotenv -e .env -- prisma generate --schema packages/shared/prisma/schema.prisma",
     "prisma:migrate": "dotenv -e .env -- prisma migrate dev --schema packages/shared/prisma/schema.prisma",

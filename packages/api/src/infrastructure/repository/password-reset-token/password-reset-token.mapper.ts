@@ -1,5 +1,5 @@
 import { PasswordResetToken as TokenPrisma } from "@prisma/client";
-import { PasswordResetToken } from "../../domain/entities/PasswordResetToken";
+import { PasswordResetToken } from "../../../domain/entities/PasswordResetToken";
 
 export class PasswordResetTokenMapper {
   static toDomain(record: TokenPrisma): PasswordResetToken {

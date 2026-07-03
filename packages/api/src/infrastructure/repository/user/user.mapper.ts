@@ -1,5 +1,5 @@
 import { User as UserPrisma } from "@prisma/client";
-import { User } from "../../domain/entities/User";
+import { User } from "../../../domain/entities/User";
 
 export class UserMapper {
   static toDomain(record: UserPrisma): User {

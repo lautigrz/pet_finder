@@ -1,8 +1,11 @@
 import { PrismaClient } from "@prisma/client";
-import { User } from "../../domain/entities/User";
-import { IUserRepository } from "../../domain/repositories/IUserRepository";
-import { IUserExperienceRepository } from "../../domain/repositories/IUserExperienceRepository";
-import { UserMapper } from "./UserMapper";
+
+import { User } from "@domain/entities/User";
+import { IUserRepository } from "@domain/repositories/IUserRepository";
+import { UserMapper } from "../user/user.mapper";
+
+import { IUserExperienceRepository } from "@domain/repositories/IUserExperienceRepository";
+
 import { inject, injectable } from "tsyringe";
 
 @injectable()
@@ -18,7 +21,7 @@ export class PrismaUserRepository implements IUserRepository, IUserExperienceRep
       where: { user_id: { in: userInternalIds } },
       select: { user_id: true, public_id: true, username: true, photo_url: true },
     });
-    return users.map((user) => ({ user_id: user.user_id, public_id: user.public_id, username: user.username, photoUrl: user.photo_url }));
+    return users.map((user: any) => ({ user_id: user.user_id, public_id: user.public_id, username: user.username, photoUrl: user.photo_url }));
   }
 
   async save(user: User): Promise<User> {

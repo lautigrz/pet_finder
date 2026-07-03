@@ -1,5 +1,5 @@
 import { EmailVerificationToken as TokenPrisma } from "@prisma/client";
-import { EmailVerificationToken } from "../../domain/entities/EmailVerificationToken";
+import { EmailVerificationToken } from "../../../domain/entities/EmailVerificationToken";
 
 export class EmailVerificationTokenMapper {
   static toDomain(record: TokenPrisma): EmailVerificationToken {
