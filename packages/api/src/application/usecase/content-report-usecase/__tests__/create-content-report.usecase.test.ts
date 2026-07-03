@@ -20,6 +20,8 @@ const REPORTER_PUBLIC_ID = "reporter-public-id";
 const REPORTER_INTERNAL_ID = 5;
 const POST_PUBLIC_ID = "post-public-uuid";
 const CHAT_PUBLIC_ID = "chat-public-uuid";
+const TARGET_USER_PUBLIC_ID = "target-user-public-id";
+const TARGET_USER_INTERNAL_ID = 42;
 
 const fakeReporter = User.reconstruct(
     REPORTER_INTERNAL_ID,
@@ -31,6 +33,19 @@ const fakeReporter = User.reconstruct(
     new Date(),
     "Nadia",
     "Belen",
+    null,
+);
+
+const fakeTargetUser = User.reconstruct(
+    TARGET_USER_INTERNAL_ID,
+    TARGET_USER_PUBLIC_ID,
+    "target@example.com",
+    "targetuser",
+    "$2b$10$" + "x".repeat(53),
+    true,
+    new Date(),
+    "Ana",
+    "García",
     null,
 );
 
@@ -147,6 +162,56 @@ describe("CreateContentReportUseCase", () => {
 
             await expect(useCase.execute(chatDto, REPORTER_PUBLIC_ID)).rejects.toThrow(
                 ReportedContentNotFoundError,
+            );
+        });
+    });
+
+    describe("denuncia de usuario (USER)", () => {
+        const userDto = {
+            targetType: ContentReportTargetType.USER,
+            targetPublicId: TARGET_USER_PUBLIC_ID,
+            reason: ContentReportReason.IMPERSONATION,
+            description: null,
+        };
+
+        beforeEach(() => {
+            vi.mocked(userRepository.findByPublicId).mockImplementation(async (publicId: string) => {
+                if (publicId === REPORTER_PUBLIC_ID) return fakeReporter;
+                if (publicId === TARGET_USER_PUBLIC_ID) return fakeTargetUser;
+                return null;
+            });
+        });
+
+        it("crea y guarda la denuncia correctamente", async () => {
+            await useCase.execute(userDto, REPORTER_PUBLIC_ID);
+
+            expect(contentReportRepository.save).toHaveBeenCalledOnce();
+        });
+
+        it("lanza CannotReportOwnContentError si te denunciás a vos mismo", async () => {
+            vi.mocked(userRepository.findByPublicId).mockResolvedValue(fakeReporter);
+
+            await expect(
+                useCase.execute({ ...userDto, targetPublicId: REPORTER_PUBLIC_ID }, REPORTER_PUBLIC_ID),
+            ).rejects.toThrow(CannotReportOwnContentError);
+            expect(contentReportRepository.save).not.toHaveBeenCalled();
+        });
+
+        it("lanza ReportedContentNotFoundError si el usuario denunciado no existe", async () => {
+            vi.mocked(userRepository.findByPublicId).mockImplementation(async (publicId: string) =>
+                publicId === REPORTER_PUBLIC_ID ? fakeReporter : null,
+            );
+
+            await expect(useCase.execute(userDto, REPORTER_PUBLIC_ID)).rejects.toThrow(
+                ReportedContentNotFoundError,
+            );
+        });
+
+        it("lanza InvalidReportReasonError si el motivo no corresponde a usuario", async () => {
+            const invalidDto = { ...userDto, reason: ContentReportReason.DUPLICATE_REPORT };
+
+            await expect(useCase.execute(invalidDto, REPORTER_PUBLIC_ID)).rejects.toThrow(
+                InvalidReportReasonError,
             );
         });
     });

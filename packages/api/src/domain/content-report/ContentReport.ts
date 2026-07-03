@@ -12,6 +12,7 @@ interface ContentReportProps {
     reason: ContentReportReason;
     status: ContentReportStatus;
     description: string | null;
+    suspensionReason: string | null;
     autoFlagged: boolean;
     createdAt: Date;
 }
@@ -26,7 +27,7 @@ interface CreateContentReportProps {
 }
 
 export class ContentReport {
-    private constructor(private readonly props: ContentReportProps) { }
+    private constructor(private props: ContentReportProps) { }
 
     static create(props: CreateContentReportProps): ContentReport {
         if (!isReasonValidForTarget(props.reason, props.targetType)) {
@@ -41,6 +42,7 @@ export class ContentReport {
             reason: props.reason,
             status: ContentReportStatus.PENDING,
             description: props.description,
+            suspensionReason: null,
             autoFlagged: false,
             createdAt: new Date(),
         });
@@ -60,4 +62,25 @@ export class ContentReport {
     get description() { return this.props.description; }
     get autoFlagged() { return this.props.autoFlagged; }
     get createdAt() { return this.props.createdAt; }
+    get suspensionReason() { return this.props.suspensionReason; }
+
+    approve(): void {
+        this.props.status = ContentReportStatus.REVIEWED;
+        this.props.suspensionReason = null;
+    }
+
+    dismiss(): void {
+        this.props.status = ContentReportStatus.DISMISSED;
+        this.props.suspensionReason = null;
+    }
+
+    suspend(reason: string): void {
+        this.props.status = ContentReportStatus.SUSPENDED;
+        this.props.suspensionReason = reason;
+    }
+
+    markPending(): void {
+        this.props.status = ContentReportStatus.PENDING;
+        this.props.suspensionReason = null;
+    }
 }

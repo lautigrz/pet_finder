@@ -13,6 +13,8 @@ container.registerInstance("RefreshTtlMs", refreshTtlMs);
 // ─── Repositories ──────────────────────────────────────────────────────────────
 import { IUserRepository } from "@domain/repositories/IUserRepository";
 import { PrismaUserRepository } from "@infrastructure/repository/user/user.repository";
+
+import { IUserExperienceRepository } from "@domain/repositories/IUserExperienceRepository";
 import { IDeviceTokenRepository } from "@domain/repositories/IDeviceTokenRepository";
 import { PrismaDeviceTokenRepository } from "@infrastructure/repository/device-token/device-token.repository";
 import { IEmailVerificationTokenRepository } from "@domain/repositories/IEmailVerificationTokenRepository";
@@ -43,6 +45,7 @@ import { MatchViewsRepository } from "@domain/match/repositories/match-views.rep
 import { PrismaMatchViewsRepository } from "@infrastructure/repository/match/match-views.repository";
 
 container.registerSingleton<IUserRepository>("UserRepository", PrismaUserRepository);
+container.registerSingleton<IUserExperienceRepository>("UserExperienceRepository", PrismaUserRepository);
 container.registerSingleton<IDeviceTokenRepository>("DeviceTokenRepository", PrismaDeviceTokenRepository);
 container.registerSingleton<IEmailVerificationTokenRepository>("EmailVerificationTokenRepository", PrismaEmailVerificationTokenRepository);
 container.registerSingleton<INotificationPreferencesRepository>("NotificationPreferencesRepository", PrismaNotificationPreferencesRepository);
@@ -99,14 +102,18 @@ container.registerSingleton("ResetPasswordUseCase", ResetPasswordUseCase);
 
 // User / Profile
 import { GetProfileUseCase } from "@application/usecase/get-profile/get-profile.usecase";
+import { GetPublicProfileUseCase } from "@application/usecase/get-public-profile/get-public-profile.usecase";
 import { UpdateProfileUseCase } from "@application/usecase/update-profile/update-profile.usecase";
 import { GetNotificationPreferencesUseCase } from "@application/usecase/get-notification-preferences/get-notification-preferences.usecase";
 import { UpdateNotificationPreferencesUseCase } from "@application/usecase/update-notification-preferences/update-notification-preferences.usecase";
+import { AwardUserExpUseCase } from "@application/usecase/award-user-exp/award-user-exp.usecase";
 
 container.registerSingleton("GetProfileUseCase", GetProfileUseCase);
+container.registerSingleton("GetPublicProfileUseCase", GetPublicProfileUseCase);
 container.registerSingleton("UpdateProfileUseCase", UpdateProfileUseCase);
 container.registerSingleton("GetNotificationPreferencesUseCase", GetNotificationPreferencesUseCase);
 container.registerSingleton("UpdateNotificationPreferencesUseCase", UpdateNotificationPreferencesUseCase);
+container.registerSingleton("AwardUserExpUseCase", AwardUserExpUseCase);
 
 // Device tokens / Push
 import { RegisterDeviceTokenUseCase } from "@application/usecase/register-device-token/register-device-token.usecase";
@@ -158,6 +165,7 @@ import { CreateReportUseCase } from "@application/usecase/report-usecase/create-
 import { GetReportUseCase } from "@application/usecase/report-usecase/get-report-usecase";
 import { GetFilteredReportsUseCase } from "@application/usecase/report-usecase/get-filter-reports.usecase";
 import { ListUserReportsUseCase } from "@application/usecase/report-usecase/list-user-reports.usecase";
+import { ListReportsByUserUseCase } from "@application/usecase/report-usecase/list-reports-by-user.usecase";
 import { UpdateReportUseCase } from "@application/usecase/report-usecase/update-report.usecase";
 import { UpdateStatus } from "@application/usecase/report-usecase/update-status-report";
 import { FollowReportUseCase } from "@application/usecase/report-usecase/follow-report.usecase";
@@ -169,6 +177,7 @@ container.registerSingleton("CreateReportUseCase", CreateReportUseCase);
 container.registerSingleton("GetReportUseCase", GetReportUseCase);
 container.registerSingleton("GetFilteredReportsUseCase", GetFilteredReportsUseCase);
 container.registerSingleton("ListUserReportsUseCase", ListUserReportsUseCase);
+container.registerSingleton("ListReportsByUserUseCase", ListReportsByUserUseCase);
 container.registerSingleton("UpdateReportUseCase", UpdateReportUseCase);
 container.registerSingleton("UpdateStatusUseCase", UpdateStatus);
 container.registerSingleton("FollowReportUseCase", FollowReportUseCase);
@@ -179,9 +188,11 @@ container.registerSingleton("NotifyReportFollowersOfStatusChangeUseCase", Notify
 // Content reports (moderation)
 import { CreateContentReportUseCase } from "@application/usecase/content-report-usecase/create-content-report.usecase";
 import { GetContentReportQueueUseCase } from "@application/usecase/content-report-usecase/get-content-report-queue.usecase";
+import { ResolveContentReportUseCase } from "@application/usecase/content-report-usecase/resolve-content-report.usecase";
 
 container.registerSingleton("CreateContentReportUseCase", CreateContentReportUseCase);
 container.registerSingleton("GetContentReportQueueUseCase", GetContentReportQueueUseCase);
+container.registerSingleton("ResolveContentReportUseCase", ResolveContentReportUseCase);
 
 // Notifications (push)
 import { NotifyNearbyLostOwnersUseCase } from "@application/usecase/notify-nearby-lost-owners/notify-nearby-lost-owners.usecase";

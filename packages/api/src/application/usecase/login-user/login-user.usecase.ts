@@ -8,6 +8,7 @@ import type { ITokenGenerator } from "../../../domain/services/ITokenGenerator";
 import { accessTokenPayloadFor } from "../../../domain/auth/access-token-payload";
 import { EmailAddress } from "../../../domain/shared/email/email-address.vo";
 import { InvalidCredentialsError } from "../../../domain/errors/InvalidCredentialsError";
+import { UserSuspendedError } from "../../../domain/errors/UserSuspendedError";
 import { LoginUserInput } from "./login-user.input";
 import { LoginUserOutput } from "./login-user.output";
 import { injectable, inject } from "tsyringe";
@@ -32,6 +33,7 @@ export class LoginUserUseCase {
   async execute(input: LoginUserInput): Promise<LoginUserOutput> {
     const user = await this.findUserByEmail(input.email);
     await this.assertPasswordMatches(input.plainPassword, user.passwordHash);
+    if (user.isSuspended) throw new UserSuspendedError();
     const accessToken = this.tokenSigner.sign(accessTokenPayloadFor(user));
     return new LoginUserOutput(accessToken, await this.issueRefreshToken(user.requireInternalId()));
   }

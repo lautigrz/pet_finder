@@ -4,7 +4,7 @@ import { ReportMapper } from "./report.mapper";
 import { Prisma, PrismaClient } from "@prisma/client";
 import { ReportQuery } from "@application/usecase/report-usecase/report-query";
 import { PetMapper } from "../pet/pet.mapper";
-import { reportStatusMap } from "@domain/report/types/report.status";
+import { ReportStatus, reportStatusMap } from "@domain/report/types/report.status";
 import { ReportType } from '@domain/report/types/report.type';
 import { SightingReportDetails } from '@domain/report/value-objects/sighting-report-details.vo';
 import { LostReportDetails } from '@domain/report/value-objects/lost-report-details.vo';
@@ -155,6 +155,28 @@ export class PrismaReportRepository implements ReportRepository {
             }
         });
 
+    }
+
+    async closeAllByUserId(userId: number): Promise<void> {
+        const closedStatusId = reportStatusMap[ReportStatus.CLOSED];
+        await this.prisma.report.updateMany({
+            where: {
+                user_id: userId,
+                report_status_id: { not: closedStatusId }
+            },
+            data: {
+                report_status_id: closedStatusId,
+                updated_at: new Date()
+            }
+        });
+    }
+
+    async findPublicIdsByUserId(userId: number): Promise<string[]> {
+        const rows = await this.prisma.report.findMany({
+            where: { user_id: userId },
+            select: { public_id: true }
+        });
+        return rows.map((row) => row.public_id);
     }
 
     async updateFields(report: Report, images?: SightingImage[]): Promise<void> {
@@ -319,7 +341,7 @@ export class PrismaReportRepository implements ReportRepository {
 
     async findByUserPublicId(userPublicId: string, filters?: { reportType?: string; animalType?: string; createdFrom?: string; createdTo?: string; q?: string; }): Promise<Report[]> {
 
-        const where: Prisma.ReportWhereInput = { user: { public_id: userPublicId } }
+        const where: Prisma.ReportWhereInput = { user: { public_id: userPublicId, is_suspended: false } }
 
         if (filters?.q) {
             const matchingIds = await this.findIdsBySearchQuery(filters.q);
@@ -363,7 +385,7 @@ export class PrismaReportRepository implements ReportRepository {
 
     async findIdsByQuery(query: ReportQuery): Promise<string[]> {
 
-        const where: Prisma.ReportWhereInput = {}
+        const where: Prisma.ReportWhereInput = { user: { is_suspended: false } }
 
         if (query.q) {
             const matchingIds = await this.findIdsBySearchQuery(query.q);
@@ -376,8 +398,10 @@ export class PrismaReportRepository implements ReportRepository {
             };
         }
 
-        if (query.status) {
+        if (query.status && query.status !== ReportStatus.CLOSED) {
             where.reportStatus = { name: query.status }
+        } else {
+            where.reportStatus = { name: { not: ReportStatus.CLOSED } }
         }
 
         if (query.reportType) {

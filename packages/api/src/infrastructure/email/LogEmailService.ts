@@ -13,4 +13,9 @@ export class LogEmailService implements IEmailService {
     const link = `${APP_BASE_URL}/reset-password?token=${token}`;
     logger.info(`[EMAIL MOCK] Reset de contraseña para ${toEmail}: ${link}`);
   }
+
+  async sendMatchAlert(toEmail: string, petName: string, scorePercentage: number, lostReportPublicId: string, imageUrl: string | null): Promise<void> {
+    const link = `${APP_BASE_URL}/reports/${lostReportPublicId}/matches`;
+    logger.info(`[EMAIL MOCK] Coincidencia ${scorePercentage}% con ${petName} (img: ${imageUrl ?? "sin foto"}) para ${toEmail}: ${link}`);
+  }
 }

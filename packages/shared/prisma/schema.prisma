@@ -33,8 +33,10 @@ model User {
   created_at DateTime  @default(now()) @db.Timestamp(6)
   updated_at DateTime? @updatedAt @db.Timestamp(6)
 
-  is_verified Boolean @default(false)
-  photo_url   String? @db.VarChar
+  is_verified  Boolean @default(false)
+  is_suspended Boolean @default(false)
+  exp          Int     @default(0)
+  photo_url    String? @db.VarChar
 
   refresh_tokens            RefreshToken[]
   password_reset_tokens     PasswordResetToken[]
@@ -379,6 +381,7 @@ model Conversation {
   user_one_id     Int
   user_two_id     Int
   created_at      DateTime @default(now()) @db.Timestamp(6)
+  is_suspended    Boolean  @default(false)
 
   user_one User      @relation(fields: [user_one_id], references: [user_id], onDelete: Cascade, name: "ConversationUserOne")
   user_two User      @relation(fields: [user_two_id], references: [user_id], onDelete: Cascade, name: "ConversationUserTwo")
@@ -427,6 +430,7 @@ model ContentReport {
   reason_id         Int      @db.SmallInt
   status_id         Int      @db.SmallInt
   description       String?  @db.Text
+  suspension_reason String?  @db.Text
   auto_flagged      Boolean  @default(false)
   created_at        DateTime @default(now()) @db.Timestamp(6)
 

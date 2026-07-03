@@ -13,6 +13,7 @@ export class ContentReportMapper {
             public_id: report.publicId,
             target_public_id: report.targetPublicId,
             description: report.description,
+            suspension_reason: report.suspensionReason,
             auto_flagged: report.autoFlagged,
             created_at: report.createdAt,
             reporter: { connect: { user_id: report.reporterUserId } },
@@ -32,6 +33,7 @@ export class ContentReportMapper {
             reason: contentReportReasonMapReverse[raw.reason_id]!,
             status: contentReportStatusMapReverse[raw.status_id]!,
             description: raw.description,
+            suspensionReason: raw.suspension_reason,
             autoFlagged: raw.auto_flagged,
             createdAt: raw.created_at,
         });

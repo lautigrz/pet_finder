@@ -1,6 +1,7 @@
 import type { ReportRepository } from "@domain/report/repositories/report.repository";
 import { ReportOutputMapper } from "./mapper/report.mapper";
 import { ReportNotFoundError } from "@domain/errors/ReportNotFoundError";
+import { ReportStatus } from "@domain/report/types/report.status";
 import { ReportOutput } from "./dto/report.output";
 import type { IUserRepository } from "@domain/repositories/IUserRepository";
 import { inject, injectable } from "tsyringe";
@@ -22,8 +23,11 @@ export class GetReportUseCase {
         if (!result) throw new ReportNotFoundError(publicId);
 
         const { report, pet } = result;
+        if (report.status === ReportStatus.CLOSED) throw new ReportNotFoundError(publicId);
+
         const user = await this.userRepository.findById(report.userId);
         if (!user) throw new Error("User not found");
+        if (user.isSuspended) throw new ReportNotFoundError(publicId);
 
         const reportImages = await this.reportRepository.findImagesByReportId(publicId);
 

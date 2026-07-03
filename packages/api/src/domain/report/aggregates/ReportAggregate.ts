@@ -136,6 +136,10 @@ export class Report {
         this.transitionTo(ReportStatus.CLOSED)
     }
 
+    suspend(): void {
+        this.transitionTo(ReportStatus.CLOSED)
+    }
+
     /**
      * Exposed for the persistence (infrastructure) mapper only.
      * Must NOT be included in API responses — use `userPublicId` instead.

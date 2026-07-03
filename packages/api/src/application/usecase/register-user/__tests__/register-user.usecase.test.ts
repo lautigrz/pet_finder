@@ -25,14 +25,14 @@ describe("RegisterUserUseCase", () => {
 
   beforeEach(() => {
     userRepository = {
-      save: vi.fn(), findByEmail: vi.fn(), findRoleByPublicId: vi.fn(), markVerified: vi.fn(),
+      save: vi.fn(), findByEmail: vi.fn(), findRoleByPublicId: vi.fn(), markVerified: vi.fn(), markSuspended: vi.fn(),
       findByPublicId: vi.fn(), updateProfile: vi.fn(), findById: vi.fn(),
       updatePassword: vi.fn(), findByIds: vi.fn(), deleteById: vi.fn(),
     };
     passwordHasher = { hash: vi.fn(), verify: vi.fn() };
     tokenRepository = { save: vi.fn(), findByValue: vi.fn(), markAsUsed: vi.fn() };
     tokenGenerator = { generate: vi.fn() };
-    emailService = { sendVerificationLink: vi.fn(), sendPasswordResetLink: vi.fn() };
+    emailService = { sendVerificationLink: vi.fn(), sendPasswordResetLink: vi.fn(), sendMatchAlert: vi.fn() };
     useCase = new RegisterUserUseCase(userRepository, passwordHasher, tokenRepository, tokenGenerator, emailService);
   });
 

@@ -13,5 +13,7 @@ export interface ConversationRepository {
 
     save(conversation: Conversation): Promise<Conversation>;
 
+    update(conversation: Conversation): Promise<void>;
+
     delete(conversationId: number): Promise<void>;
 }
