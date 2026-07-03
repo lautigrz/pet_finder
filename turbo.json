@@ -50,6 +50,12 @@
         "coverage/**"
       ]
     },
+    "test:integration": {
+      "dependsOn": [
+        "build"
+      ],
+      "cache": false
+    },
     "lint": {
       "outputs": [],
       "env": [

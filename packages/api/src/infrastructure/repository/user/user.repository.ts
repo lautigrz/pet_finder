@@ -1,7 +1,7 @@
 import { PrismaClient } from "@prisma/client";
-import { User } from "../../domain/entities/User";
-import { IUserRepository } from "../../domain/repositories/IUserRepository";
-import { UserMapper } from "./UserMapper";
+import { User } from "../../../domain/entities/User";
+import { IUserRepository } from "../../../domain/repositories/IUserRepository";
+import { UserMapper } from "../user/user.mapper";
 import { inject, injectable } from "tsyringe";
 
 @injectable()

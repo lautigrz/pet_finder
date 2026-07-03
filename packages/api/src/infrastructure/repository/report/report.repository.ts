@@ -134,17 +134,6 @@ export class PrismaReportRepository implements ReportRepository {
 
         const created = await this.prisma.$transaction(async (tx) => {
             const created = await tx.report.create({ data });
-
-            if (images && images.length > 0) {
-                await tx.reportImage.createMany({
-                    data: images.map(img => ({
-                        reportId: created.report_id,
-                        cloudinaryId: img.cloudinaryId,
-                        photoUrl: img.photoUrl,
-                    })),
-                });
-            }
-
             return created.report_id;
         });
 

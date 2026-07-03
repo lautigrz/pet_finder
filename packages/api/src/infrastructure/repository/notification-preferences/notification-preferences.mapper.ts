@@ -1,7 +1,7 @@
 import { NotificationPreference as PrismaNotificationPreference } from "@prisma/client";
-import { NotificationPreference } from "../../domain/entities/NotificationPreference";
+import { NotificationPreference } from "../../../domain/entities/NotificationPreference";
 
-export class NotificationPreferencesMapper{
+export class NotificationPreferencesMapper {
     static toDomain(record: PrismaNotificationPreference,): NotificationPreference {
         return NotificationPreference.reconstruct(
             record.notification_preference_id,

@@ -1,9 +1,10 @@
 import { createHash } from "node:crypto";
-import { RefreshToken } from "../../domain/entities/RefreshToken";
-import { IRefreshTokenRepository } from "../../domain/repositories/IRefreshTokenRepository";
-import { RefreshTokenMapper } from "./RefreshTokenMapper";
+import { RefreshToken } from "../../../domain/entities/RefreshToken";
+import { IRefreshTokenRepository } from "../../../domain/repositories/IRefreshTokenRepository";
+
 import { PrismaClient } from "@prisma/client";
 import { inject, injectable } from "tsyringe";
+import { RefreshTokenMapper } from "./refresh-token.mapper";
 
 @injectable()
 export class PrismaRefreshTokenRepository implements IRefreshTokenRepository {

@@ -1,7 +1,7 @@
 import { createHash } from "node:crypto";
-import { PasswordResetToken } from "../../domain/entities/PasswordResetToken";
-import { IPasswordResetTokenRepository } from "../../domain/repositories/IPasswordResetTokenRepository";
-import { PasswordResetTokenMapper } from "./PasswordResetTokenMapper";
+import { PasswordResetToken } from "../../../domain/entities/PasswordResetToken";
+import { IPasswordResetTokenRepository } from "../../../domain/repositories/IPasswordResetTokenRepository";
+import { PasswordResetTokenMapper } from "./password-reset-token.mapper";
 import { PrismaClient } from "@prisma/client";
 import { inject, injectable } from "tsyringe";
 

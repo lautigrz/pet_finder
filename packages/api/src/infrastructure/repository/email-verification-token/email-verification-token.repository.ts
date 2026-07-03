@@ -1,8 +1,9 @@
 import { PrismaClient } from "@prisma/client";
-import { EmailVerificationToken } from "../../domain/entities/EmailVerificationToken";
-import { IEmailVerificationTokenRepository } from "../../domain/repositories/IEmailVerificationTokenRepository";
-import { EmailVerificationTokenMapper } from "./EmailVerificationTokenMapper";
+import { EmailVerificationToken } from "../../../domain/entities/EmailVerificationToken";
+import { IEmailVerificationTokenRepository } from "../../../domain/repositories/IEmailVerificationTokenRepository";
+
 import { inject, injectable } from "tsyringe";
+import { EmailVerificationTokenMapper } from "./email-verification-token.mapper";
 
 @injectable()
 export class PrismaEmailVerificationTokenRepository implements IEmailVerificationTokenRepository {

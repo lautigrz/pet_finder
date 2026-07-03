@@ -1,7 +1,7 @@
 import { MessageImage } from '../value-objects/image.vo';
 import { MessageText } from '../value-objects/message.vo';
 
-interface MessageProps {
+export interface MessageProps {
     messageId?: number;
     publicId: string;
     senderUserId: number;

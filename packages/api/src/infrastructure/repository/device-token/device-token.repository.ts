@@ -1,5 +1,5 @@
 import { PrismaClient } from "@prisma/client";
-import { IDeviceTokenRepository } from "../../domain/repositories/IDeviceTokenRepository";
+import { IDeviceTokenRepository } from "../../../domain/repositories/IDeviceTokenRepository";
 import { inject, injectable } from "tsyringe";
 
 @injectable()

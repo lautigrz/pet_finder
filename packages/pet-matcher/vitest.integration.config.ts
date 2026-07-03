@@ -1,4 +1,4 @@
-// packages/pet-matcher/vitest.config.ts
+
 import { defineConfig } from "vitest/config";
 import path from "path";
 
@@ -15,12 +15,12 @@ export default defineConfig({
     test: {
         globals: true,
         environment: "node",
-        coverage: {
-            provider: "v8",
-            reporter: ["text", "html"],
-            reportsDirectory: "coverage",
-        },
-        include: ["src/**/*.test.ts", "e2e/**/*.test.ts"],
-        exclude: ["**/*.integration.test.ts"],
+        setupFiles: ["./vitest.setup.ts"],
+        include: ["src/**/*.integration.test.ts"],
+        testTimeout: 60000,
+        hookTimeout: 60000,
+        pool: "forks",
+        fileParallelism: false,
+        globalSetup: ["../api/src/global-setup.ts"],
     },
 });
