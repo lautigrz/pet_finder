@@ -12,6 +12,7 @@ container.registerInstance("RefreshTtlMs", refreshTtlMs);
 
 // ─── Repositories ──────────────────────────────────────────────────────────────
 import { IUserRepository } from "@domain/repositories/IUserRepository";
+import { IUserExperienceRepository } from "@domain/repositories/IUserExperienceRepository";
 import { PrismaUserRepository } from "@infrastructure/repository/PrismaUserRepository";
 import { IDeviceTokenRepository } from "@domain/repositories/IDeviceTokenRepository";
 import { PrismaDeviceTokenRepository } from "@infrastructure/repository/PrismaDeviceTokenRepository";
@@ -43,6 +44,7 @@ import { MatchViewsRepository } from "@domain/match/repositories/match-views.rep
 import { PrismaMatchViewsRepository } from "@infrastructure/repository/match/match-views.repository";
 
 container.registerSingleton<IUserRepository>("UserRepository", PrismaUserRepository);
+container.registerSingleton<IUserExperienceRepository>("UserExperienceRepository", PrismaUserRepository);
 container.registerSingleton<IDeviceTokenRepository>("DeviceTokenRepository", PrismaDeviceTokenRepository);
 container.registerSingleton<IEmailVerificationTokenRepository>("EmailVerificationTokenRepository", PrismaEmailVerificationTokenRepository);
 container.registerSingleton<INotificationPreferencesRepository>("NotificationPreferencesRepository", PrismaNotificationPreferencesRepository);
@@ -103,12 +105,14 @@ import { GetPublicProfileUseCase } from "@application/usecase/get-public-profile
 import { UpdateProfileUseCase } from "@application/usecase/update-profile/update-profile.usecase";
 import { GetNotificationPreferencesUseCase } from "@application/usecase/get-notification-preferences/get-notification-preferences.usecase";
 import { UpdateNotificationPreferencesUseCase } from "@application/usecase/update-notification-preferences/update-notification-preferences.usecase";
+import { AwardUserExpUseCase } from "@application/usecase/award-user-exp/award-user-exp.usecase";
 
 container.registerSingleton("GetProfileUseCase", GetProfileUseCase);
 container.registerSingleton("GetPublicProfileUseCase", GetPublicProfileUseCase);
 container.registerSingleton("UpdateProfileUseCase", UpdateProfileUseCase);
 container.registerSingleton("GetNotificationPreferencesUseCase", GetNotificationPreferencesUseCase);
 container.registerSingleton("UpdateNotificationPreferencesUseCase", UpdateNotificationPreferencesUseCase);
+container.registerSingleton("AwardUserExpUseCase", AwardUserExpUseCase);
 
 // Device tokens / Push
 import { RegisterDeviceTokenUseCase } from "@application/usecase/register-device-token/register-device-token.usecase";

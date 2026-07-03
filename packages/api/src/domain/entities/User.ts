@@ -21,12 +21,13 @@ export class User {
     public readonly lastname: string | null,
     public readonly photoUrl: string | null,
     public readonly isSuspended: boolean,
+    public readonly exp: number,
   ) {}
 
   static create(email: EmailAddress, username: string, passwordHash: string): User {
     User.assertValidUsername(username);
     User.assertValidPasswordHash(passwordHash);
-    return new User(null, randomUUID(), email.value, username, passwordHash, false, new Date(), null, null, null, false,);
+    return new User(null, randomUUID(), email.value, username, passwordHash, false, new Date(), null, null, null, false, 0);
   }
 
   static reconstruct(
@@ -41,13 +42,32 @@ export class User {
     lastname: string | null,
     photoUrl: string | null,
     isSuspended = false,
+    exp = 0,
   ): User {
-    return new User(internalId, id, email, username, passwordHash, isVerified, createdAt,name, lastname, photoUrl, isSuspended,);
+    return new User(internalId, id, email, username, passwordHash, isVerified, createdAt, name, lastname, photoUrl, isSuspended, exp);
   }
 
   requireInternalId(): number {
     if (this.internalId === null) throw new Error("User is not persisted");
     return this.internalId;
+  }
+
+  addExperience(amount: number): User {
+    User.assertValidExperienceAmount(amount);
+    return new User(
+      this.internalId,
+      this.id,
+      this.email,
+      this.username,
+      this.passwordHash,
+      this.isVerified,
+      this.createdAt,
+      this.name,
+      this.lastname,
+      this.photoUrl,
+      this.isSuspended,
+      this.exp + amount,
+    );
   }
 
   private static assertValidUsername(username: string): void {
@@ -65,5 +85,11 @@ export class User {
 
   private static assertValidPasswordHash(hash: string): void {
     if (hash.length < BCRYPT_HASH_MIN_LENGTH) throw new InvalidPasswordHashError();
+  }
+
+  private static assertValidExperienceAmount(amount: number): void {
+    if (!Number.isInteger(amount) || amount <= 0) {
+      throw new Error("Experience amount must be a positive integer");
+    }
   }
 }
