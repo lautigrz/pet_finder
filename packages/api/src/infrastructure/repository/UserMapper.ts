@@ -14,6 +14,7 @@ export class UserMapper {
       record.name,
       record.lastname,
       record.photo_url,
+      record.is_suspended,
     );
   }
 
@@ -24,6 +25,7 @@ export class UserMapper {
       username: user.username,
       password: user.passwordHash,
       is_verified: user.isVerified,
+      is_suspended: user.isSuspended,
       name: user.name,
       lastname: user.lastname,
       photo_url: user.photoUrl,

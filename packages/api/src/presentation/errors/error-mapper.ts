@@ -17,6 +17,7 @@ export function errorToHttpStatus(error: Error): HttpError {
             case 'INVALID_PASSWORD': return { statusCode: 400, code: error.code, message: error.message };
             case 'INVALID_USERNAME': return { statusCode: 400, code: error.code, message: error.message };
             case 'USER_NOT_FOUND': return { statusCode: 404, code: error.code, message: error.message };
+            case 'USER_SUSPENDED': return { statusCode: 403, code: error.code, message: error.message };
             case 'PET_NOT_FOUND': return { statusCode: 404, code: error.code, message: error.message };
             case 'REPORT_NOT_FOUND': return { statusCode: 404, code: error.code, message: error.message };
             case 'INVALID_VERIFICATION_TOKEN': return { statusCode: 400, code: error.code, message: error.message };

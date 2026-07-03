@@ -16,6 +16,8 @@ import { Location } from "@domain/report/value-objects/location.vo";
 import { LostReportDetails } from "@domain/report/value-objects/lost-report-details.vo";
 import { ConversationRepository } from "@domain/conversation/repositories/conversation.repository";
 import { Conversation } from "@domain/conversation/Conversation";
+import { IUserRepository } from "@domain/repositories/IUserRepository";
+import { User } from "@domain/entities/User";
 
 function fakeContentReport(targetType: ContentReportTargetType = ContentReportTargetType.POST): ContentReport {
   return ContentReport.restore({
@@ -61,23 +63,44 @@ function fakeConversation(isSuspended = false): Conversation {
   });
 }
 
+function fakeUser(isSuspended = false): User {
+  return User.reconstruct(
+    9,
+    "perfil-uuid",
+    "perfil@test.com",
+    "perfil",
+    "x".repeat(60),
+    true,
+    new Date("2026-06-20"),
+    null,
+    null,
+    null,
+    isSuspended,
+  );
+}
+
 describe("ResolveContentReportUseCase", () => {
   let contentReportRepository: ContentReportRepository;
   let reportRepository: ReportRepository;
   let conversationRepository: ConversationRepository;
+  let userRepository: IUserRepository;
   let useCase: ResolveContentReportUseCase;
 
   beforeEach(() => {
     contentReportRepository = {
       findByPublicId: vi.fn(),
       update: vi.fn(),
-      countApprovedByTarget: vi.fn().mockResolvedValue(1),
-      suspendOpenByTarget: vi.fn(),
+      suspendOpenByTarget: vi.fn().mockResolvedValue(0),
+      approveOpenByTarget: vi.fn().mockResolvedValue(0),
+      suspendOpenForUser: vi.fn().mockResolvedValue(0),
+      countDistinctApprovedPublications: vi.fn().mockResolvedValue(0),
     } as unknown as ContentReportRepository;
 
     reportRepository = {
       findByPublicId: vi.fn(),
       update: vi.fn(),
+      closeAllByUserId: vi.fn(),
+      findPublicIdsByUserId: vi.fn().mockResolvedValue([]),
     } as unknown as ReportRepository;
 
     conversationRepository = {
@@ -85,7 +108,13 @@ describe("ResolveContentReportUseCase", () => {
       update: vi.fn(),
     } as unknown as ConversationRepository;
 
-    useCase = new ResolveContentReportUseCase(contentReportRepository, reportRepository, conversationRepository);
+    userRepository = {
+      findByPublicId: vi.fn(),
+      findById: vi.fn(),
+      markSuspended: vi.fn(),
+    } as unknown as IUserRepository;
+
+    useCase = new ResolveContentReportUseCase(contentReportRepository, reportRepository, conversationRepository, userRepository);
   });
 
   it("lanza ContentReportNotFoundError si la denuncia no existe", async () => {
@@ -96,17 +125,109 @@ describe("ResolveContentReportUseCase", () => {
     ).rejects.toThrow(ContentReportNotFoundError);
   });
 
-  it("aprobar marca la denuncia como REVIEWED sin suspender el reporte", async () => {
+  it("aprobar una publicación reportada la oculta (reporte CLOSED) y marca la denuncia como aprobada", async () => {
     const denuncia = fakeContentReport();
+    const reporte = fakeReport();
     vi.mocked(contentReportRepository.findByPublicId).mockResolvedValue(denuncia);
-    vi.mocked(reportRepository.findByPublicId).mockResolvedValue(fakeReport());
+    vi.mocked(reportRepository.findByPublicId).mockResolvedValue(reporte);
 
     await useCase.execute({ publicId: "denuncia-uuid", status: ContentReportStatus.REVIEWED });
 
     expect(denuncia.status).toBe(ContentReportStatus.REVIEWED);
     expect(contentReportRepository.update).toHaveBeenCalledWith(denuncia);
+    expect(reporte.status).toBe(ReportStatus.CLOSED);
+    expect(reportRepository.update).toHaveBeenCalledWith(reporte);
+    expect(contentReportRepository.approveOpenByTarget).toHaveBeenCalledWith(
+      ContentReportTargetType.POST,
+      "reporte-uuid",
+    );
+  });
+
+  it("aprobar una publicación también aprueba las demás denuncias pendientes y devuelve cuántas", async () => {
+    const denuncia = fakeContentReport();
+    vi.mocked(contentReportRepository.findByPublicId).mockResolvedValue(denuncia);
+    vi.mocked(reportRepository.findByPublicId).mockResolvedValue(fakeReport());
+    vi.mocked(contentReportRepository.approveOpenByTarget).mockResolvedValue(4);
+
+    const result = await useCase.execute({ publicId: "denuncia-uuid", status: ContentReportStatus.REVIEWED });
+
+    expect(contentReportRepository.approveOpenByTarget).toHaveBeenCalledWith(
+      ContentReportTargetType.POST,
+      "reporte-uuid",
+    );
+    expect(result.approvedCount).toBe(4);
+  });
+
+  it("aprobar sin llegar a 5 publicaciones distintas no suspende al autor", async () => {
+    const denuncia = fakeContentReport();
+    vi.mocked(contentReportRepository.findByPublicId).mockResolvedValue(denuncia);
+    vi.mocked(reportRepository.findByPublicId).mockResolvedValue(fakeReport());
+    vi.mocked(contentReportRepository.countDistinctApprovedPublications).mockResolvedValue(4);
+
+    const result = await useCase.execute({ publicId: "denuncia-uuid", status: ContentReportStatus.REVIEWED });
+
+    expect(userRepository.markSuspended).not.toHaveBeenCalled();
+    expect(contentReportRepository.suspendOpenForUser).not.toHaveBeenCalled();
+    expect(result.autoSuspended).toBe(false);
+  });
+
+  it("al aprobar la 5ª publicación distinta del mismo autor lo suspende automáticamente y cascadea sus denuncias", async () => {
+    const denuncia = fakeContentReport();
+    vi.mocked(contentReportRepository.findByPublicId).mockResolvedValue(denuncia);
+    vi.mocked(reportRepository.findByPublicId).mockResolvedValue(fakeReport());
+    vi.mocked(reportRepository.findPublicIdsByUserId).mockResolvedValue(["p1", "p2", "p3", "p4", "p5"]);
+    vi.mocked(contentReportRepository.countDistinctApprovedPublications).mockResolvedValue(5);
+    vi.mocked(userRepository.findById).mockResolvedValue(fakeUser());
+    vi.mocked(contentReportRepository.suspendOpenForUser).mockResolvedValue(8);
+
+    const result = await useCase.execute({ publicId: "denuncia-uuid", status: ContentReportStatus.REVIEWED });
+
+    expect(userRepository.markSuspended).toHaveBeenCalledWith(5);
+    expect(reportRepository.closeAllByUserId).toHaveBeenCalledWith(5);
+    expect(contentReportRepository.suspendOpenForUser).toHaveBeenCalledWith(
+      "user-pub-id",
+      ["p1", "p2", "p3", "p4", "p5"],
+      expect.stringContaining("automática"),
+    );
+    expect(result.autoSuspended).toBe(true);
+    expect(result.suspendedCount).toBe(8);
+  });
+
+  it("no re-suspende si el autor ya está suspendido aunque llegue al umbral", async () => {
+    const denuncia = fakeContentReport();
+    vi.mocked(contentReportRepository.findByPublicId).mockResolvedValue(denuncia);
+    vi.mocked(reportRepository.findByPublicId).mockResolvedValue(fakeReport());
+    vi.mocked(contentReportRepository.countDistinctApprovedPublications).mockResolvedValue(5);
+    vi.mocked(userRepository.findById).mockResolvedValue(fakeUser(true));
+
+    const result = await useCase.execute({ publicId: "denuncia-uuid", status: ContentReportStatus.REVIEWED });
+
+    expect(userRepository.markSuspended).not.toHaveBeenCalled();
+    expect(contentReportRepository.suspendOpenForUser).not.toHaveBeenCalled();
+    expect(result.autoSuspended).toBe(false);
+  });
+
+  it("aprobar cuando la publicación ya está cerrada no la re-cierra", async () => {
+    const denuncia = fakeContentReport();
+    const reporte = fakeReport(ReportStatus.CLOSED);
+    vi.mocked(contentReportRepository.findByPublicId).mockResolvedValue(denuncia);
+    vi.mocked(reportRepository.findByPublicId).mockResolvedValue(reporte);
+
+    await useCase.execute({ publicId: "denuncia-uuid", status: ContentReportStatus.REVIEWED });
+
+    expect(denuncia.status).toBe(ContentReportStatus.REVIEWED);
     expect(reportRepository.update).not.toHaveBeenCalled();
-    expect(contentReportRepository.suspendOpenByTarget).not.toHaveBeenCalled();
+  });
+
+  it("aprobar una denuncia de chat no toca ninguna publicación", async () => {
+    const denuncia = fakeContentReport(ContentReportTargetType.CHAT);
+    vi.mocked(contentReportRepository.findByPublicId).mockResolvedValue(denuncia);
+
+    await useCase.execute({ publicId: "denuncia-uuid", status: ContentReportStatus.REVIEWED });
+
+    expect(denuncia.status).toBe(ContentReportStatus.REVIEWED);
+    expect(reportRepository.findByPublicId).not.toHaveBeenCalled();
+    expect(contentReportRepository.approveOpenByTarget).not.toHaveBeenCalled();
   });
 
   it("eliminar marca la denuncia como DISMISSED sin tocar el reporte", async () => {
@@ -117,6 +238,7 @@ describe("ResolveContentReportUseCase", () => {
 
     expect(denuncia.status).toBe(ContentReportStatus.DISMISSED);
     expect(reportRepository.update).not.toHaveBeenCalled();
+    expect(contentReportRepository.suspendOpenByTarget).not.toHaveBeenCalled();
   });
 
   it("revertir a PENDING marca la denuncia como PENDING sin tocar el reporte", async () => {
@@ -130,25 +252,29 @@ describe("ResolveContentReportUseCase", () => {
     expect(reportRepository.findByPublicId).not.toHaveBeenCalled();
   });
 
-  it("suspender manualmente cierra el reporte y suspende todas sus denuncias abiertas con el motivo", async () => {
+  it("suspender una publicación suspende al autor y cascadea TODAS sus denuncias con el motivo", async () => {
     const denuncia = fakeContentReport();
     const reporte = fakeReport();
     vi.mocked(contentReportRepository.findByPublicId).mockResolvedValue(denuncia);
     vi.mocked(reportRepository.findByPublicId).mockResolvedValue(reporte);
+    vi.mocked(reportRepository.findPublicIdsByUserId).mockResolvedValue(["reporte-uuid", "otra-pub-uuid"]);
+    vi.mocked(contentReportRepository.suspendOpenForUser).mockResolvedValue(7);
 
-    await useCase.execute({
+    const result = await useCase.execute({
       publicId: "denuncia-uuid",
       status: ContentReportStatus.SUSPENDED,
       suspensionReason: "Contenido fraudulento",
     });
 
-    expect(reporte.status).toBe(ReportStatus.CLOSED);
-    expect(reportRepository.update).toHaveBeenCalledWith(reporte);
-    expect(contentReportRepository.suspendOpenByTarget).toHaveBeenCalledWith(
-      ContentReportTargetType.POST,
-      "reporte-uuid",
+    expect(userRepository.markSuspended).toHaveBeenCalledWith(5);
+    expect(reportRepository.closeAllByUserId).toHaveBeenCalledWith(5);
+    expect(reportRepository.findPublicIdsByUserId).toHaveBeenCalledWith(5);
+    expect(contentReportRepository.suspendOpenForUser).toHaveBeenCalledWith(
+      "user-pub-id",
+      ["reporte-uuid", "otra-pub-uuid"],
       expect.stringContaining("Contenido fraudulento"),
     );
+    expect(result.suspendedCount).toBe(7);
   });
 
   it("suspender sin motivo lanza SuspensionReasonRequiredError", async () => {
@@ -160,7 +286,7 @@ describe("ResolveContentReportUseCase", () => {
     ).rejects.toThrow(SuspensionReasonRequiredError);
   });
 
-  it("suspender lanza ReportedContentNotFoundError si el reporte no existe", async () => {
+  it("suspender lanza ReportedContentNotFoundError si la publicación no existe", async () => {
     const denuncia = fakeContentReport();
     vi.mocked(contentReportRepository.findByPublicId).mockResolvedValue(denuncia);
     vi.mocked(reportRepository.findByPublicId).mockResolvedValue(null);
@@ -172,92 +298,6 @@ describe("ResolveContentReportUseCase", () => {
         suspensionReason: "x",
       }),
     ).rejects.toThrow(ReportedContentNotFoundError);
-  });
-
-  it("aprobar por debajo del umbral no suspende la publicación", async () => {
-    const denuncia = fakeContentReport();
-    vi.mocked(contentReportRepository.findByPublicId).mockResolvedValue(denuncia);
-    vi.mocked(reportRepository.findByPublicId).mockResolvedValue(fakeReport());
-    vi.mocked(contentReportRepository.countApprovedByTarget).mockResolvedValue(4);
-
-    await useCase.execute({ publicId: "denuncia-uuid", status: ContentReportStatus.REVIEWED });
-
-    expect(reportRepository.update).not.toHaveBeenCalled();
-    expect(contentReportRepository.suspendOpenByTarget).not.toHaveBeenCalled();
-  });
-
-  it("al alcanzar el umbral suspende la publicación (CLOSED) y suspende todas las denuncias abiertas", async () => {
-    const denuncia = fakeContentReport();
-    const reporte = fakeReport();
-    vi.mocked(contentReportRepository.findByPublicId).mockResolvedValue(denuncia);
-    vi.mocked(contentReportRepository.countApprovedByTarget).mockResolvedValue(5);
-    vi.mocked(reportRepository.findByPublicId).mockResolvedValue(reporte);
-
-    const result = await useCase.execute({ publicId: "denuncia-uuid", status: ContentReportStatus.REVIEWED });
-
-    expect(reporte.status).toBe(ReportStatus.CLOSED);
-    expect(reportRepository.update).toHaveBeenCalledWith(reporte);
-    expect(contentReportRepository.suspendOpenByTarget).toHaveBeenCalledWith(
-      ContentReportTargetType.POST,
-      "reporte-uuid",
-      expect.stringContaining("5"),
-    );
-    expect(result.autoSuspended).toBe(true);
-  });
-
-  it("editar una denuncia de descartada a aprobada también cuenta para el umbral y suspende", async () => {
-    const denuncia = fakeContentReport();
-    denuncia.dismiss();
-    const reporte = fakeReport();
-    vi.mocked(contentReportRepository.findByPublicId).mockResolvedValue(denuncia);
-    vi.mocked(contentReportRepository.countApprovedByTarget).mockResolvedValue(5);
-    vi.mocked(reportRepository.findByPublicId).mockResolvedValue(reporte);
-
-    const result = await useCase.execute({ publicId: "denuncia-uuid", status: ContentReportStatus.REVIEWED });
-
-    expect(denuncia.status).toBe(ContentReportStatus.REVIEWED);
-    expect(reporte.status).toBe(ReportStatus.CLOSED);
-    expect(result.autoSuspended).toBe(true);
-  });
-
-  it("editar una denuncia de aprobada a descartada no suspende la publicación", async () => {
-    const denuncia = fakeContentReport();
-    denuncia.approve();
-    vi.mocked(contentReportRepository.findByPublicId).mockResolvedValue(denuncia);
-
-    const result = await useCase.execute({ publicId: "denuncia-uuid", status: ContentReportStatus.DISMISSED });
-
-    expect(denuncia.status).toBe(ContentReportStatus.DISMISSED);
-    expect(reportRepository.findByPublicId).not.toHaveBeenCalled();
-    expect(contentReportRepository.suspendOpenByTarget).not.toHaveBeenCalled();
-    expect(result.autoSuspended).toBe(false);
-  });
-
-  it("si la publicación ya está cerrada, no la re-cierra pero mantiene las denuncias suspendidas", async () => {
-    const denuncia = fakeContentReport();
-    const reporte = fakeReport(ReportStatus.CLOSED);
-    vi.mocked(contentReportRepository.findByPublicId).mockResolvedValue(denuncia);
-    vi.mocked(reportRepository.findByPublicId).mockResolvedValue(reporte);
-
-    const result = await useCase.execute({ publicId: "denuncia-uuid", status: ContentReportStatus.REVIEWED });
-
-    expect(reportRepository.update).not.toHaveBeenCalled();
-    expect(contentReportRepository.suspendOpenByTarget).toHaveBeenCalledWith(
-      ContentReportTargetType.POST,
-      "reporte-uuid",
-      expect.stringContaining("5"),
-    );
-    expect(result.autoSuspended).toBe(false);
-  });
-
-  it("aprobar una denuncia de chat no dispara la auto-suspensión", async () => {
-    const denuncia = fakeContentReport(ContentReportTargetType.CHAT);
-    vi.mocked(contentReportRepository.findByPublicId).mockResolvedValue(denuncia);
-
-    await useCase.execute({ publicId: "denuncia-uuid", status: ContentReportStatus.REVIEWED });
-
-    expect(contentReportRepository.countApprovedByTarget).not.toHaveBeenCalled();
-    expect(reportRepository.findByPublicId).not.toHaveBeenCalled();
   });
 
   it("suspender una denuncia de chat suspende la conversación y sus denuncias abiertas", async () => {
@@ -280,5 +320,30 @@ describe("ResolveContentReportUseCase", () => {
       "reporte-uuid",
       expect.stringContaining("Comportamiento sospechoso"),
     );
+  });
+
+  it("suspender una denuncia de perfil suspende al usuario y TODAS sus denuncias abiertas", async () => {
+    const denuncia = fakeContentReport(ContentReportTargetType.USER);
+    const user = fakeUser();
+    vi.mocked(contentReportRepository.findByPublicId).mockResolvedValue(denuncia);
+    vi.mocked(userRepository.findByPublicId).mockResolvedValue(user);
+    vi.mocked(reportRepository.findPublicIdsByUserId).mockResolvedValue(["pub-uuid"]);
+    vi.mocked(contentReportRepository.suspendOpenForUser).mockResolvedValue(3);
+
+    const result = await useCase.execute({
+      publicId: "denuncia-uuid",
+      status: ContentReportStatus.SUSPENDED,
+      suspensionReason: "Suplantación de identidad",
+    });
+
+    expect(userRepository.markSuspended).toHaveBeenCalledWith(9);
+    expect(reportRepository.closeAllByUserId).toHaveBeenCalledWith(9);
+    expect(reportRepository.findByPublicId).not.toHaveBeenCalled();
+    expect(contentReportRepository.suspendOpenForUser).toHaveBeenCalledWith(
+      "perfil-uuid",
+      ["pub-uuid"],
+      expect.stringContaining("Suplantación de identidad"),
+    );
+    expect(result.suspendedCount).toBe(3);
   });
 });

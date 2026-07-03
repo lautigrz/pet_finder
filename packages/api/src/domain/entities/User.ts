@@ -20,12 +20,13 @@ export class User {
     public readonly name: string | null,
     public readonly lastname: string | null,
     public readonly photoUrl: string | null,
+    public readonly isSuspended: boolean,
   ) {}
 
   static create(email: EmailAddress, username: string, passwordHash: string): User {
     User.assertValidUsername(username);
     User.assertValidPasswordHash(passwordHash);
-    return new User(null, randomUUID(), email.value, username, passwordHash, false, new Date(), null, null, null,);
+    return new User(null, randomUUID(), email.value, username, passwordHash, false, new Date(), null, null, null, false,);
   }
 
   static reconstruct(
@@ -39,8 +40,9 @@ export class User {
     name: string | null,
     lastname: string | null,
     photoUrl: string | null,
+    isSuspended = false,
   ): User {
-    return new User(internalId, id, email, username, passwordHash, isVerified, createdAt,name, lastname, photoUrl,);
+    return new User(internalId, id, email, username, passwordHash, isVerified, createdAt,name, lastname, photoUrl, isSuspended,);
   }
 
   requireInternalId(): number {

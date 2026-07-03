@@ -168,6 +168,28 @@ export class PrismaReportRepository implements ReportRepository {
 
     }
 
+    async closeAllByUserId(userId: number): Promise<void> {
+        const closedStatusId = reportStatusMap[ReportStatus.CLOSED];
+        await this.prisma.report.updateMany({
+            where: {
+                user_id: userId,
+                report_status_id: { not: closedStatusId }
+            },
+            data: {
+                report_status_id: closedStatusId,
+                updated_at: new Date()
+            }
+        });
+    }
+
+    async findPublicIdsByUserId(userId: number): Promise<string[]> {
+        const rows = await this.prisma.report.findMany({
+            where: { user_id: userId },
+            select: { public_id: true }
+        });
+        return rows.map((row) => row.public_id);
+    }
+
     async updateFields(report: Report, images?: SightingImage[]): Promise<void> {
         if (!report.idReport) throw new Error('Report ID is required');
 
@@ -330,7 +352,7 @@ export class PrismaReportRepository implements ReportRepository {
 
     async findByUserPublicId(userPublicId: string, filters?: { reportType?: string; animalType?: string; createdFrom?: string; createdTo?: string; q?: string; }): Promise<Report[]> {
 
-        const where: Prisma.ReportWhereInput = { user: { public_id: userPublicId } }
+        const where: Prisma.ReportWhereInput = { user: { public_id: userPublicId, is_suspended: false } }
 
         if (filters?.q) {
             const matchingIds = await this.findIdsBySearchQuery(filters.q);
@@ -374,7 +396,7 @@ export class PrismaReportRepository implements ReportRepository {
 
     async findIdsByQuery(query: ReportQuery): Promise<string[]> {
 
-        const where: Prisma.ReportWhereInput = {}
+        const where: Prisma.ReportWhereInput = { user: { is_suspended: false } }
 
         if (query.q) {
             const matchingIds = await this.findIdsBySearchQuery(query.q);

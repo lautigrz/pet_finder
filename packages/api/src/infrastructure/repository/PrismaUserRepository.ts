@@ -37,6 +37,13 @@ export class PrismaUserRepository implements IUserRepository {
     });
   }
 
+  async markSuspended(internalUserId: number): Promise<void> {
+    await this.prisma.user.update({
+      where: { user_id: internalUserId },
+      data: { is_suspended: true },
+    });
+  }
+
   async findById(internalUserId: number): Promise<User | null> {
     const record = await this.prisma.user.findUnique({ where: { user_id: internalUserId } });
     return record ? UserMapper.toDomain(record) : null;

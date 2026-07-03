@@ -215,4 +215,31 @@ describe("GetReportUseCase", () => {
       );
     });
   });
+
+  describe("autor suspendido", () => {
+    it("lanza ReportNotFoundError si el autor del reporte está suspendido", async () => {
+      vi.mocked(reportRepository.findDetailByPublicId).mockResolvedValue({
+        report: fakeLostReport,
+        pet: fakePet,
+      });
+      const suspendedUser = User.reconstruct(
+        5,
+        "user-pub-id",
+        "test@example.com",
+        "testuser",
+        "$2b$10$Somethinghashedhere",
+        true,
+        new Date(),
+        "Test",
+        "User",
+        "http://example.com/photo.jpg",
+        true,
+      );
+      vi.mocked(userRepository.findById).mockResolvedValue(suspendedUser);
+
+      await expect(useCase.execute("report-lost-uuid")).rejects.toThrow(
+        ReportNotFoundError
+      );
+    });
+  });
 });
