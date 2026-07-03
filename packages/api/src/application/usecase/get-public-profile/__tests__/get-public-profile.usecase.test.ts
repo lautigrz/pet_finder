@@ -55,4 +55,23 @@ describe("GetPublicProfileUseCase", () => {
 
     await expect(useCase.execute("inexistente")).rejects.toThrow(UserNotFoundError);
   });
+
+  it("lanza UserNotFoundError si el usuario está suspendido", async () => {
+    const suspended = User.reconstruct(
+      7,
+      TARGET_PUBLIC_ID,
+      "target@example.com",
+      "targetuser",
+      "$2b$10$" + "x".repeat(53),
+      true,
+      new Date(),
+      "Ana",
+      "García",
+      "https://fake.com/photo.jpg",
+      true,
+    );
+    vi.mocked(userRepository.findByPublicId).mockResolvedValue(suspended);
+
+    await expect(useCase.execute(TARGET_PUBLIC_ID)).rejects.toThrow(UserNotFoundError);
+  });
 });

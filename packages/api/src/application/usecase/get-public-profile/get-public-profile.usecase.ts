@@ -13,7 +13,7 @@ export class GetPublicProfileUseCase {
     async execute(publicId: string): Promise<GetPublicProfileOutput> {
         const user = await this.userRepository.findByPublicId(publicId);
 
-        if (!user) {
+        if (!user || user.isSuspended) {
             throw new UserNotFoundError();
         }
 
