@@ -32,22 +32,41 @@ export class PrismaNotificationPreferencesRepository implements INotificationPre
         return NotificationPreferencesMapper.toDomain(record);
     }
 
-    async updateByUserPublicId(userPublicId: string, data: UpdateNotificationPreferencesData): Promise<NotificationPreference> {
-        const record = await this.prisma.notificationPreference.update({
+    async updateByUserPublicId(
+        userPublicId: string,
+        data: UpdateNotificationPreferencesData,
+    ): Promise<NotificationPreference> {
+        const user = await this.prisma.user.findUniqueOrThrow({
+            where: { public_id: userPublicId },
+            select: { user_id: true },
+        });
+
+        const preferenceData = {
+            ...(data.notificationRadius !== undefined
+                ? { notification_radius: data.notificationRadius }
+                : {}),
+            ...(data.lostReportsEnabled !== undefined
+                ? { lost_reports_enabled: data.lostReportsEnabled }
+                : {}),
+            ...(data.sightingReportsEnabled !== undefined
+                ? { sighting_reports_enabled: data.sightingReportsEnabled }
+                : {}),
+            ...(data.matchesEnabled !== undefined
+                ? { matches_enabled: data.matchesEnabled }
+                : {}),
+            ...(data.mutedUntil !== undefined
+                ? { notifications_muted_until: data.mutedUntil }
+                : {}),
+        };
+
+        const record = await this.prisma.notificationPreference.upsert({
             where: {
-                user_id: (
-                    await this.prisma.user.findUniqueOrThrow({
-                        where: { public_id: userPublicId },
-                        select: { user_id: true },
-                    })
-                ).user_id,
+                user_id: user.user_id,
             },
-            data: {
-                notification_radius: data.notificationRadius,
-                lost_reports_enabled: data.lostReportsEnabled,
-                sighting_reports_enabled: data.sightingReportsEnabled,
-                matches_enabled: data.matchesEnabled,
-                notifications_muted_until: data.mutedUntil,
+            update: preferenceData,
+            create: {
+                user_id: user.user_id,
+                ...preferenceData,
             },
         });
 
