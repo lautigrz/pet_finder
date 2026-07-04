@@ -43,6 +43,8 @@ import { ContentReportRepository } from "@domain/content-report/repositories/con
 import { PrismaContentReportRepository } from "@infrastructure/repository/content-report/content-report.repository";
 import { MatchViewsRepository } from "@domain/match/repositories/match-views.repository";
 import { PrismaMatchViewsRepository } from "@infrastructure/repository/match/match-views.repository";
+import { AppealRepository } from "@domain/appeal/repositories/appeal.repository";
+import { PrismaAppealRepository } from "@infrastructure/repository/appeal/appeal.repository";
 
 container.registerSingleton<IUserRepository>("UserRepository", PrismaUserRepository);
 container.registerSingleton<IUserExperienceRepository>("UserExperienceRepository", PrismaUserRepository);
@@ -60,10 +62,13 @@ container.registerSingleton<ReportFollowerRepository>("ReportFollowerRepository"
 container.registerSingleton<CatalogRepository>("CatalogRepository", PrismaCatalogRepository);
 container.registerSingleton<ContentReportRepository>("ContentReportRepository", PrismaContentReportRepository);
 container.registerSingleton<MatchViewsRepository>("MatchViewsRepository", PrismaMatchViewsRepository);
+container.registerSingleton<AppealRepository>("AppealRepository", PrismaAppealRepository);
 
 // ─── Services ──────────────────────────────────────────────────────────────────
 import { ITokenSigner } from "@domain/services/ITokenSigner";
 import { JwtTokenSigner } from "@infrastructure/security/JwtTokenSigner";
+import { IAppealTokenSigner } from "@domain/services/IAppealTokenSigner";
+import { JwtAppealTokenSigner } from "@infrastructure/security/JwtAppealTokenSigner";
 import { IPasswordHasher } from "@domain/services/IPasswordHasher";
 import { BcryptPasswordHasher } from "@infrastructure/security/BcryptPasswordHasher";
 import { ITokenGenerator } from "@domain/services/ITokenGenerator";
@@ -76,6 +81,7 @@ import { StorageService } from "@application/ports/StorageService";
 import { ClaudinaryService } from "@infrastructure/storage/CloudinaryService";
 
 container.registerInstance<ITokenSigner>("TokenSigner", new JwtTokenSigner(jwtSecret, accessTtl));
+container.registerInstance<IAppealTokenSigner>("AppealTokenSigner", new JwtAppealTokenSigner(jwtSecret, "30d"));
 container.registerSingleton<IPasswordHasher>("PasswordHasher", BcryptPasswordHasher);
 container.registerSingleton<ITokenGenerator>("TokenGenerator", CryptoTokenGenerator);
 container.registerInstance<IEmailService>("EmailService", createEmailService());
@@ -163,6 +169,7 @@ container.registerSingleton("GetPetsUseCase", GetPetsUseCase);
 // Reports
 import { CreateReportUseCase } from "@application/usecase/report-usecase/create-report.usecase";
 import { GetReportUseCase } from "@application/usecase/report-usecase/get-report-usecase";
+import { GetReportForModerationUseCase } from "@application/usecase/report-usecase/get-report-for-moderation.usecase";
 import { GetFilteredReportsUseCase } from "@application/usecase/report-usecase/get-filter-reports.usecase";
 import { ListUserReportsUseCase } from "@application/usecase/report-usecase/list-user-reports.usecase";
 import { ListReportsByUserUseCase } from "@application/usecase/report-usecase/list-reports-by-user.usecase";
@@ -175,6 +182,7 @@ import { NotifyReportFollowersOfStatusChangeUseCase } from "@application/usecase
 
 container.registerSingleton("CreateReportUseCase", CreateReportUseCase);
 container.registerSingleton("GetReportUseCase", GetReportUseCase);
+container.registerSingleton("GetReportForModerationUseCase", GetReportForModerationUseCase);
 container.registerSingleton("GetFilteredReportsUseCase", GetFilteredReportsUseCase);
 container.registerSingleton("ListUserReportsUseCase", ListUserReportsUseCase);
 container.registerSingleton("ListReportsByUserUseCase", ListReportsByUserUseCase);
@@ -194,12 +202,25 @@ container.registerSingleton("CreateContentReportUseCase", CreateContentReportUse
 container.registerSingleton("GetContentReportQueueUseCase", GetContentReportQueueUseCase);
 container.registerSingleton("ResolveContentReportUseCase", ResolveContentReportUseCase);
 
-// Notifications (push)
+// Appeals
+import { CreateAppealUseCase } from "@application/usecase/appeal-usecase/create-appeal.usecase";
+import { GetAppealQueueUseCase } from "@application/usecase/appeal-usecase/get-appeal-queue.usecase";
+import { ResolveAppealUseCase } from "@application/usecase/appeal-usecase/resolve-appeal.usecase";
+import { NotifyAppealResultUseCase } from "@application/usecase/notify-appeal-result/notify-appeal-result.usecase";
+
+container.registerSingleton("CreateAppealUseCase", CreateAppealUseCase);
+container.registerSingleton("GetAppealQueueUseCase", GetAppealQueueUseCase);
+container.registerSingleton("ResolveAppealUseCase", ResolveAppealUseCase);
+container.registerSingleton("NotifyAppealResultUseCase", NotifyAppealResultUseCase);
+
+// Notifications (push + email)
 import { NotifyNearbyLostOwnersUseCase } from "@application/usecase/notify-nearby-lost-owners/notify-nearby-lost-owners.usecase";
 import { NotifyOwnerOfMatchUseCase } from "@application/usecase/notify-owner-of-match/notify-owner-of-match.usecase";
+import { NotifyOwnerOfContentSentenceUseCase } from "@application/usecase/notify-owner-of-content-sentence/notify-owner-of-content-sentence.usecase";
 
 container.registerSingleton("NotifyNearbyLostOwnersUseCase", NotifyNearbyLostOwnersUseCase);
 container.registerSingleton("NotifyOwnerOfMatchUseCase", NotifyOwnerOfMatchUseCase);
+container.registerSingleton("NotifyOwnerOfContentSentenceUseCase", NotifyOwnerOfContentSentenceUseCase);
 
 // Catalog
 import { GetBreedsUseCase } from "@application/usecase/catalog/get-breeds.usecase";

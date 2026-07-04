@@ -25,6 +25,8 @@ export interface ReportRepository {
 
   closeAllByUserId(userId: number): Promise<void>;
 
+  reopenModerationClosedByUserId(userId: number): Promise<void>;
+
   findPublicIdsByUserId(userId: number): Promise<string[]>;
 
   findImagesByReportId(publicId: string): Promise<SightingImage[]>;

@@ -151,6 +151,7 @@ export class PrismaReportRepository implements ReportRepository {
             },
             data: {
                 report_status_id: reportStatusMap[report.status],
+                closed_by_moderation: report.closedByModeration,
                 updated_at: report.updatedAt
             }
         });
@@ -166,6 +167,21 @@ export class PrismaReportRepository implements ReportRepository {
             },
             data: {
                 report_status_id: closedStatusId,
+                closed_by_moderation: true,
+                updated_at: new Date()
+            }
+        });
+    }
+
+    async reopenModerationClosedByUserId(userId: number): Promise<void> {
+        await this.prisma.report.updateMany({
+            where: {
+                user_id: userId,
+                closed_by_moderation: true
+            },
+            data: {
+                report_status_id: reportStatusMap[ReportStatus.ACTIVE],
+                closed_by_moderation: false,
                 updated_at: new Date()
             }
         });

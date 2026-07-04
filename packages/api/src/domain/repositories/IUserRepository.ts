@@ -5,6 +5,7 @@ export interface IUserRepository {
   findByEmail(email: string): Promise<User | null>;
   markVerified(internalUserId: number): Promise<void>;
   markSuspended(internalUserId: number): Promise<void>;
+  unsuspend(internalUserId: number): Promise<void>;
   findByPublicId(publicId: string): Promise<User | null>;
   findRoleByPublicId(publicId: string): Promise<string | null>;
   findByIds(userInternalIds: number[]): Promise<{ user_id: number, public_id: string, username: string, photoUrl: string | null }[]>;

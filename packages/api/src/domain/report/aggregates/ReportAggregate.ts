@@ -33,6 +33,7 @@ interface RestoreReportParams {
     occurredAt: Date
     createdAt: Date
     updatedAt: Date | null
+    closedByModeration?: boolean
 }
 
 
@@ -51,6 +52,7 @@ export class Report {
         private _occurredAt: Date,
         private readonly _createdAt: Date,
         private _updatedAt: Date | null = null,
+        private _closedByModeration: boolean = false,
     ) { }
 
 
@@ -87,7 +89,8 @@ export class Report {
             params.details,
             params.occurredAt,
             params.createdAt,
-            params.updatedAt
+            params.updatedAt,
+            params.closedByModeration ?? false,
         )
     }
 
@@ -138,6 +141,12 @@ export class Report {
 
     suspend(): void {
         this.transitionTo(ReportStatus.CLOSED)
+        this._closedByModeration = true
+    }
+
+    reopen(): void {
+        this.transitionTo(ReportStatus.ACTIVE)
+        this._closedByModeration = false
     }
 
     /**
@@ -158,6 +167,10 @@ export class Report {
 
     get status(): ReportStatus {
         return this.currentStatus
+    }
+
+    get closedByModeration(): boolean {
+        return this._closedByModeration
     }
 
     get reportType(): ReportType {
@@ -198,7 +211,7 @@ export class Report {
     private static readonly validTransitions: Record<ReportStatus, ReportStatus[]> = {
         [ReportStatus.ACTIVE]: [ReportStatus.RESOLVED, ReportStatus.CLOSED],
         [ReportStatus.RESOLVED]: [ReportStatus.CLOSED],
-        [ReportStatus.CLOSED]: []
+        [ReportStatus.CLOSED]: [ReportStatus.ACTIVE]
     }
 
 

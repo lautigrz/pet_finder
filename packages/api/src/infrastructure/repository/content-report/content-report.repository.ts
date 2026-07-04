@@ -160,6 +160,52 @@ export class PrismaContentReportRepository implements ContentReportRepository {
         return result.count;
     }
 
+    async dismissByTarget(targetType: ContentReportTargetType, targetPublicId: string): Promise<void> {
+        await this.prisma.contentReport.updateMany({
+            where: {
+                target_type_id: contentReportTargetTypeMap[targetType],
+                target_public_id: targetPublicId,
+                status_id: {
+                    in: [
+                        contentReportStatusMap[ContentReportStatus.REVIEWED],
+                        contentReportStatusMap[ContentReportStatus.SUSPENDED],
+                    ],
+                },
+            },
+            data: {
+                status_id: contentReportStatusMap[ContentReportStatus.DISMISSED],
+                suspension_reason: null,
+            },
+        });
+    }
+
+    async dismissResolvedForUser(userPublicId: string, reportPublicIds: string[]): Promise<void> {
+        await this.prisma.contentReport.updateMany({
+            where: {
+                status_id: {
+                    in: [
+                        contentReportStatusMap[ContentReportStatus.REVIEWED],
+                        contentReportStatusMap[ContentReportStatus.SUSPENDED],
+                    ],
+                },
+                OR: [
+                    {
+                        target_type_id: contentReportTargetTypeMap[ContentReportTargetType.USER],
+                        target_public_id: userPublicId,
+                    },
+                    {
+                        target_type_id: contentReportTargetTypeMap[ContentReportTargetType.POST],
+                        target_public_id: { in: reportPublicIds },
+                    },
+                ],
+            },
+            data: {
+                status_id: contentReportStatusMap[ContentReportStatus.DISMISSED],
+                suspension_reason: null,
+            },
+        });
+    }
+
     async findQueueByStatus(status: ContentReportStatus): Promise<ContentReportQueueItem[]> {
         const rows = await this.prisma.contentReport.findMany({
             where: { status_id: contentReportStatusMap[status] },

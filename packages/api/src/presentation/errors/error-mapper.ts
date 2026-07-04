@@ -57,6 +57,11 @@ export function errorToHttpStatus(error: Error): HttpError {
             case 'CONTENT_REPORT_NOT_FOUND': return { statusCode: 404, code: error.code, message: error.message };
             case 'SUSPENSION_REASON_REQUIRED': return { statusCode: 400, code: error.code, message: error.message };
             case 'MATCH_RESULT_NOT_FOUND': return { statusCode: 404, code: error.code, message: error.message };
+            case 'APPEAL_NOT_FOUND': return { statusCode: 404, code: error.code, message: error.message };
+            case 'ALREADY_APPEALED': return { statusCode: 409, code: error.code, message: error.message };
+            case 'APPEAL_ALREADY_RESOLVED': return { statusCode: 409, code: error.code, message: error.message };
+            case 'APPEAL_MESSAGE_REQUIRED': return { statusCode: 400, code: error.code, message: error.message };
+            case 'INVALID_APPEAL_TOKEN': return { statusCode: 400, code: error.code, message: error.message };
         }
     }
 

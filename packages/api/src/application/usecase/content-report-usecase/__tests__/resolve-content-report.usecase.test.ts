@@ -18,6 +18,7 @@ import { ConversationRepository } from "@domain/conversation/repositories/conver
 import { Conversation } from "@domain/conversation/Conversation";
 import { IUserRepository } from "@domain/repositories/IUserRepository";
 import { User } from "@domain/entities/User";
+import { NotifyOwnerOfContentSentenceUseCase } from "@application/usecase/notify-owner-of-content-sentence/notify-owner-of-content-sentence.usecase";
 
 function fakeContentReport(targetType: ContentReportTargetType = ContentReportTargetType.POST): ContentReport {
   return ContentReport.restore({
@@ -84,6 +85,7 @@ describe("ResolveContentReportUseCase", () => {
   let reportRepository: ReportRepository;
   let conversationRepository: ConversationRepository;
   let userRepository: IUserRepository;
+  let notifyOwnerOfContentSentence: { execute: ReturnType<typeof vi.fn> };
   let useCase: ResolveContentReportUseCase;
 
   beforeEach(() => {
@@ -111,10 +113,18 @@ describe("ResolveContentReportUseCase", () => {
     userRepository = {
       findByPublicId: vi.fn(),
       findById: vi.fn(),
-      markSuspended: vi.fn(),
+      markSuspended: vi.fn(), unsuspend: vi.fn(),
     } as unknown as IUserRepository;
 
-    useCase = new ResolveContentReportUseCase(contentReportRepository, reportRepository, conversationRepository, userRepository);
+    notifyOwnerOfContentSentence = { execute: vi.fn().mockResolvedValue(undefined) };
+
+    useCase = new ResolveContentReportUseCase(
+      contentReportRepository,
+      reportRepository,
+      conversationRepository,
+      userRepository,
+      notifyOwnerOfContentSentence as unknown as NotifyOwnerOfContentSentenceUseCase,
+    );
   });
 
   it("lanza ContentReportNotFoundError si la denuncia no existe", async () => {
@@ -345,5 +355,70 @@ describe("ResolveContentReportUseCase", () => {
       expect.stringContaining("Suplantación de identidad"),
     );
     expect(result.suspendedCount).toBe(3);
+  });
+
+  it("aprobar una publicación (sin auto-suspensión) le avisa al dueño que la dieron de baja", async () => {
+    const denuncia = fakeContentReport();
+    vi.mocked(contentReportRepository.findByPublicId).mockResolvedValue(denuncia);
+    vi.mocked(reportRepository.findByPublicId).mockResolvedValue(fakeReport());
+
+    await useCase.execute({ publicId: "denuncia-uuid", status: ContentReportStatus.REVIEWED });
+
+    expect(notifyOwnerOfContentSentence.execute).toHaveBeenCalledWith(
+      expect.objectContaining({ ownerPublicId: "user-pub-id", kind: "PUBLICATION_REMOVED" }),
+    );
+  });
+
+  it("la auto-suspensión al aprobar la 5ª avisa de la cuenta suspendida y NO de la publicación", async () => {
+    const denuncia = fakeContentReport();
+    vi.mocked(contentReportRepository.findByPublicId).mockResolvedValue(denuncia);
+    vi.mocked(reportRepository.findByPublicId).mockResolvedValue(fakeReport());
+    vi.mocked(reportRepository.findPublicIdsByUserId).mockResolvedValue(["p1", "p2", "p3", "p4", "p5"]);
+    vi.mocked(contentReportRepository.countDistinctApprovedPublications).mockResolvedValue(5);
+    vi.mocked(userRepository.findById).mockResolvedValue(fakeUser());
+    vi.mocked(contentReportRepository.suspendOpenForUser).mockResolvedValue(8);
+
+    await useCase.execute({ publicId: "denuncia-uuid", status: ContentReportStatus.REVIEWED });
+
+    expect(notifyOwnerOfContentSentence.execute).toHaveBeenCalledTimes(1);
+    expect(notifyOwnerOfContentSentence.execute).toHaveBeenCalledWith(
+      expect.objectContaining({ ownerPublicId: "user-pub-id", kind: "ACCOUNT_SUSPENDED" }),
+    );
+  });
+
+  it("suspender un perfil le avisa al dueño de la cuenta suspendida con el motivo del admin", async () => {
+    const denuncia = fakeContentReport(ContentReportTargetType.USER);
+    vi.mocked(contentReportRepository.findByPublicId).mockResolvedValue(denuncia);
+    vi.mocked(userRepository.findByPublicId).mockResolvedValue(fakeUser());
+    vi.mocked(reportRepository.findPublicIdsByUserId).mockResolvedValue(["pub-uuid"]);
+    vi.mocked(contentReportRepository.suspendOpenForUser).mockResolvedValue(3);
+
+    await useCase.execute({
+      publicId: "denuncia-uuid",
+      status: ContentReportStatus.SUSPENDED,
+      suspensionReason: "Suplantación de identidad",
+    });
+
+    expect(notifyOwnerOfContentSentence.execute).toHaveBeenCalledWith(
+      expect.objectContaining({
+        ownerPublicId: "perfil-uuid",
+        kind: "ACCOUNT_SUSPENDED",
+        motive: "Suplantación de identidad",
+      }),
+    );
+  });
+
+  it("suspender un chat no le manda mail a nadie", async () => {
+    const denuncia = fakeContentReport(ContentReportTargetType.CHAT);
+    vi.mocked(contentReportRepository.findByPublicId).mockResolvedValue(denuncia);
+    vi.mocked(conversationRepository.findByPublicId).mockResolvedValue(fakeConversation());
+
+    await useCase.execute({
+      publicId: "denuncia-uuid",
+      status: ContentReportStatus.SUSPENDED,
+      suspensionReason: "Comportamiento sospechoso",
+    });
+
+    expect(notifyOwnerOfContentSentence.execute).not.toHaveBeenCalled();
   });
 });

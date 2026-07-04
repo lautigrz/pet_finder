@@ -53,6 +53,10 @@ export interface ContentReportRepository {
 
     suspendOpenForUser(userPublicId: string, reportPublicIds: string[], reason: string): Promise<number>;
 
+    dismissByTarget(targetType: ContentReportTargetType, targetPublicId: string): Promise<void>;
+
+    dismissResolvedForUser(userPublicId: string, reportPublicIds: string[]): Promise<void>;
+
     countDistinctApprovedPublications(reportPublicIds: string[]): Promise<number>;
 
     findQueueByStatus(status: ContentReportStatus): Promise<ContentReportQueueItem[]>;

@@ -42,6 +42,7 @@ export async function setupTestDatabase(): Promise<TestDatabase> {
  */
 export async function truncateAll(prisma: PrismaClient): Promise<void> {
     const tables = [
+        "appeals",
         "content_reports",
         "message_images",
         "messages",
