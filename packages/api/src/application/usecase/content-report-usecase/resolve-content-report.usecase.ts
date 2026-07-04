@@ -51,7 +51,7 @@ export class ResolveContentReportUseCase {
                     contentReport.targetPublicId,
                 );
                 const suspendedCount = await this.autoSuspendAuthorIfManyApproved(userId, userPublicId);
-                this.notifyPostSentence(userPublicId, suspendedCount);
+                this.notifyPostSentence(userPublicId, contentReport.targetPublicId, suspendedCount);
                 return { autoSuspended: suspendedCount > 0, approvedCount, suspendedCount };
             }
             return { autoSuspended: false, approvedCount: 0, suspendedCount: 0 };
@@ -78,7 +78,7 @@ export class ResolveContentReportUseCase {
                 contentReport.targetPublicId,
                 reason,
             );
-            this.dispatchNotification(new NotifyOwnerOfContentSentenceInput(userPublicId, "ACCOUNT_SUSPENDED", motive));
+            this.dispatchNotification(new NotifyOwnerOfContentSentenceInput(userPublicId, "ACCOUNT_SUSPENDED", userPublicId, motive));
             return { autoSuspended: false, approvedCount: 0, suspendedCount };
         }
 
@@ -140,10 +140,10 @@ export class ResolveContentReportUseCase {
         return { suspendedCount, userPublicId };
     }
 
-    private notifyPostSentence(userPublicId: string, suspendedCount: number): void {
+    private notifyPostSentence(userPublicId: string, postPublicId: string, suspendedCount: number): void {
         const input = suspendedCount > 0
-            ? new NotifyOwnerOfContentSentenceInput(userPublicId, "ACCOUNT_SUSPENDED", AUTO_SUSPENSION_MOTIVE)
-            : new NotifyOwnerOfContentSentenceInput(userPublicId, "PUBLICATION_REMOVED");
+            ? new NotifyOwnerOfContentSentenceInput(userPublicId, "ACCOUNT_SUSPENDED", userPublicId, AUTO_SUSPENSION_MOTIVE)
+            : new NotifyOwnerOfContentSentenceInput(userPublicId, "PUBLICATION_REMOVED", postPublicId);
         this.dispatchNotification(input);
     }
 

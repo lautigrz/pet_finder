@@ -48,6 +48,13 @@ export class PrismaUserRepository implements IUserRepository, IUserExperienceRep
     });
   }
 
+  async unsuspend(internalUserId: number): Promise<void> {
+    await this.prisma.user.update({
+      where: { user_id: internalUserId },
+      data: { is_suspended: false },
+    });
+  }
+
   async addExp(publicId: string, amount: number): Promise<User> {
     const record = await this.prisma.user.update({
       where: { public_id: publicId },

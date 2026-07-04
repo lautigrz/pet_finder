@@ -1,7 +1,8 @@
 import { Transporter } from "nodemailer";
 import { IEmailService } from "@domain/services/IEmailService";
 import { EmailAddress } from "@domain/shared/email/email-address.vo";
-import { verificationEmail, passwordResetEmail, matchAlertEmail, publicationRemovedEmail, accountSuspendedEmail } from "./email-templates";
+import { verificationEmail, passwordResetEmail, matchAlertEmail, publicationRemovedEmail, accountSuspendedEmail, appealAcceptedEmail, appealRejectedEmail } from "./email-templates";
+import { AppealTargetType } from "@domain/appeal/types/appeal-target-type";
 import { PETFINDER_LOGO_BASE64, PETFINDER_LOGO_CID, PETFINDER_ISOTIPO_BASE64, PETFINDER_ISOTIPO_CID } from "./email-logo-asset";
 
 type MailSender = Pick<Transporter, "sendMail">;
@@ -28,12 +29,24 @@ export class NodemailerEmailService implements IEmailService {
     await this.send(toEmail, "Encontramos una posible coincidencia en PetFinder", html, extras);
   }
 
-  async sendPublicationRemovedNotice(toEmail: string): Promise<void> {
-    await this.send(toEmail, "Tu publicación fue dada de baja en PetFinder", publicationRemovedEmail());
+  async sendPublicationRemovedNotice(toEmail: string, appealToken: string): Promise<void> {
+    await this.send(toEmail, "Tu publicación fue dada de baja en PetFinder", publicationRemovedEmail(this.appealUrl(appealToken)));
   }
 
-  async sendAccountSuspendedNotice(toEmail: string, motive: string | null): Promise<void> {
-    await this.send(toEmail, "Tu cuenta fue suspendida en PetFinder", accountSuspendedEmail(motive));
+  async sendAccountSuspendedNotice(toEmail: string, motive: string | null, appealToken: string): Promise<void> {
+    await this.send(toEmail, "Tu cuenta fue suspendida en PetFinder", accountSuspendedEmail(motive, this.appealUrl(appealToken)));
+  }
+
+  private appealUrl(token: string): string {
+    return `${this.appBaseUrl}/appeals/new?token=${token}`;
+  }
+
+  async sendAppealAcceptedNotice(toEmail: string, targetType: AppealTargetType): Promise<void> {
+    await this.send(toEmail, "Tu apelación fue aceptada en PetFinder", appealAcceptedEmail(targetType));
+  }
+
+  async sendAppealRejectedNotice(toEmail: string, targetType: AppealTargetType): Promise<void> {
+    await this.send(toEmail, "Novedades de tu apelación en PetFinder", appealRejectedEmail(targetType));
   }
 
   private async send(toEmail: string, subject: string, html: string, extraImages: InlineImage[] = []): Promise<void> {

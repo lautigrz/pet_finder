@@ -1,4 +1,5 @@
 import { PETFINDER_LOGO_CID, PETFINDER_ISOTIPO_CID } from "./email-logo-asset";
+import { AppealTargetType } from "@domain/appeal/types/appeal-target-type";
 
 const ORANGE = "#E8842E";
 const NAVY = "#12355B";
@@ -39,19 +40,37 @@ export function matchAlertEmail(appBaseUrl: string, petName: string, scorePercen
     note("Es un resultado aproximado de nuestra IA: la decisión final es tuya."));
 }
 
-export function publicationRemovedEmail(): string {
+export function publicationRemovedEmail(appealUrl: string): string {
   return shell(
     heading("Tu publicación fue dada de baja") +
     text("Un administrador de PetFinder dio de baja una de tus publicaciones porque no cumplía con las normas de la comunidad.") +
-    note("Si creés que se trata de un error, respondé a este correo y lo revisamos."));
+    buttonRow("Apelar la decisión", appealUrl) +
+    note("Si creés que se trata de un error, apelá y revisamos el caso."));
 }
 
-export function accountSuspendedEmail(motive: string | null): string {
+export function accountSuspendedEmail(motive: string | null, appealUrl: string): string {
   return shell(
     heading("Tu cuenta fue suspendida") +
     text("Un administrador de PetFinder suspendió tu cuenta por incumplir las normas de la comunidad.") +
     (motive ? reasonBox(motive) : "") +
-    note("Si creés que se trata de un error, respondé a este correo y lo revisamos."));
+    buttonRow("Apelar la decisión", appealUrl) +
+    note("Si creés que se trata de un error, apelá y revisamos el caso."));
+}
+
+export function appealAcceptedEmail(targetType: AppealTargetType): string {
+  const noun = targetType === AppealTargetType.POST ? "tu publicación" : "tu cuenta";
+  return shell(
+    heading("Tu apelación fue aceptada") +
+    text(`Revisamos tu apelación y recuperaste ${noun}. Ya podés volver a usarla con normalidad en PetFinder.`) +
+    note("Gracias por tu paciencia."));
+}
+
+export function appealRejectedEmail(targetType: AppealTargetType): string {
+  const detail = targetType === AppealTargetType.POST ? "la baja de tu publicación" : "la suspensión de tu cuenta";
+  return shell(
+    heading("Tu apelación fue rechazada") +
+    text(`Revisamos tu apelación y se mantuvo ${detail}. La decisión es definitiva.`) +
+    note("Si tenés dudas, respondé a este correo."));
 }
 
 function shell(bodyHtml: string): string {

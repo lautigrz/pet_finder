@@ -113,7 +113,7 @@ describe("ResolveContentReportUseCase", () => {
     userRepository = {
       findByPublicId: vi.fn(),
       findById: vi.fn(),
-      markSuspended: vi.fn(),
+      markSuspended: vi.fn(), unsuspend: vi.fn(),
     } as unknown as IUserRepository;
 
     notifyOwnerOfContentSentence = { execute: vi.fn().mockResolvedValue(undefined) };
