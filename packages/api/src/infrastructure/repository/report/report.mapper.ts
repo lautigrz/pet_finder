@@ -68,6 +68,8 @@ export class ReportMapper {
       location_lng: report.location.longitude,
       created_at: report.createdAt,
       updated_at: report.updatedAt,
+      resolved: report.resolved,
+      resolved_at: report.resolvedAt,
       ...ReportMapper.buildDetailsInput(report, colorId, breedId),
     }
   }
@@ -89,6 +91,8 @@ export class ReportMapper {
       createdAt: raw.created_at,
       updatedAt: raw.updated_at,
       closedByModeration: raw.closed_by_moderation,
+      resolved: raw.resolved,
+      resolvedAt: raw.resolved_at,
 
     })
 

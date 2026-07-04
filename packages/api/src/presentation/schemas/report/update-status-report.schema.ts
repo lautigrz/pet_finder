@@ -9,6 +9,7 @@ export const updateStatusReportSchema = z.object({
         status: z.string()
             .transform(val => val.toUpperCase())
             .refine(val => isValidReportStatus(val), { message: 'ReportStatus inválido' }),
+        resolved: z.boolean().optional(),
     })
 })
 
