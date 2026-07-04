@@ -26,7 +26,7 @@ export class UpdateStatus {
     const previousStatus = report.status;
 
     if (dto.status === ReportStatus.RESOLVED) {
-      report.resolve();
+      report.resolve(dto.resolved ?? false);
     } else if (dto.status === ReportStatus.CLOSED) {
       report.close();
     }

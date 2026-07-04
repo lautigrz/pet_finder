@@ -111,6 +111,8 @@ model Report {
   description      String? @db.Text
 
   closed_by_moderation Boolean @default(false)
+  resolved             Boolean @default(false)
+  resolved_at          DateTime? @db.Timestamp(6)
 
   occurred_at DateTime
 

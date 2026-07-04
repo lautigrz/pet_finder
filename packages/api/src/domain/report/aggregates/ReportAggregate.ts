@@ -34,6 +34,8 @@ interface RestoreReportParams {
     createdAt: Date
     updatedAt: Date | null
     closedByModeration?: boolean
+    resolved?: boolean
+    resolvedAt?: Date | null
 }
 
 
@@ -53,6 +55,8 @@ export class Report {
         private readonly _createdAt: Date,
         private _updatedAt: Date | null = null,
         private _closedByModeration: boolean = false,
+        private _resolved: boolean = false,
+        private _resolvedAt: Date | null = null,
     ) { }
 
 
@@ -91,6 +95,8 @@ export class Report {
             params.createdAt,
             params.updatedAt,
             params.closedByModeration ?? false,
+            params.resolved ?? false,
+            params.resolvedAt ?? null,
         )
     }
 
@@ -131,8 +137,10 @@ export class Report {
         return this._userPublicId
     }
 
-    resolve(): void {
+    resolve(reunited: boolean): void {
         this.transitionTo(ReportStatus.RESOLVED)
+        this._resolved = reunited
+        this._resolvedAt = new Date()
     }
 
     close(): void {
@@ -171,6 +179,14 @@ export class Report {
 
     get closedByModeration(): boolean {
         return this._closedByModeration
+    }
+
+    get resolved(): boolean {
+        return this._resolved
+    }
+
+    get resolvedAt(): Date | null {
+        return this._resolvedAt
     }
 
     get reportType(): ReportType {

@@ -129,18 +129,32 @@ describe("Report.resolve", () => {
     expect(report.status).toBe(ReportStatus.ACTIVE);
 
 
-    report.resolve();
+    report.resolve(true);
 
 
     expect(report.status).toBe(ReportStatus.RESOLVED);
     expect(report.updatedAt).toBeInstanceOf(Date);
   });
 
+  it("marca resolved=true y setea resolvedAt cuando el dueño indica reencuentro", () => {
+    const report = Report.create(baseLostParams);
+    report.resolve(true);
+    expect(report.resolved).toBe(true);
+    expect(report.resolvedAt).toBeInstanceOf(Date);
+  });
+
+  it("resolver por otro motivo deja resolved=false pero igual setea resolvedAt", () => {
+    const report = Report.create(baseLostParams);
+    report.resolve(false);
+    expect(report.resolved).toBe(false);
+    expect(report.resolvedAt).toBeInstanceOf(Date);
+  });
+
   it("lanza InvalidStatusTransitionError al resolver un reporte CLOSED", () => {
 
     const report = Report.create(baseLostParams);
     report.close();
-    expect(() => report.resolve()).toThrow(InvalidStatusTransitionError);
+    expect(() => report.resolve(true)).toThrow(InvalidStatusTransitionError);
   });
 });
 
@@ -160,7 +174,7 @@ describe("Report.close", () => {
   it("transiciona de RESOLVED a CLOSED", () => {
 
     const report = Report.create(baseLostParams);
-    report.resolve();
+    report.resolve(true);
 
 
     report.close();

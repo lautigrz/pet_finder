@@ -152,6 +152,8 @@ export class PrismaReportRepository implements ReportRepository {
             data: {
                 report_status_id: reportStatusMap[report.status],
                 closed_by_moderation: report.closedByModeration,
+                resolved: report.resolved,
+                resolved_at: report.resolvedAt,
                 updated_at: report.updatedAt
             }
         });

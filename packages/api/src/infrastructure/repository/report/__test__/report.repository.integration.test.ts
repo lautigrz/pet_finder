@@ -284,7 +284,7 @@ describe("PrismaReportRepository (integration)", () => {
             const reportId = await repository.save(r1);
 
             const saved = await repository.findByPublicId(r1.publicId);
-            saved!.resolve();
+            saved!.resolve(true);
             await repository.update(saved!);
             const ids = await repository.findIdsByQuery(new ReportQuery({ status: "RESOLVED" }));
             expect(ids).toContain(r1.publicId);
@@ -366,7 +366,7 @@ describe("PrismaReportRepository (integration)", () => {
             const saved = await repository.findByPublicId(report.publicId);
             expect(saved!.status).toBe(ReportStatus.ACTIVE);
 
-            saved!.resolve();
+            saved!.resolve(true);
             await repository.update(saved!);
 
             const updated = await prisma.report.findFirst({ where: { report_id: savedId } });
@@ -378,7 +378,7 @@ describe("PrismaReportRepository (integration)", () => {
             const savedId = await repository.save(report);
 
             const saved = await repository.findByPublicId(report.publicId);
-            saved!.resolve();
+            saved!.resolve(true);
             await repository.update(saved!);
 
             const afterResolve = await repository.findByPublicId(report.publicId);

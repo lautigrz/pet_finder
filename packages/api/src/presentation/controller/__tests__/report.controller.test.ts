@@ -130,6 +130,8 @@ const fakeReportOutput = {
   occurredAt: new Date(),
   createdAt: new Date(),
   updatedAt: null,
+  resolved: false,
+  resolvedAt: null,
 };
 
 const fakeListOutput = {
