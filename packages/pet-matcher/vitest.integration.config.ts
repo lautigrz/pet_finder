@@ -21,6 +21,7 @@ export default defineConfig({
         hookTimeout: 60000,
         pool: "forks",
         fileParallelism: false,
+        passWithNoTests: true,
         globalSetup: ["../api/src/global-setup.ts"],
     },
 });
