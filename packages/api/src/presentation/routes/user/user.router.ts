@@ -38,6 +38,8 @@ router.get("/me", requireAuth(tokenSigner), getProfileController.handle);
 router.post("/me/photo", requireAuth(tokenSigner), upload.single("photo"), uploadProfilePhotoController.handle);
 router.get("/preferences", requireAuth(tokenSigner), getNotificationPreferencesController.handle);
 router.patch("/preferences", requireAuth(tokenSigner), validateRequest(updateNotificationPreferencesRequestSchema), updateNotificationPreferencesController.handle);
+router.get("/:publicId/profile", requireAuth(tokenSigner), getPublicProfileController.handle);
 router.get("/:publicId", requireAuth(tokenSigner), getPublicProfileController.handle);
+
 
 export default router;

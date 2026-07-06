@@ -1,3 +1,5 @@
+import type { UserProfileStats } from "../../../domain/repositories/IUserRepository";
+
 export class GetPublicProfileOutput {
   constructor(
     public readonly id: string,
@@ -5,5 +7,6 @@ export class GetPublicProfileOutput {
     public readonly name?: string,
     public readonly lastname?: string,
     public readonly photoUrl?: string,
+    public readonly stats?: UserProfileStats,
   ) {}
 }

@@ -331,7 +331,7 @@ model Breed {
 }
 
 model Color {
-  color_id Int    @id @default(autoincrement()) @db.SmallInt
+  color_id Int    @id @default(autoincrement()) @db.SmallIntf
   name     String @unique @db.VarChar(150)
 
   pets                    Pet[]

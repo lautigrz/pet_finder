@@ -181,4 +181,70 @@ describe("PrismaUserRepository (integration)", () => {
             expect(tokens).toHaveLength(0);
         });
     });
+
+    describe("getProfileStatsByPublicId()", () => {
+        it("retorna estadísticas agregadas del perfil", async () => {
+            const saved = await repository.save(makeUser());
+
+            await prisma.reportType.createMany({
+                data: [{ report_type_id: 1, name: "LOST" }],
+                skipDuplicates: true,
+            });
+
+            await prisma.reportStatus.createMany({
+                data: [{ report_status_id: 1, name: "ACTIVE" }],
+                skipDuplicates: true,
+            });
+
+            await prisma.report.createMany({
+                data: [
+                    {
+                        public_id: "11111111-1111-1111-1111-111111111111",
+                        user_id: saved.internalId!,
+                        report_type_id: 1,
+                        report_status_id: 1,
+                        occurred_at: new Date(),
+                        location_lat: -34.6,
+                        location_lng: -58.4,
+                        created_at: new Date(),
+                        resolved: false,
+                    },
+                    {
+                        public_id: "22222222-2222-2222-2222-222222222222",
+                        user_id: saved.internalId!,
+                        report_type_id: 1,
+                        report_status_id: 1,
+                        occurred_at: new Date(),
+                        location_lat: -34.6,
+                        location_lng: -58.4,
+                        created_at: new Date(),
+                        resolved: true,
+                        resolved_at: new Date(),
+                    },
+                ],
+            });
+
+            const stats = await repository.getProfileStatsByPublicId(saved.id);
+
+            expect(stats).toEqual({
+                reportsCreated: 2,
+                successfulReturns: 1,
+                activeDays: expect.any(Number),
+                petsHelped: 0,
+            });
+
+            expect(stats.activeDays).toBeGreaterThanOrEqual(1);
+        });
+
+        it("retorna estadísticas en cero si el usuario no existe", async () => {
+            const stats = await repository.getProfileStatsByPublicId(NON_EXISTENT_UUID);
+
+            expect(stats).toEqual({
+                reportsCreated: 0,
+                successfulReturns: 0,
+                activeDays: 0,
+                petsHelped: 0,
+            });
+        });
+    });
 });

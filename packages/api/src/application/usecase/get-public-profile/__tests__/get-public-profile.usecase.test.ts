@@ -6,6 +6,13 @@ import { User } from "@domain/entities/User";
 
 const TARGET_PUBLIC_ID = "target-public-id";
 
+const fakeStats = {
+  reportsCreated: 2,
+  successfulReturns: 1,
+  activeDays: 10,
+  petsHelped: 0,
+};
+
 const fakeUser = User.reconstruct(
   7,
   TARGET_PUBLIC_ID,
@@ -26,21 +33,27 @@ describe("GetPublicProfileUseCase", () => {
   beforeEach(() => {
     userRepository = {
       findByPublicId: vi.fn().mockResolvedValue(fakeUser),
+      getProfileStatsByPublicId: vi.fn().mockResolvedValue(fakeStats),
     } as unknown as IUserRepository;
 
     useCase = new GetPublicProfileUseCase(userRepository);
   });
 
-  it("devuelve los datos públicos del usuario", async () => {
+  it("devuelve los datos públicos del usuario con sus estadísticas", async () => {
     const result = await useCase.execute(TARGET_PUBLIC_ID);
 
     expect(userRepository.findByPublicId).toHaveBeenCalledWith(TARGET_PUBLIC_ID);
+    expect(userRepository.getProfileStatsByPublicId).toHaveBeenCalledWith(
+      TARGET_PUBLIC_ID,
+    );
+
     expect(result).toEqual({
       id: TARGET_PUBLIC_ID,
       username: "targetuser",
       name: "Ana",
       lastname: "García",
       photoUrl: "https://fake.com/photo.jpg",
+      stats: fakeStats,
     });
   });
 
@@ -53,7 +66,11 @@ describe("GetPublicProfileUseCase", () => {
   it("lanza UserNotFoundError si el usuario no existe", async () => {
     vi.mocked(userRepository.findByPublicId).mockResolvedValue(null);
 
-    await expect(useCase.execute("inexistente")).rejects.toThrow(UserNotFoundError);
+    await expect(useCase.execute("inexistente")).rejects.toThrow(
+      UserNotFoundError,
+    );
+
+    expect(userRepository.getProfileStatsByPublicId).not.toHaveBeenCalled();
   });
 
   it("lanza UserNotFoundError si el usuario está suspendido", async () => {
@@ -70,8 +87,13 @@ describe("GetPublicProfileUseCase", () => {
       "https://fake.com/photo.jpg",
       true,
     );
+
     vi.mocked(userRepository.findByPublicId).mockResolvedValue(suspended);
 
-    await expect(useCase.execute(TARGET_PUBLIC_ID)).rejects.toThrow(UserNotFoundError);
+    await expect(useCase.execute(TARGET_PUBLIC_ID)).rejects.toThrow(
+      UserNotFoundError,
+    );
+
+    expect(userRepository.getProfileStatsByPublicId).not.toHaveBeenCalled();
   });
 });

@@ -18,6 +18,7 @@ export class GetProfileUseCase {
         }
 
         const role = await this.userRepository.findRoleByPublicId(publicId);
-        return new GetProfileOutput(user.id, user.email, user.username, user.name ?? undefined, user.lastname ?? undefined, user.photoUrl ?? undefined, role ?? undefined);
+        const stats = await this.userRepository.getProfileStatsByPublicId(publicId);
+        return new GetProfileOutput(user.id, user.email, user.username, user.name ?? undefined, user.lastname ?? undefined, user.photoUrl ?? undefined, role ?? undefined, stats,);
     }
 }
