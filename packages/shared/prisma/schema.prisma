@@ -54,6 +54,8 @@ model User {
   match_views               MatchView[]
   payments                  Payment[]
   appeals                   Appeal[]
+  reviews_written           UserReview[]              @relation("ReviewsWritten")
+  reviews_received          UserReview[]              @relation("ReviewsReceived")
 
   @@map("users")
 }
@@ -540,4 +542,22 @@ model AppealStatus {
   appeals Appeal[]
 
   @@map("appeal_statuses")
+}
+
+model UserReview {
+  user_review_id   Int      @id @default(autoincrement())
+  reviewer_user_id Int
+  reviewed_user_id Int
+  rating           Int      @db.SmallInt
+  description      String?  @db.Text
+  created_at       DateTime @default(now()) @db.Timestamp(6)
+  updated_at       DateTime @updatedAt @db.Timestamp(6)
+
+  reviewer User @relation("ReviewsWritten", fields: [reviewer_user_id], references: [user_id], onDelete: Cascade)
+  reviewed User @relation("ReviewsReceived", fields: [reviewed_user_id], references: [user_id], onDelete: Cascade)
+
+  @@unique([reviewer_user_id, reviewed_user_id])
+  @@index([reviewed_user_id])
+  @@index([reviewer_user_id])
+  @@map("user_reviews")
 }

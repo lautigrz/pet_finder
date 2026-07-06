@@ -66,6 +66,8 @@ export function errorToHttpStatus(error: Error): HttpError {
             case 'APPEAL_ALREADY_RESOLVED': return { statusCode: 409, code: error.code, message: error.message };
             case 'APPEAL_MESSAGE_REQUIRED': return { statusCode: 400, code: error.code, message: error.message };
             case 'INVALID_APPEAL_TOKEN': return { statusCode: 400, code: error.code, message: error.message };
+            case 'CANNOT_REVIEW_YOURSELF': return { statusCode: 400, code: error.code, message: error.message };
+            case 'INVALID_USER_REVIEW_RATING': return { statusCode: 400, code: error.code, message: error.message };
         }
     }
 
