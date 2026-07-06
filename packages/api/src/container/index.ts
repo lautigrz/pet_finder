@@ -202,3 +202,55 @@ import { GetColorsUseCase } from "@application/usecase/catalog/get-colors.usecas
 
 container.registerSingleton("GetBreedsUseCase", GetBreedsUseCase);
 container.registerSingleton("GetColorsUseCase", GetColorsUseCase);
+
+// Missions
+import { MissionRepository } from "@domain/repositories/mission.repository";
+import { PrismaMissionRepository } from "@infrastructure/repository/mission/PrismaMissionRepository";
+container.registerSingleton<MissionRepository>(
+  "MissionRepository",
+  PrismaMissionRepository
+);
+
+import { CreateMissionUseCase } from "@application/usecase/mission-usecase/create-mission.usecase";
+container.registerSingleton(
+  "CreateMissionUseCase",
+  CreateMissionUseCase
+);
+
+import { GetMissionsUseCase } from "@application/usecase/mission-usecase/get-missions.usecase";
+
+container.registerSingleton(
+  "GetMissionsUseCase",
+  GetMissionsUseCase
+);
+
+
+import { PrismaMissionResponseRepository } from "@infrastructure/repository/mission-response/PrismaMissionResponseRepository"; 
+container.registerSingleton(
+  "MissionResponseRepository",
+  PrismaMissionResponseRepository
+);
+
+import { CreateMissionResponseUseCase } from "@application/usecase/mission-response-usecase/create-mission-response.usecase";
+container.registerSingleton(
+  "CreateMissionResponseUseCase",
+  CreateMissionResponseUseCase
+);
+
+import { CreateMissionResponseController } from "@presentation/controller/mission-response/create-mission-response.controller";
+
+container.registerSingleton(
+  CreateMissionResponseController
+);
+
+import { GetMissionResponsesUseCase } from "@application/usecase/mission-response-usecase/get-mission-responses.usecase";
+container.registerSingleton(
+  "GetMissionResponsesUseCase",
+  GetMissionResponsesUseCase
+);
+
+import { GetMissionResponsesController } from "@presentation/controller/mission-response/get-mission-responses.controller";
+container.registerSingleton(
+  GetMissionResponsesController
+);
+
