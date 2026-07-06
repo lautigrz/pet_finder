@@ -160,6 +160,15 @@ export class PrismaReportRepository implements ReportRepository {
 
     }
 
+    async markFeatured(reportId: number): Promise<void> {
+        await this.prisma.report.update({
+            where: { report_id: reportId },
+            data: {
+                featured: true,
+            },
+        });
+    }
+
     async closeAllByUserId(userId: number): Promise<void> {
         const closedStatusId = reportStatusMap[ReportStatus.CLOSED];
         await this.prisma.report.updateMany({

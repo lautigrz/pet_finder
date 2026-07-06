@@ -23,6 +23,8 @@ export interface ReportRepository {
 
   update(report: Report): Promise<void>;
 
+  markFeatured(reportId: number): Promise<void>;
+
   closeAllByUserId(userId: number): Promise<void>;
 
   reopenModerationClosedByUserId(userId: number): Promise<void>;

@@ -31,6 +31,7 @@ export class ReportOutputMapper {
             occurredAt: report.occurredAt,
             createdAt: report.createdAt,
             updatedAt: report.updatedAt,
+            featured: report.isFeaturedActive(),
             resolved: report.resolved,
             resolvedAt: report.resolvedAt
         }

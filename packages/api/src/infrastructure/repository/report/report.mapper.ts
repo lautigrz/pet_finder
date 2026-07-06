@@ -90,6 +90,7 @@ export class ReportMapper {
       occurredAt: raw.occurred_at,
       createdAt: raw.created_at,
       updatedAt: raw.updated_at,
+      featured: raw.featured,
       closedByModeration: raw.closed_by_moderation,
       resolved: raw.resolved,
       resolvedAt: raw.resolved_at,

@@ -10,6 +10,7 @@ import { matchRouter } from "./match/match.router";
 import notificationRouter from "./notifications/notification.router";
 import { messageRouter } from "./message/message.router";
 import { contentReportRoute } from "./content-report/content-report.router";
+import { paymentRoute } from "./payment/payment.router";
 import { appealRoute } from "./appeal/appeal.router";
 
 const router = Router();
@@ -25,6 +26,7 @@ router.use('/notifications', notificationRouter);
 router.use('/auth', authRouter);
 router.use('/messages', messageRouter);
 router.use('/content-reports', contentReportRoute);
+router.use('/payments', paymentRoute);
 router.use('/appeals', appealRoute);
 
 export default router;

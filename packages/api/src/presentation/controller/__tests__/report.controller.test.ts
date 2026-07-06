@@ -130,6 +130,7 @@ const fakeReportOutput = {
   occurredAt: new Date(),
   createdAt: new Date(),
   updatedAt: null,
+  featured: false,
   resolved: false,
   resolvedAt: null,
 };

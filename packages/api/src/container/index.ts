@@ -6,9 +6,14 @@ import "@infrastructure/prisma/prisma.client";
 
 // ─── Config values ─────────────────────────────────────────────────────────────
 import { readAuthConfig } from "@presentation/config/authConfig";
+import { readPaymentConfig, readMercadoPagoCredentials } from "@presentation/config/paymentConfig";
+import { PaymentConfig } from "@application/ports/PaymentConfig";
 
 const { jwtSecret, accessTtl, refreshTtlMs } = readAuthConfig();
 container.registerInstance("RefreshTtlMs", refreshTtlMs);
+
+const paymentConfig = readPaymentConfig();
+container.registerInstance<PaymentConfig>("PaymentConfig", paymentConfig);
 
 // ─── Repositories ──────────────────────────────────────────────────────────────
 import { IUserRepository } from "@domain/repositories/IUserRepository";
@@ -43,6 +48,8 @@ import { ContentReportRepository } from "@domain/content-report/repositories/con
 import { PrismaContentReportRepository } from "@infrastructure/repository/content-report/content-report.repository";
 import { MatchViewsRepository } from "@domain/match/repositories/match-views.repository";
 import { PrismaMatchViewsRepository } from "@infrastructure/repository/match/match-views.repository";
+import { PaymentRepository } from "@domain/payment/repositories/payment.repository";
+import { PrismaPaymentRepository } from "@infrastructure/repository/payment/payment.repository";
 import { AppealRepository } from "@domain/appeal/repositories/appeal.repository";
 import { PrismaAppealRepository } from "@infrastructure/repository/appeal/appeal.repository";
 
@@ -62,6 +69,7 @@ container.registerSingleton<ReportFollowerRepository>("ReportFollowerRepository"
 container.registerSingleton<CatalogRepository>("CatalogRepository", PrismaCatalogRepository);
 container.registerSingleton<ContentReportRepository>("ContentReportRepository", PrismaContentReportRepository);
 container.registerSingleton<MatchViewsRepository>("MatchViewsRepository", PrismaMatchViewsRepository);
+container.registerSingleton<PaymentRepository>("PaymentRepository", PrismaPaymentRepository);
 container.registerSingleton<AppealRepository>("AppealRepository", PrismaAppealRepository);
 
 // ─── Services ──────────────────────────────────────────────────────────────────
@@ -79,6 +87,8 @@ import { IPushSender } from "@domain/services/IPushSender";
 import { createPushSender } from "@infrastructure/push/push-sender.factory";
 import { StorageService } from "@application/ports/StorageService";
 import { ClaudinaryService } from "@infrastructure/storage/CloudinaryService";
+import { PaymentGateway } from "@domain/payment/gateway/payment-gateway";
+import { MercadoPagoGateway } from "@infrastructure/payment/mercado-pago.gateway";
 
 container.registerInstance<ITokenSigner>("TokenSigner", new JwtTokenSigner(jwtSecret, accessTtl));
 container.registerInstance<IAppealTokenSigner>("AppealTokenSigner", new JwtAppealTokenSigner(jwtSecret, "30d"));
@@ -87,6 +97,9 @@ container.registerSingleton<ITokenGenerator>("TokenGenerator", CryptoTokenGenera
 container.registerInstance<IEmailService>("EmailService", createEmailService());
 container.registerInstance<IPushSender>("PushSender", createPushSender());
 container.registerSingleton<StorageService>("StorageService", ClaudinaryService);
+
+const mpCredentials = readMercadoPagoCredentials();
+container.registerInstance<PaymentGateway>("PaymentGateway", new MercadoPagoGateway(mpCredentials.accessToken, mpCredentials.webhookSecret));
 
 // ─── Use Cases ─────────────────────────────────────────────────────────────────
 // Auth
@@ -192,6 +205,13 @@ container.registerSingleton("FollowReportUseCase", FollowReportUseCase);
 container.registerSingleton("UnfollowReportUseCase", UnfollowReportUseCase);
 container.registerSingleton("IsFollowingReportUseCase", IsFollowingReportUseCase);
 container.registerSingleton("NotifyReportFollowersOfStatusChangeUseCase", NotifyReportFollowersOfStatusChangeUseCase);
+
+// Payments
+import { CreateFeaturedPreferenceUseCase } from "@application/usecase/payment-usecase/create-featured-preference.usecase";
+import { ProcessPaymentWebhookUseCase } from "@application/usecase/payment-usecase/process-payment-webhook.usecase";
+
+container.registerSingleton("CreateFeaturedPreferenceUseCase", CreateFeaturedPreferenceUseCase);
+container.registerSingleton("ProcessPaymentWebhookUseCase", ProcessPaymentWebhookUseCase);
 
 // Content reports (moderation)
 import { CreateContentReportUseCase } from "@application/usecase/content-report-usecase/create-content-report.usecase";

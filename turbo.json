@@ -32,6 +32,12 @@
         "SENDGRID_API_KEY",
         "EMAIL_FROM",
         "APP_BASE_URL",
+        "MP_ACCESS_TOKEN",
+        "MP_WEBHOOK_SECRET",
+        "PUBLIC_API_URL",
+        "FEATURED_PRICE",
+        "FEATURED_CURRENCY",
+        "MP_VALIDATE_WEBHOOK_SIGNATURE",
         "LOG_LEVEL",
         "LOG_DIR"
       ]
@@ -76,6 +82,12 @@
         "SENDGRID_API_KEY",
         "EMAIL_FROM",
         "APP_BASE_URL",
+        "MP_ACCESS_TOKEN",
+        "MP_WEBHOOK_SECRET",
+        "PUBLIC_API_URL",
+        "FEATURED_PRICE",
+        "FEATURED_CURRENCY",
+        "MP_VALIDATE_WEBHOOK_SIGNATURE",
         "LOG_LEVEL",
         "LOG_DIR"
       ]
