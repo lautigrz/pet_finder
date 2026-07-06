@@ -134,17 +134,6 @@ export class PrismaReportRepository implements ReportRepository {
 
         const created = await this.prisma.$transaction(async (tx) => {
             const created = await tx.report.create({ data });
-
-            if (images && images.length > 0) {
-                await tx.reportImage.createMany({
-                    data: images.map(img => ({
-                        reportId: created.report_id,
-                        cloudinaryId: img.cloudinaryId,
-                        photoUrl: img.photoUrl,
-                    })),
-                });
-            }
-
             return created.report_id;
         });
 
@@ -162,6 +151,9 @@ export class PrismaReportRepository implements ReportRepository {
             },
             data: {
                 report_status_id: reportStatusMap[report.status],
+                closed_by_moderation: report.closedByModeration,
+                resolved: report.resolved,
+                resolved_at: report.resolvedAt,
                 updated_at: report.updatedAt
             }
         });
@@ -175,6 +167,43 @@ export class PrismaReportRepository implements ReportRepository {
                 featured: true,
             },
         });
+    }
+
+    async closeAllByUserId(userId: number): Promise<void> {
+        const closedStatusId = reportStatusMap[ReportStatus.CLOSED];
+        await this.prisma.report.updateMany({
+            where: {
+                user_id: userId,
+                report_status_id: { not: closedStatusId }
+            },
+            data: {
+                report_status_id: closedStatusId,
+                closed_by_moderation: true,
+                updated_at: new Date()
+            }
+        });
+    }
+
+    async reopenModerationClosedByUserId(userId: number): Promise<void> {
+        await this.prisma.report.updateMany({
+            where: {
+                user_id: userId,
+                closed_by_moderation: true
+            },
+            data: {
+                report_status_id: reportStatusMap[ReportStatus.ACTIVE],
+                closed_by_moderation: false,
+                updated_at: new Date()
+            }
+        });
+    }
+
+    async findPublicIdsByUserId(userId: number): Promise<string[]> {
+        const rows = await this.prisma.report.findMany({
+            where: { user_id: userId },
+            select: { public_id: true }
+        });
+        return rows.map((row) => row.public_id);
     }
 
     async updateFields(report: Report, images?: SightingImage[]): Promise<void> {
@@ -339,7 +368,7 @@ export class PrismaReportRepository implements ReportRepository {
 
     async findByUserPublicId(userPublicId: string, filters?: { reportType?: string; animalType?: string; createdFrom?: string; createdTo?: string; q?: string; }): Promise<Report[]> {
 
-        const where: Prisma.ReportWhereInput = { user: { public_id: userPublicId } }
+        const where: Prisma.ReportWhereInput = { user: { public_id: userPublicId, is_suspended: false } }
 
         if (filters?.q) {
             const matchingIds = await this.findIdsBySearchQuery(filters.q);
@@ -383,7 +412,7 @@ export class PrismaReportRepository implements ReportRepository {
 
     async findIdsByQuery(query: ReportQuery): Promise<string[]> {
 
-        const where: Prisma.ReportWhereInput = {}
+        const where: Prisma.ReportWhereInput = { user: { is_suspended: false } }
 
         if (query.q) {
             const matchingIds = await this.findIdsBySearchQuery(query.q);

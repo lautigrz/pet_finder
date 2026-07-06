@@ -21,6 +21,9 @@
     "isolatedModules": true,
     "skipLibCheck": true,
     "paths": {
+      "@pet-alert/shared/testing": [
+        "../shared/dist/testing/index.d.ts"
+      ],
       "@infrastructure/*": [
         "./src/infrastructure/*"
       ],
@@ -40,7 +43,8 @@
   },
   "extends": "../../tsconfig.base.json",
   "include": [
-    "src/**/*"
+    "src/**/*",
+    "../shared/src/testing/vitest-env.d.ts"
   ],
   "exclude": [
     "node_modules",

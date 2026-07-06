@@ -46,4 +46,6 @@ export interface ReportOutput {
     createdAt: Date;
     updatedAt: Date | null;
     featured: boolean;
+    resolved: boolean;
+    resolvedAt: Date | null;
 }

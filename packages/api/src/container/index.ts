@@ -17,17 +17,19 @@ container.registerInstance<PaymentConfig>("PaymentConfig", paymentConfig);
 
 // ─── Repositories ──────────────────────────────────────────────────────────────
 import { IUserRepository } from "@domain/repositories/IUserRepository";
-import { PrismaUserRepository } from "@infrastructure/repository/PrismaUserRepository";
+import { PrismaUserRepository } from "@infrastructure/repository/user/user.repository";
+
+import { IUserExperienceRepository } from "@domain/repositories/IUserExperienceRepository";
 import { IDeviceTokenRepository } from "@domain/repositories/IDeviceTokenRepository";
-import { PrismaDeviceTokenRepository } from "@infrastructure/repository/PrismaDeviceTokenRepository";
+import { PrismaDeviceTokenRepository } from "@infrastructure/repository/device-token/device-token.repository";
 import { IEmailVerificationTokenRepository } from "@domain/repositories/IEmailVerificationTokenRepository";
-import { PrismaEmailVerificationTokenRepository } from "@infrastructure/repository/PrismaEmailVerificationTokenRepository";
+import { PrismaEmailVerificationTokenRepository } from "@infrastructure/repository/email-verification-token/email-verification-token.repository";
 import { INotificationPreferencesRepository } from "@domain/repositories/INotificationPreferencesRepository";
-import { PrismaNotificationPreferencesRepository } from "@infrastructure/repository/PrismaNotificationPreferencesRepository";
+import { PrismaNotificationPreferencesRepository } from "@infrastructure/repository/notification-preferences/notification-preferences.repository";
 import { IPasswordResetTokenRepository } from "@domain/repositories/IPasswordResetTokenRepository";
-import { PrismaPasswordResetTokenRepository } from "@infrastructure/repository/PrismaPasswordResetTokenRepository";
+import { PrismaPasswordResetTokenRepository } from "@infrastructure/repository/password-reset-token/password-reset-token.repository";
 import { IRefreshTokenRepository } from "@domain/repositories/IRefreshTokenRepository";
-import { PrismaRefreshTokenRepository } from "@infrastructure/repository/PrismaRefreshTokenRepository";
+import { PrismaRefreshTokenRepository } from "@infrastructure/repository/refresh-token/refresh-token.repository";
 import { ConversationRepository } from "@domain/conversation/repositories/conversation.repository";
 import { PrismaConversationRepository } from "@infrastructure/repository/conversation/conversation.repository";
 import { MessageRepository } from "@domain/message/repositories/message.repository";
@@ -48,8 +50,11 @@ import { MatchViewsRepository } from "@domain/match/repositories/match-views.rep
 import { PrismaMatchViewsRepository } from "@infrastructure/repository/match/match-views.repository";
 import { PaymentRepository } from "@domain/payment/repositories/payment.repository";
 import { PrismaPaymentRepository } from "@infrastructure/repository/payment/payment.repository";
+import { AppealRepository } from "@domain/appeal/repositories/appeal.repository";
+import { PrismaAppealRepository } from "@infrastructure/repository/appeal/appeal.repository";
 
 container.registerSingleton<IUserRepository>("UserRepository", PrismaUserRepository);
+container.registerSingleton<IUserExperienceRepository>("UserExperienceRepository", PrismaUserRepository);
 container.registerSingleton<IDeviceTokenRepository>("DeviceTokenRepository", PrismaDeviceTokenRepository);
 container.registerSingleton<IEmailVerificationTokenRepository>("EmailVerificationTokenRepository", PrismaEmailVerificationTokenRepository);
 container.registerSingleton<INotificationPreferencesRepository>("NotificationPreferencesRepository", PrismaNotificationPreferencesRepository);
@@ -65,10 +70,13 @@ container.registerSingleton<CatalogRepository>("CatalogRepository", PrismaCatalo
 container.registerSingleton<ContentReportRepository>("ContentReportRepository", PrismaContentReportRepository);
 container.registerSingleton<MatchViewsRepository>("MatchViewsRepository", PrismaMatchViewsRepository);
 container.registerSingleton<PaymentRepository>("PaymentRepository", PrismaPaymentRepository);
+container.registerSingleton<AppealRepository>("AppealRepository", PrismaAppealRepository);
 
 // ─── Services ──────────────────────────────────────────────────────────────────
 import { ITokenSigner } from "@domain/services/ITokenSigner";
 import { JwtTokenSigner } from "@infrastructure/security/JwtTokenSigner";
+import { IAppealTokenSigner } from "@domain/services/IAppealTokenSigner";
+import { JwtAppealTokenSigner } from "@infrastructure/security/JwtAppealTokenSigner";
 import { IPasswordHasher } from "@domain/services/IPasswordHasher";
 import { BcryptPasswordHasher } from "@infrastructure/security/BcryptPasswordHasher";
 import { ITokenGenerator } from "@domain/services/ITokenGenerator";
@@ -83,6 +91,7 @@ import { PaymentGateway } from "@domain/payment/gateway/payment-gateway";
 import { MercadoPagoGateway } from "@infrastructure/payment/mercado-pago.gateway";
 
 container.registerInstance<ITokenSigner>("TokenSigner", new JwtTokenSigner(jwtSecret, accessTtl));
+container.registerInstance<IAppealTokenSigner>("AppealTokenSigner", new JwtAppealTokenSigner(jwtSecret, "30d"));
 container.registerSingleton<IPasswordHasher>("PasswordHasher", BcryptPasswordHasher);
 container.registerSingleton<ITokenGenerator>("TokenGenerator", CryptoTokenGenerator);
 container.registerInstance<IEmailService>("EmailService", createEmailService());
@@ -116,12 +125,14 @@ import { GetPublicProfileUseCase } from "@application/usecase/get-public-profile
 import { UpdateProfileUseCase } from "@application/usecase/update-profile/update-profile.usecase";
 import { GetNotificationPreferencesUseCase } from "@application/usecase/get-notification-preferences/get-notification-preferences.usecase";
 import { UpdateNotificationPreferencesUseCase } from "@application/usecase/update-notification-preferences/update-notification-preferences.usecase";
+import { AwardUserExpUseCase } from "@application/usecase/award-user-exp/award-user-exp.usecase";
 
 container.registerSingleton("GetProfileUseCase", GetProfileUseCase);
 container.registerSingleton("GetPublicProfileUseCase", GetPublicProfileUseCase);
 container.registerSingleton("UpdateProfileUseCase", UpdateProfileUseCase);
 container.registerSingleton("GetNotificationPreferencesUseCase", GetNotificationPreferencesUseCase);
 container.registerSingleton("UpdateNotificationPreferencesUseCase", UpdateNotificationPreferencesUseCase);
+container.registerSingleton("AwardUserExpUseCase", AwardUserExpUseCase);
 
 // Device tokens / Push
 import { RegisterDeviceTokenUseCase } from "@application/usecase/register-device-token/register-device-token.usecase";
@@ -171,6 +182,7 @@ container.registerSingleton("GetPetsUseCase", GetPetsUseCase);
 // Reports
 import { CreateReportUseCase } from "@application/usecase/report-usecase/create-report.usecase";
 import { GetReportUseCase } from "@application/usecase/report-usecase/get-report-usecase";
+import { GetReportForModerationUseCase } from "@application/usecase/report-usecase/get-report-for-moderation.usecase";
 import { GetFilteredReportsUseCase } from "@application/usecase/report-usecase/get-filter-reports.usecase";
 import { ListUserReportsUseCase } from "@application/usecase/report-usecase/list-user-reports.usecase";
 import { ListReportsByUserUseCase } from "@application/usecase/report-usecase/list-reports-by-user.usecase";
@@ -183,6 +195,7 @@ import { NotifyReportFollowersOfStatusChangeUseCase } from "@application/usecase
 
 container.registerSingleton("CreateReportUseCase", CreateReportUseCase);
 container.registerSingleton("GetReportUseCase", GetReportUseCase);
+container.registerSingleton("GetReportForModerationUseCase", GetReportForModerationUseCase);
 container.registerSingleton("GetFilteredReportsUseCase", GetFilteredReportsUseCase);
 container.registerSingleton("ListUserReportsUseCase", ListUserReportsUseCase);
 container.registerSingleton("ListReportsByUserUseCase", ListReportsByUserUseCase);
@@ -209,12 +222,25 @@ container.registerSingleton("CreateContentReportUseCase", CreateContentReportUse
 container.registerSingleton("GetContentReportQueueUseCase", GetContentReportQueueUseCase);
 container.registerSingleton("ResolveContentReportUseCase", ResolveContentReportUseCase);
 
-// Notifications (push)
+// Appeals
+import { CreateAppealUseCase } from "@application/usecase/appeal-usecase/create-appeal.usecase";
+import { GetAppealQueueUseCase } from "@application/usecase/appeal-usecase/get-appeal-queue.usecase";
+import { ResolveAppealUseCase } from "@application/usecase/appeal-usecase/resolve-appeal.usecase";
+import { NotifyAppealResultUseCase } from "@application/usecase/notify-appeal-result/notify-appeal-result.usecase";
+
+container.registerSingleton("CreateAppealUseCase", CreateAppealUseCase);
+container.registerSingleton("GetAppealQueueUseCase", GetAppealQueueUseCase);
+container.registerSingleton("ResolveAppealUseCase", ResolveAppealUseCase);
+container.registerSingleton("NotifyAppealResultUseCase", NotifyAppealResultUseCase);
+
+// Notifications (push + email)
 import { NotifyNearbyLostOwnersUseCase } from "@application/usecase/notify-nearby-lost-owners/notify-nearby-lost-owners.usecase";
 import { NotifyOwnerOfMatchUseCase } from "@application/usecase/notify-owner-of-match/notify-owner-of-match.usecase";
+import { NotifyOwnerOfContentSentenceUseCase } from "@application/usecase/notify-owner-of-content-sentence/notify-owner-of-content-sentence.usecase";
 
 container.registerSingleton("NotifyNearbyLostOwnersUseCase", NotifyNearbyLostOwnersUseCase);
 container.registerSingleton("NotifyOwnerOfMatchUseCase", NotifyOwnerOfMatchUseCase);
+container.registerSingleton("NotifyOwnerOfContentSentenceUseCase", NotifyOwnerOfContentSentenceUseCase);
 
 // Catalog
 import { GetBreedsUseCase } from "@application/usecase/catalog/get-breeds.usecase";

@@ -27,6 +27,7 @@ export class GetReportUseCase {
 
         const user = await this.userRepository.findById(report.userId);
         if (!user) throw new Error("User not found");
+        if (user.isSuspended) throw new ReportNotFoundError(publicId);
 
         const reportImages = await this.reportRepository.findImagesByReportId(publicId);
 
