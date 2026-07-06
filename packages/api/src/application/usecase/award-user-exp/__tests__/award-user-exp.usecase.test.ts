@@ -26,6 +26,7 @@ describe("AwardUserExpUseCase", () => {
           35,
         ),
       ),
+      findRecentEvents: vi.fn(),
     };
 
     const useCase = new AwardUserExpUseCase(repository);
@@ -33,7 +34,7 @@ describe("AwardUserExpUseCase", () => {
       new AwardUserExpInput("user-123", UserExpAction.CREATE_SIGHTING_REPORT),
     );
 
-    expect(repository.addExp).toHaveBeenCalledWith("user-123", 35);
+    expect(repository.addExp).toHaveBeenCalledWith("user-123", UserExpAction.CREATE_SIGHTING_REPORT, 35);
     expect(result).toEqual({
       userPublicId: "user-123",
       action: UserExpAction.CREATE_SIGHTING_REPORT,

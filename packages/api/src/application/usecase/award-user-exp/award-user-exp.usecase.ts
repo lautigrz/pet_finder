@@ -13,7 +13,7 @@ export class AwardUserExpUseCase {
 
   async execute(input: AwardUserExpInput): Promise<AwardUserExpOutput> {
     const awardedExp = getExpForAction(input.action);
-    const user = await this.userExperienceRepository.addExp(input.userPublicId, awardedExp);
+    const user = await this.userExperienceRepository.addExp(input.userPublicId, input.action, awardedExp);
 
     return new AwardUserExpOutput(user.id, input.action, awardedExp, user.exp);
   }
