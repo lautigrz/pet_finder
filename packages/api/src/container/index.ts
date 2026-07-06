@@ -46,6 +46,8 @@ import { CatalogRepository } from "@domain/catalog/catalog.repository";
 import { PrismaCatalogRepository } from "@infrastructure/repository/catalog/catalog.repository";
 import { ContentReportRepository } from "@domain/content-report/repositories/content-report.repository";
 import { PrismaContentReportRepository } from "@infrastructure/repository/content-report/content-report.repository";
+import { AdminStatsRepository } from "@domain/stats/repositories/admin-stats.repository";
+import { PrismaAdminStatsRepository } from "@infrastructure/repository/stats/prisma-admin-stats.repository";
 import { MatchViewsRepository } from "@domain/match/repositories/match-views.repository";
 import { PrismaMatchViewsRepository } from "@infrastructure/repository/match/match-views.repository";
 import { PaymentRepository } from "@domain/payment/repositories/payment.repository";
@@ -68,6 +70,7 @@ container.registerSingleton<ReportRepository>("ReportRepository", PrismaReportRe
 container.registerSingleton<ReportFollowerRepository>("ReportFollowerRepository", PrismaReportFollowerRepository);
 container.registerSingleton<CatalogRepository>("CatalogRepository", PrismaCatalogRepository);
 container.registerSingleton<ContentReportRepository>("ContentReportRepository", PrismaContentReportRepository);
+container.registerSingleton<AdminStatsRepository>("AdminStatsRepository", PrismaAdminStatsRepository);
 container.registerSingleton<MatchViewsRepository>("MatchViewsRepository", PrismaMatchViewsRepository);
 container.registerSingleton<PaymentRepository>("PaymentRepository", PrismaPaymentRepository);
 container.registerSingleton<AppealRepository>("AppealRepository", PrismaAppealRepository);
@@ -221,6 +224,11 @@ import { ResolveContentReportUseCase } from "@application/usecase/content-report
 container.registerSingleton("CreateContentReportUseCase", CreateContentReportUseCase);
 container.registerSingleton("GetContentReportQueueUseCase", GetContentReportQueueUseCase);
 container.registerSingleton("ResolveContentReportUseCase", ResolveContentReportUseCase);
+
+// Admin stats
+import { GetAdminStatsUseCase } from "@application/usecase/stats-usecase/get-admin-stats.usecase";
+
+container.registerSingleton("GetAdminStatsUseCase", GetAdminStatsUseCase);
 
 // Appeals
 import { CreateAppealUseCase } from "@application/usecase/appeal-usecase/create-appeal.usecase";
