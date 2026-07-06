@@ -44,7 +44,22 @@ export const updateNotificationPreferencesRequestSchema = z.object({
     ),
 });
 
+export const createUserReviewRequestSchema = z.object({
+    body: z.object({
+        rating: z.number().int().min(1).max(5),
+        description: z.string().max(1000).optional().nullable(),
+    }),
+});
+
+export const listUserReviewsRequestSchema = z.object({
+    query: z.object({
+        page: z.coerce.number().int().min(1).optional(),
+        pageSize: z.coerce.number().int().min(1).max(50).optional(),
+    }),
+});
+
 export type CreateUserBody = z.infer<typeof createUserRequestSchema>['body'];
 export type VerifyEmailBody = z.infer<typeof verifyEmailRequestSchema>['body'];
 export type UpdateProfileBody = z.infer<typeof updateProfileRequestSchema>['body'];
 export type UpdateNotificationPreferencesBody = z.infer<typeof updateNotificationPreferencesRequestSchema>['body'];
+export type CreateUserReviewBody = z.infer<typeof createUserReviewRequestSchema>['body'];
