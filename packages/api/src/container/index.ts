@@ -226,6 +226,7 @@ import { UpdateProfileUseCase } from "@application/usecase/update-profile/update
 import { GetNotificationPreferencesUseCase } from "@application/usecase/get-notification-preferences/get-notification-preferences.usecase";
 import { UpdateNotificationPreferencesUseCase } from "@application/usecase/update-notification-preferences/update-notification-preferences.usecase";
 import { AwardUserExpUseCase } from "@application/usecase/award-user-exp/award-user-exp.usecase";
+import { GetUserExperienceUseCase } from "@application/usecase/get-user-experience/get-user-experience.usecase";
 
 container.registerSingleton("GetProfileUseCase", GetProfileUseCase);
 container.registerSingleton("GetPublicProfileUseCase", GetPublicProfileUseCase);
@@ -239,6 +240,7 @@ container.registerSingleton(
   UpdateNotificationPreferencesUseCase,
 );
 container.registerSingleton("AwardUserExpUseCase", AwardUserExpUseCase);
+container.registerSingleton("GetUserExperienceUseCase", GetUserExperienceUseCase);
 
 import { UpsertUserReviewUseCase } from "@application/usecase/user-review/upsert-user-review.usecase";
 import { ListUserReviewsUseCase } from "@application/usecase/user-review/list-user-reviews.usecase";

@@ -4,7 +4,8 @@ import { User } from "@domain/entities/User";
 import { IUserRepository, UserProfileStats } from "@domain/repositories/IUserRepository";
 import { UserMapper } from "../user/user.mapper";
 
-import { IUserExperienceRepository } from "@domain/repositories/IUserExperienceRepository";
+import type { IUserExperienceRepository, UserExperienceEvent } from "@domain/repositories/IUserExperienceRepository";
+import type { UserExpAction } from "@domain/entities/UserExpAction";
 
 import { inject, injectable } from "tsyringe";
 
@@ -55,13 +56,39 @@ export class PrismaUserRepository implements IUserRepository, IUserExperienceRep
     });
   }
 
-  async addExp(publicId: string, amount: number): Promise<User> {
-    const record = await this.prisma.user.update({
-      where: { public_id: publicId },
-      data: { exp: { increment: amount } },
+  async addExp(publicId: string, action: UserExpAction, amount: number): Promise<User> {
+    const record = await this.prisma.$transaction(async (tx) => {
+      const updatedUser = await tx.user.update({
+        where: { public_id: publicId },
+        data: { exp: { increment: amount } },
+      });
+
+      await tx.userExpEvent.create({
+        data: {
+          user_id: updatedUser.user_id,
+          action,
+          amount,
+        },
+      });
+
+      return updatedUser;
     });
 
     return UserMapper.toDomain(record);
+  }
+
+  async findRecentEvents(publicId: string, limit: number): Promise<UserExperienceEvent[]> {
+    const records = await this.prisma.userExpEvent.findMany({
+      where: { user: { public_id: publicId } },
+      orderBy: { created_at: "desc" },
+      take: limit,
+    });
+
+    return records.map((record) => ({
+      action: record.action as UserExpAction,
+      amount: record.amount,
+      occurredAt: record.created_at,
+    }));
   }
 
   async findById(internalUserId: number): Promise<User | null> {

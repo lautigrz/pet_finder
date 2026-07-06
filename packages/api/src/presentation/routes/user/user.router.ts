@@ -24,6 +24,7 @@ import { UpsertUserReviewController } from "@presentation/controller/user-review
 import { ListUserReviewsController } from "@presentation/controller/user-review/list-user-reviews.controller";
 import { ListPublicUserReviewsController } from "@presentation/controller/user-review/list-public-user-reviews.controller";
 import { GetUserRatingController } from "@presentation/controller/user-review/get-user-rating.controller";
+import { GetUserExperienceController } from "@presentation/controller/user/get-user-experience.controller";
 
 const router = Router();
 
@@ -38,14 +39,16 @@ const getNotificationPreferencesController = container.resolve(GetNotificationPr
 const updateNotificationPreferencesController = container.resolve(UpdateNotificationPreferencesController);
 const upsertUserReviewController = container.resolve(UpsertUserReviewController);
 const listUserReviewsController = container.resolve(ListUserReviewsController);
-const listPublicUserReviewsController = container.resolve(ListPublicUserReviewsController,);
+const listPublicUserReviewsController = container.resolve(ListPublicUserReviewsController);
 const getUserRatingController = container.resolve(GetUserRatingController);
+const getUserExperienceController = container.resolve(GetUserExperienceController);
 
 router.post("/", validateRequest(createUserRequestSchema), createUserController.handle);
 router.post("/verify-email", validateRequest(verifyEmailRequestSchema), verifyEmailController.handle);
 router.patch("/me", requireAuth(tokenSigner), validateRequest(updateProfileRequestSchema), updateProfileController.handle);
 router.get("/me/reviews", requireAuth(tokenSigner), validateRequest(listUserReviewsRequestSchema), listUserReviewsController.handle);
 router.get("/me", requireAuth(tokenSigner), getProfileController.handle);
+router.get("/me/xp", requireAuth(tokenSigner), getUserExperienceController.handle);
 router.post("/me/photo", requireAuth(tokenSigner), upload.single("photo"), uploadProfilePhotoController.handle);
 router.get("/preferences", requireAuth(tokenSigner), getNotificationPreferencesController.handle);
 router.patch("/preferences",requireAuth(tokenSigner),validateRequest(updateNotificationPreferencesRequestSchema),updateNotificationPreferencesController.handle,);

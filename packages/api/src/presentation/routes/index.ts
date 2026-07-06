@@ -1,4 +1,5 @@
 import { Router } from "express";
+import { container } from "tsyringe";
 import healthRouter from "./health/health.router";
 import userRouter from "./user/user.router";
 import { createReportRoute } from "./report/report.router";
@@ -13,10 +14,16 @@ import { contentReportRoute } from "./content-report/content-report.router";
 import { paymentRoute } from "./payment/payment.router";
 import { appealRoute } from "./appeal/appeal.router";
 import { statsRoute } from "./stats/stats.router";
+import { ITokenSigner } from "@domain/services/ITokenSigner";
+import { requireAuth } from "@presentation/middleware/requireAuth.middleware";
+import { GetUserExperienceController } from "@presentation/controller/user/get-user-experience.controller";
 
 const router = Router();
+const tokenSigner = container.resolve<ITokenSigner>("TokenSigner");
+const getUserExperienceController = container.resolve(GetUserExperienceController);
 
 router.use('/health', healthRouter);
+router.get('/me/xp', requireAuth(tokenSigner), getUserExperienceController.handle);
 router.use('/users', userRouter);
 router.use('/reports', createReportRoute);
 router.use('/pets', createPetRoute);

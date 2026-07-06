@@ -56,8 +56,22 @@ model User {
   appeals                   Appeal[]
   reviews_written           UserReview[]              @relation("ReviewsWritten")
   reviews_received          UserReview[]              @relation("ReviewsReceived")
+  user_exp_events           UserExpEvent[]
 
   @@map("users")
+}
+
+model UserExpEvent {
+  user_exp_event_id Int      @id @default(autoincrement())
+  user_id           Int
+  action            String   @db.VarChar(50)
+  amount            Int
+  created_at        DateTime @default(now()) @db.Timestamp(6)
+
+  user User @relation(fields: [user_id], references: [user_id], onDelete: Cascade)
+
+  @@index([user_id, created_at])
+  @@map("user_exp_events")
 }
 
 model RefreshToken {
