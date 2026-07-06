@@ -47,6 +47,12 @@ describe("CreateConversationUseCase", () => {
       updateProfile: vi.fn(),
       updatePassword: vi.fn(),
       deleteById: vi.fn(),
+      getProfileStatsByPublicId: vi.fn().mockResolvedValue({
+        reportsCreated: 0,
+        successfulReturns: 0,
+        activeDays: 1,
+        petsHelped: 0,
+      }),
     };
     useCase = new CreateConversationUseCase(conversationRepository, userRepository);
   });

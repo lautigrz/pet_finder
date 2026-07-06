@@ -38,7 +38,7 @@ const getNotificationPreferencesController = container.resolve(GetNotificationPr
 const updateNotificationPreferencesController = container.resolve(UpdateNotificationPreferencesController);
 const upsertUserReviewController = container.resolve(UpsertUserReviewController);
 const listUserReviewsController = container.resolve(ListUserReviewsController);
-const listPublicUserReviewsController = container.resolve( ListPublicUserReviewsController,);
+const listPublicUserReviewsController = container.resolve(ListPublicUserReviewsController,);
 const getUserRatingController = container.resolve(GetUserRatingController);
 
 router.post("/", validateRequest(createUserRequestSchema), createUserController.handle);
@@ -48,10 +48,11 @@ router.get("/me/reviews", requireAuth(tokenSigner), validateRequest(listUserRevi
 router.get("/me", requireAuth(tokenSigner), getProfileController.handle);
 router.post("/me/photo", requireAuth(tokenSigner), upload.single("photo"), uploadProfilePhotoController.handle);
 router.get("/preferences", requireAuth(tokenSigner), getNotificationPreferencesController.handle);
-router.patch("/preferences", requireAuth(tokenSigner), validateRequest(updateNotificationPreferencesRequestSchema), updateNotificationPreferencesController.handle);
-router.post("/:publicId/reviews", requireAuth(tokenSigner), validateRequest(createUserReviewRequestSchema), upsertUserReviewController.handle);
-router.get( "/:publicId/reviews",  requireAuth(tokenSigner), validateRequest(listUserReviewsRequestSchema), listPublicUserReviewsController.handle,);
-router.get("/:publicId/rating", requireAuth(tokenSigner), getUserRatingController.handle);
-router.get("/:publicId", requireAuth(tokenSigner), getPublicProfileController.handle);
+router.patch("/preferences",requireAuth(tokenSigner),validateRequest(updateNotificationPreferencesRequestSchema),updateNotificationPreferencesController.handle,);
+router.get("/:publicId/profile",requireAuth(tokenSigner),getPublicProfileController.handle,);
+router.post("/:publicId/reviews",requireAuth(tokenSigner),validateRequest(createUserReviewRequestSchema),upsertUserReviewController.handle,);
+router.get("/:publicId/reviews",requireAuth(tokenSigner),validateRequest(listUserReviewsRequestSchema),listPublicUserReviewsController.handle,);
+router.get("/:publicId/rating",requireAuth(tokenSigner),getUserRatingController.handle,);
+router.get("/:publicId",requireAuth(tokenSigner),getPublicProfileController.handle,);
 
 export default router;

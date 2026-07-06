@@ -1,5 +1,11 @@
 import { User } from "../entities/User";
 
+export interface UserProfileStats {
+  reportsCreated: number;
+  successfulReturns: number;
+  activeDays: number;
+  petsHelped: number;
+}
 export interface IUserRepository {
   save(user: User): Promise<User>;
   findByEmail(email: string): Promise<User | null>;
@@ -19,4 +25,5 @@ export interface IUserRepository {
     },): Promise<User>;
   updatePassword(internalUserId: number, passwordHash: string): Promise<void>;
   deleteById(internalUserId: number): Promise<void>;
+  getProfileStatsByPublicId(publicId:string): Promise<UserProfileStats>;
 }
