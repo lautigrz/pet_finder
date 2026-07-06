@@ -43,6 +43,12 @@ describe("LoginUserUseCase", () => {
       save: vi.fn(), findByEmail: vi.fn(), findRoleByPublicId: vi.fn(), markVerified: vi.fn(), markSuspended: vi.fn(), unsuspend: vi.fn(),
       findByPublicId: vi.fn(), updateProfile: vi.fn(), findById: vi.fn(), updatePassword: vi.fn(),
       findByIds: vi.fn(), deleteById: vi.fn(),
+      getProfileStatsByPublicId: vi.fn().mockResolvedValue({
+        reportsCreated: 0,
+        successfulReturns: 0,
+        activeDays: 1,
+        petsHelped: 0,
+      }),
     };
     refreshTokenRepository = { save: vi.fn(), findByValue: vi.fn(), revoke: vi.fn(), revokeAllByUser: vi.fn() };
     passwordHasher = { hash: vi.fn(), verify: vi.fn() };

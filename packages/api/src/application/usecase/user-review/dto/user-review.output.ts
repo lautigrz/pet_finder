@@ -53,6 +53,11 @@ export interface MyUserReviewsOutput {
   given: PaginatedGivenUserReviewsOutput;
 }
 
+export interface UserRatingOutput {
+  average: number;
+  count: number;
+}
+
 export function toUserReviewOutput(review: {
   id: number;
   reviewerUserId: number;

@@ -1,7 +1,7 @@
 import { inject, injectable } from "tsyringe";
 import type { IUserRepository } from "@domain/repositories/IUserRepository";
 import { UserNotFoundError } from "@domain/errors/UserNotFoundError";
-import type { UserReviewRepository } from "@domain/repositories/IUserReviewRepository";
+import type { IUserReviewRepository } from "@domain/repositories/IUserReviewRepository";
 import { CannotReviewYourselfError } from "@domain/errors/CannotReviewYourselfError";
 import { InvalidUserReviewRatingError } from "@domain/errors/InvalidUserReviewRatingError";
 import { UserReviewOutput, toUserReviewOutput } from "./dto/user-review.output";
@@ -11,7 +11,7 @@ export class UpsertUserReviewUseCase {
   constructor(
     @inject("UserRepository") private readonly userRepository: IUserRepository,
     @inject("UserReviewRepository")
-    private readonly userReviewRepository: UserReviewRepository,
+    private readonly userReviewRepository: IUserReviewRepository,
   ) {}
 
   async execute(input: {

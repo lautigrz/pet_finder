@@ -19,6 +19,12 @@ describe("VerifyEmailUseCase", () => {
       save: vi.fn(), findByEmail: vi.fn(), findRoleByPublicId: vi.fn(), markVerified: vi.fn(), markSuspended: vi.fn(), unsuspend: vi.fn(),
       findByPublicId: vi.fn(), updateProfile: vi.fn(), findById: vi.fn(), updatePassword: vi.fn(),
       findByIds: vi.fn(), deleteById: vi.fn(),
+      getProfileStatsByPublicId: vi.fn().mockResolvedValue({
+        reportsCreated: 0,
+        successfulReturns: 0,
+        activeDays: 1,
+        petsHelped: 0,
+      }),
     };
     tokenRepository = { save: vi.fn(), findByValue: vi.fn(), markAsUsed: vi.fn() };
     useCase = new VerifyEmailUseCase(userRepository, tokenRepository);
