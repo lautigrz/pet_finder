@@ -33,6 +33,7 @@ interface RestoreReportParams {
     occurredAt: Date
     createdAt: Date
     updatedAt: Date | null
+    featured?: boolean
 }
 
 
@@ -51,6 +52,7 @@ export class Report {
         private _occurredAt: Date,
         private readonly _createdAt: Date,
         private _updatedAt: Date | null = null,
+        private _featured: boolean = false,
     ) { }
 
 
@@ -87,7 +89,8 @@ export class Report {
             params.details,
             params.occurredAt,
             params.createdAt,
-            params.updatedAt
+            params.updatedAt,
+            params.featured ?? false,
         )
     }
 
@@ -182,6 +185,14 @@ export class Report {
 
     get details(): ReportDetails {
         return this._details
+    }
+
+    get featured(): boolean {
+        return this._featured
+    }
+
+    isFeaturedActive(): boolean {
+        return this._featured && this.currentStatus === ReportStatus.ACTIVE
     }
 
     private transitionTo(newStatus: ReportStatus): void {

@@ -168,6 +168,15 @@ export class PrismaReportRepository implements ReportRepository {
 
     }
 
+    async markFeatured(reportId: number): Promise<void> {
+        await this.prisma.report.update({
+            where: { report_id: reportId },
+            data: {
+                featured: true,
+            },
+        });
+    }
+
     async updateFields(report: Report, images?: SightingImage[]): Promise<void> {
         if (!report.idReport) throw new Error('Report ID is required');
 

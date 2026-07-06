@@ -55,6 +55,10 @@ export function errorToHttpStatus(error: Error): HttpError {
             case 'CONTENT_REPORT_NOT_FOUND': return { statusCode: 404, code: error.code, message: error.message };
             case 'SUSPENSION_REASON_REQUIRED': return { statusCode: 400, code: error.code, message: error.message };
             case 'MATCH_RESULT_NOT_FOUND': return { statusCode: 404, code: error.code, message: error.message };
+            case 'PAYMENT_NOT_FOUND': return { statusCode: 404, code: error.code, message: error.message };
+            case 'REPORT_ALREADY_FEATURED': return { statusCode: 409, code: error.code, message: error.message };
+            case 'UNAUTHORIZED_FEATURE_REPORT': return { statusCode: 403, code: error.code, message: error.message };
+            case 'INVALID_WEBHOOK_SIGNATURE': return { statusCode: 401, code: error.code, message: error.message };
         }
     }
 

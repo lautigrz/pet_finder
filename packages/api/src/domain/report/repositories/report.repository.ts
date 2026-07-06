@@ -23,6 +23,8 @@ export interface ReportRepository {
 
   update(report: Report): Promise<void>;
 
+  markFeatured(reportId: number): Promise<void>;
+
   findImagesByReportId(publicId: string): Promise<SightingImage[]>;
   updateFields(report: Report, images?: SightingImage[]): Promise<void>;
 }
