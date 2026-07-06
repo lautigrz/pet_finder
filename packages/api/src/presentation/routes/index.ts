@@ -12,6 +12,7 @@ import { messageRouter } from "./message/message.router";
 import { contentReportRoute } from "./content-report/content-report.router";
 import { paymentRoute } from "./payment/payment.router";
 import { appealRoute } from "./appeal/appeal.router";
+import { statsRoute } from "./stats/stats.router";
 
 const router = Router();
 
@@ -28,5 +29,6 @@ router.use('/messages', messageRouter);
 router.use('/content-reports', contentReportRoute);
 router.use('/payments', paymentRoute);
 router.use('/appeals', appealRoute);
+router.use('/admin/stats', statsRoute);
 
 export default router;
