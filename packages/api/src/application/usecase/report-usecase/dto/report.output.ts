@@ -31,6 +31,7 @@ export interface ReportOutput {
         publicId: string;
         username: string;
         photoUrl: string;
+        createdAt?: Date;
     };
     type: string;
     status: string;
@@ -44,4 +45,7 @@ export interface ReportOutput {
     occurredAt: Date;
     createdAt: Date;
     updatedAt: Date | null;
+    featured: boolean;
+    resolved: boolean;
+    resolvedAt: Date | null;
 }

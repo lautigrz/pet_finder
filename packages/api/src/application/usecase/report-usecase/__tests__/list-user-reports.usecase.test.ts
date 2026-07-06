@@ -12,6 +12,7 @@ import { SizeType } from "@domain/shared/size-type/size.type";
 import { Location } from "@domain/report/value-objects/location.vo";
 import { ReportDescription } from "@domain/report/value-objects/description.vo";
 import { SightingReportDetails } from "@domain/report/value-objects/sighting-report-details.vo";
+import { SightingImage } from "@domain/report/value-objects/sighting.images";
 import { LostReportDetails } from "@domain/report/value-objects/lost-report-details.vo";
 import { PetNotFoundError } from "@domain/errors/PetNotFoundError";
 import { PetImage } from "@domain/pet/value-objects/image.vo";
@@ -34,15 +35,15 @@ function buildSightingReport(i: number, loc = validLocation): Report {
     currentStatus: ReportStatus.ACTIVE,
     description: ReportDescription.create(`Avistamiento ${i}`),
     details: new SightingReportDetails(
-      AnimalType.DOG,
+      null,
       AnimalType.DOG,
       GenderType.MALE,
+      SizeType.MEDIUM,
       null,
-      "" as any,
-      false as any,
-      false as any,
-      false as any,
-      false as any,
+      false,
+      "brown",
+      false,
+      [SightingImage.create({ cloudinaryId: `img-${i}`, photoUrl: `https://fake.com/img-${i}.jpg` })],
     ),
     location: Location.create(loc),
     occurredAt: new Date("2024-05-01"),

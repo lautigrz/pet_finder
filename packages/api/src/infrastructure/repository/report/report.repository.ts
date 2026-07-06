@@ -4,9 +4,10 @@ import { ReportMapper } from "./report.mapper";
 import { Prisma, PrismaClient } from "@prisma/client";
 import { ReportQuery } from "@application/usecase/report-usecase/report-query";
 import { PetMapper } from "../pet/pet.mapper";
-import { reportStatusMap } from "@domain/report/types/report.status";
+import { ReportStatus, reportStatusMap } from "@domain/report/types/report.status";
 import { ReportType } from '@domain/report/types/report.type';
 import { SightingReportDetails } from '@domain/report/value-objects/sighting-report-details.vo';
+import { LostReportDetails } from '@domain/report/value-objects/lost-report-details.vo';
 import { AnimalTypeMap } from '@domain/shared/animal-type/animal-type-map';
 import { GenderTypeMap } from '@domain/shared/gender-type/gender-map';
 import { SizeTypeMap } from '@domain/shared/size-type/size-map';
@@ -133,17 +134,6 @@ export class PrismaReportRepository implements ReportRepository {
 
         const created = await this.prisma.$transaction(async (tx) => {
             const created = await tx.report.create({ data });
-
-            if (images && images.length > 0) {
-                await tx.reportImage.createMany({
-                    data: images.map(img => ({
-                        reportId: created.report_id,
-                        cloudinaryId: img.cloudinaryId,
-                        photoUrl: img.photoUrl,
-                    })),
-                });
-            }
-
             return created.report_id;
         });
 
@@ -161,10 +151,59 @@ export class PrismaReportRepository implements ReportRepository {
             },
             data: {
                 report_status_id: reportStatusMap[report.status],
+                closed_by_moderation: report.closedByModeration,
+                resolved: report.resolved,
+                resolved_at: report.resolvedAt,
                 updated_at: report.updatedAt
             }
         });
 
+    }
+
+    async markFeatured(reportId: number): Promise<void> {
+        await this.prisma.report.update({
+            where: { report_id: reportId },
+            data: {
+                featured: true,
+            },
+        });
+    }
+
+    async closeAllByUserId(userId: number): Promise<void> {
+        const closedStatusId = reportStatusMap[ReportStatus.CLOSED];
+        await this.prisma.report.updateMany({
+            where: {
+                user_id: userId,
+                report_status_id: { not: closedStatusId }
+            },
+            data: {
+                report_status_id: closedStatusId,
+                closed_by_moderation: true,
+                updated_at: new Date()
+            }
+        });
+    }
+
+    async reopenModerationClosedByUserId(userId: number): Promise<void> {
+        await this.prisma.report.updateMany({
+            where: {
+                user_id: userId,
+                closed_by_moderation: true
+            },
+            data: {
+                report_status_id: reportStatusMap[ReportStatus.ACTIVE],
+                closed_by_moderation: false,
+                updated_at: new Date()
+            }
+        });
+    }
+
+    async findPublicIdsByUserId(userId: number): Promise<string[]> {
+        const rows = await this.prisma.report.findMany({
+            where: { user_id: userId },
+            select: { public_id: true }
+        });
+        return rows.map((row) => row.public_id);
     }
 
     async updateFields(report: Report, images?: SightingImage[]): Promise<void> {
@@ -172,12 +211,23 @@ export class PrismaReportRepository implements ReportRepository {
 
         const isSighting = report.reportType === ReportType.SIGHTING;
         const details = isSighting ? report.details as SightingReportDetails : null;
+        const lostDetails = !isSighting ? report.details as LostReportDetails : null;
 
         const colorId = details ? await this.catalog.colorId(details.color) : undefined;
         const breedId = details ? await this.catalog.breedId(details.breed, details.animalType) : undefined;
 
-        await this.prisma.$transaction([
 
+        const dbImages = isSighting
+            ? await this.prisma.reportImage.findMany({ where: { reportId: report.idReport } })
+            : await this.prisma.petImage.findMany({ where: { petId: lostDetails!.petId } });
+
+        const targetIds = new Set((images ?? []).map(img => img.cloudinaryId));
+        const toDelete = dbImages.filter(img => !targetIds.has(img.cloudinaryId));
+
+        const dbIds = new Set(dbImages.map(img => img.cloudinaryId));
+        const toInsert = (images ?? []).filter(img => !dbIds.has(img.cloudinaryId));
+
+        await this.prisma.$transaction([
             this.prisma.report.update({
                 where: { report_id: report.idReport },
                 data: {
@@ -209,32 +259,76 @@ export class PrismaReportRepository implements ReportRepository {
                     } : {}),
                 },
             }),
-
-            this.prisma.reportImage.deleteMany({
-                where: { reportId: report.idReport },
-            }),
-
-            ...((images ?? []).length > 0
-                ? [this.prisma.reportImage.createMany({
-                    data: (images ?? []).map(img => ({
-                        reportId: report.idReport!,
-                        cloudinaryId: img.cloudinaryId,
-                        photoUrl: img.photoUrl,
-                    })),
-                })]
+            ...(toDelete.length > 0
+                ? [
+                    isSighting
+                        ? this.prisma.reportImage.deleteMany({
+                            where: {
+                                reportId: report.idReport,
+                                cloudinaryId: { in: toDelete.map(img => img.cloudinaryId) },
+                            },
+                        })
+                        : this.prisma.petImage.deleteMany({
+                            where: {
+                                petId: lostDetails!.petId,
+                                cloudinaryId: { in: toDelete.map(img => img.cloudinaryId) },
+                            },
+                        })
+                ]
+                : []),
+            ...(toInsert.length > 0
+                ? [
+                    isSighting
+                        ? this.prisma.reportImage.createMany({
+                            data: toInsert.map(img => ({
+                                reportId: report.idReport!,
+                                cloudinaryId: img.cloudinaryId,
+                                photoUrl: img.photoUrl,
+                            })),
+                        })
+                        : this.prisma.petImage.createMany({
+                            data: toInsert.map(img => ({
+                                petId: lostDetails!.petId,
+                                cloudinaryId: img.cloudinaryId,
+                                photoUrl: img.photoUrl,
+                            })),
+                        })
+                ]
                 : []),
         ]);
     }
 
 
     async findImagesByReportId(publicId: string): Promise<SightingImage[]> {
-        const raw = await this.prisma.report.findUnique({
+        const report = await this.prisma.report.findUnique({
             where: { public_id: publicId },
-            select: { reportImages: true },
+            select: {
+                report_type_id: true,
+                reportImages: true,
+                lost_report_detail: {
+                    select: {
+                        pet: {
+                            select: {
+                                petImages: true
+                            }
+                        }
+                    }
+                }
+            }
         });
-        return (raw?.reportImages ?? []).map(img =>
-            SightingImage.create({ cloudinaryId: img.cloudinaryId, photoUrl: img.photoUrl })
-        );
+
+        if (!report) return [];
+
+        if (report.report_type_id === 2) {
+            return (report.reportImages ?? []).map(img =>
+                SightingImage.create({ cloudinaryId: img.cloudinaryId, photoUrl: img.photoUrl })
+            );
+        } else {
+            const petImages = report.lost_report_detail?.pet?.petImages ?? [];
+            return petImages.map(img =>
+                SightingImage.create({ cloudinaryId: img.cloudinaryId, photoUrl: img.photoUrl })
+            );
+        }
     }
 
     async findDetailByPublicId(publicId: string): Promise<ReportWithPet | null> {
@@ -274,7 +368,7 @@ export class PrismaReportRepository implements ReportRepository {
 
     async findByUserPublicId(userPublicId: string, filters?: { reportType?: string; animalType?: string; createdFrom?: string; createdTo?: string; q?: string; }): Promise<Report[]> {
 
-        const where: Prisma.ReportWhereInput = { user: { public_id: userPublicId } }
+        const where: Prisma.ReportWhereInput = { user: { public_id: userPublicId, is_suspended: false } }
 
         if (filters?.q) {
             const matchingIds = await this.findIdsBySearchQuery(filters.q);
@@ -318,7 +412,7 @@ export class PrismaReportRepository implements ReportRepository {
 
     async findIdsByQuery(query: ReportQuery): Promise<string[]> {
 
-        const where: Prisma.ReportWhereInput = {}
+        const where: Prisma.ReportWhereInput = { user: { is_suspended: false } }
 
         if (query.q) {
             const matchingIds = await this.findIdsBySearchQuery(query.q);
@@ -331,8 +425,10 @@ export class PrismaReportRepository implements ReportRepository {
             };
         }
 
-        if (query.status) {
+        if (query.status && query.status !== ReportStatus.CLOSED) {
             where.reportStatus = { name: query.status }
+        } else {
+            where.reportStatus = { name: { not: ReportStatus.CLOSED } }
         }
 
         if (query.reportType) {

@@ -25,7 +25,7 @@ export class GetFilteredReportsUseCase {
 
         const withinRadius = this.filterByRadius(results, dto);
 
-        const ordered = this.applySort(withinRadius, dto);
+        const ordered = this.prioritizeFeatured(this.applySort(withinRadius, dto));
 
         const outputs = await Promise.all(
             ordered.map(async ({ report, pet }) => {
@@ -50,6 +50,12 @@ export class GetFilteredReportsUseCase {
                 longitude: item.report.location.longitude,
             }) <= dto.radiusKm!
         );
+    }
+
+    private prioritizeFeatured(results: ReportWithPet[]): ReportWithPet[] {
+        const featured = results.filter(item => item.report.isFeaturedActive());
+        const rest = results.filter(item => !item.report.isFeaturedActive());
+        return [...featured, ...rest];
     }
 
     private applySort(results: ReportWithPet[], dto: GetFilteredReportsDTO): ReportWithPet[] {

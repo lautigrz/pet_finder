@@ -17,6 +17,7 @@ export function errorToHttpStatus(error: Error): HttpError {
             case 'INVALID_PASSWORD': return { statusCode: 400, code: error.code, message: error.message };
             case 'INVALID_USERNAME': return { statusCode: 400, code: error.code, message: error.message };
             case 'USER_NOT_FOUND': return { statusCode: 404, code: error.code, message: error.message };
+            case 'USER_SUSPENDED': return { statusCode: 403, code: error.code, message: error.message };
             case 'PET_NOT_FOUND': return { statusCode: 404, code: error.code, message: error.message };
             case 'REPORT_NOT_FOUND': return { statusCode: 404, code: error.code, message: error.message };
             case 'INVALID_VERIFICATION_TOKEN': return { statusCode: 400, code: error.code, message: error.message };
@@ -26,6 +27,7 @@ export function errorToHttpStatus(error: Error): HttpError {
             case 'INVALID_REPORT_DETAILS': return { statusCode: 400, code: error.code, message: error.message };
             case 'INVALID_REPORT_DESCRIPTION': return { statusCode: 400, code: error.code, message: error.message };
             case 'EMAIL_VERIFICATION_REQUIRED': return { statusCode: 403, code: error.code, message: error.message };
+            case 'ADMIN_ACCESS_REQUIRED': return { statusCode: 403, code: error.code, message: error.message };
             case 'EMAIL_VERIFICATION_NOT_FOUND': return { statusCode: 400, code: error.code, message: error.message };
             case 'EMAIL_VERIFICATION_EXPIRED': return { statusCode: 400, code: error.code, message: error.message };
             case 'INVALID_COORDINATES': return { statusCode: 400, code: error.code, message: error.message };
@@ -43,6 +45,7 @@ export function errorToHttpStatus(error: Error): HttpError {
             case 'INVALID_PET_NAME': return { statusCode: 400, code: error.code, message: error.message };
             case 'CONVERSATION_NOT_FOUND': return { statusCode: 404, code: error.code, message: error.message };
             case 'UNAUTHORIZED_CONVERSATION': return { statusCode: 403, code: error.code, message: error.message };
+            case 'CONVERSATION_SUSPENDED': return { statusCode: 403, code: error.code, message: error.message };
             case 'CONVERSATION_ALREADY_EXISTS': return { statusCode: 409, code: error.code, message: error.message };
             case 'INVALID_CONVERSATION_WITH_ITSELF': return { statusCode: 400, code: error.code, message: error.message };
             case 'INVALID_MESSAGE_TEXT': return { statusCode: 400, code: error.code, message: error.message };
@@ -51,7 +54,20 @@ export function errorToHttpStatus(error: Error): HttpError {
             case 'CONTENT_ALREADY_REPORTED': return { statusCode: 409, code: error.code, message: error.message };
             case 'INVALID_REPORT_REASON': return { statusCode: 400, code: error.code, message: error.message };
             case 'REPORTED_CONTENT_NOT_FOUND': return { statusCode: 404, code: error.code, message: error.message };
+            case 'CONTENT_REPORT_NOT_FOUND': return { statusCode: 404, code: error.code, message: error.message };
+            case 'SUSPENSION_REASON_REQUIRED': return { statusCode: 400, code: error.code, message: error.message };
             case 'MATCH_RESULT_NOT_FOUND': return { statusCode: 404, code: error.code, message: error.message };
+            case 'PAYMENT_NOT_FOUND': return { statusCode: 404, code: error.code, message: error.message };
+            case 'REPORT_ALREADY_FEATURED': return { statusCode: 409, code: error.code, message: error.message };
+            case 'UNAUTHORIZED_FEATURE_REPORT': return { statusCode: 403, code: error.code, message: error.message };
+            case 'INVALID_WEBHOOK_SIGNATURE': return { statusCode: 401, code: error.code, message: error.message };
+            case 'APPEAL_NOT_FOUND': return { statusCode: 404, code: error.code, message: error.message };
+            case 'ALREADY_APPEALED': return { statusCode: 409, code: error.code, message: error.message };
+            case 'APPEAL_ALREADY_RESOLVED': return { statusCode: 409, code: error.code, message: error.message };
+            case 'APPEAL_MESSAGE_REQUIRED': return { statusCode: 400, code: error.code, message: error.message };
+            case 'INVALID_APPEAL_TOKEN': return { statusCode: 400, code: error.code, message: error.message };
+            case 'CANNOT_REVIEW_YOURSELF': return { statusCode: 400, code: error.code, message: error.message };
+            case 'INVALID_USER_REVIEW_RATING': return { statusCode: 400, code: error.code, message: error.message };
         }
     }
 

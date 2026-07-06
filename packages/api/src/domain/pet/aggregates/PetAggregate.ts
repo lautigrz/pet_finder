@@ -52,7 +52,7 @@ export class Pet {
         private _hasIdCollar: boolean,
         private _isVaccinated: boolean,
         private _breed: string,
-        private readonly _images: PetImage[],
+        private _images: PetImage[],
         private readonly _createdAt: Date,
         private _updatedAt?: Date
     ) { this.validateName(); this.validateLenghtImage(); }
@@ -192,6 +192,12 @@ export class Pet {
 
     updateVaccinationStatus(isVaccinated: boolean): void {
         this._isVaccinated = isVaccinated;
+        this.touch();
+    }
+
+    updateImages(images: PetImage[]): void {
+        this._images = images;
+        this.validateLenghtImage();
         this.touch();
     }
 

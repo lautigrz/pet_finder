@@ -23,6 +23,18 @@ export interface ReportRepository {
 
   update(report: Report): Promise<void>;
 
+  markFeatured(reportId: number): Promise<void>;
+
+  closeAllByUserId(userId: number): Promise<void>;
+
+  reopenModerationClosedByUserId(userId: number): Promise<void>;
+
+  findPublicIdsByUserId(userId: number): Promise<string[]>;
+
   findImagesByReportId(publicId: string): Promise<SightingImage[]>;
   updateFields(report: Report, images?: SightingImage[]): Promise<void>;
+}
+
+export interface ReportQueries {
+  getUserNamesByReportIds(reportIds: number[]): Promise<Map<number, string>>;
 }

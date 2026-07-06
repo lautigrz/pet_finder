@@ -5,9 +5,10 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "vitest run --passWithNoTests",
+    "test": "vitest run --passWithNoTests --exclude '**/*.integration.test.ts'",
     "test:watch": "vitest",
-    "test:coverage": "vitest run --coverage --passWithNoTests",
+    "test:coverage": "vitest run --coverage --passWithNoTests --exclude '**/*.integration.test.ts'",
+    "test:integration": "vitest run --config vitest.integration.config.ts",
     "lint": "eslint src --ext .ts",
     "start": "node dist/server.js",
     "build": "npx prisma generate --schema=../shared/prisma/schema.prisma && tsc",
@@ -29,6 +30,7 @@
     "firebase-admin": "^14.0.0",
     "ioredis": "^5.10.1",
     "jsonwebtoken": "^9.0.3",
+    "mercadopago": "^2.9.0",
     "winston": "^3.19.0"
   },
   "devDependencies": {

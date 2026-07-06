@@ -15,6 +15,7 @@ const fakeReport = ContentReport.restore({
     reason: ContentReportReason.SUSPICIOUS_BEHAVIOR,
     status: ContentReportStatus.PENDING,
     description: "Me pidió dinero",
+    suspensionReason: null,
     autoFlagged: true,
     createdAt: new Date("2026-06-20"),
 });
@@ -30,6 +31,7 @@ describe("GetContentReportQueueUseCase", () => {
                     report: fakeReport,
                     reporter: { publicId: "reporter-public-id", username: "reporter" },
                     reportedUser: { username: "reported-user" },
+                    reportedContent: null,
                     reportCount: 3,
                 },
             ]),
@@ -61,10 +63,12 @@ describe("GetContentReportQueueUseCase", () => {
             reason: ContentReportReason.SUSPICIOUS_BEHAVIOR,
             status: ContentReportStatus.PENDING,
             description: "Me pidió dinero",
+            suspensionReason: null,
             autoFlagged: true,
             createdAt: new Date("2026-06-20"),
             reportCount: 3,
             reportedUser: { username: "reported-user" },
+            reportedContent: null,
             reporter: { publicId: "reporter-public-id", username: "reporter" },
         });
     });

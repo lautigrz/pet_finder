@@ -7,6 +7,7 @@ import { LostReportDetails } from "../value-objects/lost-report-details.vo"
 import { SightingReportDetails } from "../value-objects/sighting-report-details.vo"
 import { InvalidStatusTransitionError } from "../../errors/InvalidStatusTransitionError"
 import { InvalidReportDetailsError } from "../../errors/InvalidReportDetailsError"
+import { InvalidFieldError } from "../../errors/InvalidFieldError"
 
 
 export interface CreateReportParams {
@@ -32,6 +33,10 @@ interface RestoreReportParams {
     occurredAt: Date
     createdAt: Date
     updatedAt: Date | null
+    featured?: boolean
+    closedByModeration?: boolean
+    resolved?: boolean
+    resolvedAt?: Date | null
 }
 
 
@@ -50,11 +55,16 @@ export class Report {
         private _occurredAt: Date,
         private readonly _createdAt: Date,
         private _updatedAt: Date | null = null,
+        private _featured: boolean = false,
+        private _closedByModeration: boolean = false,
+        private _resolved: boolean = false,
+        private _resolvedAt: Date | null = null,
     ) { }
 
 
     static create(params: CreateReportParams): Report {
-        Report.validateDetails(params.type, params.details)
+        Report.validateOccurredAt(params.occurredAt);
+        Report.validateDetails(params.type, params.details);
 
         return new Report(
             null,
@@ -85,7 +95,11 @@ export class Report {
             params.details,
             params.occurredAt,
             params.createdAt,
-            params.updatedAt
+            params.updatedAt,
+            params.featured ?? false,
+            params.closedByModeration ?? false,
+            params.resolved ?? false,
+            params.resolvedAt ?? null,
         )
     }
 
@@ -104,10 +118,19 @@ export class Report {
         details?: ReportDetails;  
     }): void {
         if (params.description !== undefined) this._description = params.description;
-        if (params.occurredAt  !== undefined) this._occurredAt  = params.occurredAt;
+        if (params.occurredAt  !== undefined) {
+            Report.validateOccurredAt(params.occurredAt);
+            this._occurredAt  = params.occurredAt;
+        }
         if (params.location    !== undefined) this._location    = params.location;
         if (params.details     !== undefined) this._details     = params.details;  
         this._updatedAt = new Date();
+    }
+
+    private static validateOccurredAt(occurredAt: Date): void {
+        if (occurredAt > new Date()) {
+            throw new InvalidFieldError('occurredAt', 'cannot be in the future');
+        }
     }
 
     get idReport(): number | null {
@@ -117,12 +140,24 @@ export class Report {
         return this._userPublicId
     }
 
-    resolve(): void {
+    resolve(reunited: boolean): void {
         this.transitionTo(ReportStatus.RESOLVED)
+        this._resolved = reunited
+        this._resolvedAt = new Date()
     }
 
     close(): void {
         this.transitionTo(ReportStatus.CLOSED)
+    }
+
+    suspend(): void {
+        this.transitionTo(ReportStatus.CLOSED)
+        this._closedByModeration = true
+    }
+
+    reopen(): void {
+        this.transitionTo(ReportStatus.ACTIVE)
+        this._closedByModeration = false
     }
 
     /**
@@ -143,6 +178,18 @@ export class Report {
 
     get status(): ReportStatus {
         return this.currentStatus
+    }
+
+    get closedByModeration(): boolean {
+        return this._closedByModeration
+    }
+
+    get resolved(): boolean {
+        return this._resolved
+    }
+
+    get resolvedAt(): Date | null {
+        return this._resolvedAt
     }
 
     get reportType(): ReportType {
@@ -169,6 +216,14 @@ export class Report {
         return this._details
     }
 
+    get featured(): boolean {
+        return this._featured
+    }
+
+    isFeaturedActive(): boolean {
+        return this._featured && this.currentStatus === ReportStatus.ACTIVE
+    }
+
     private transitionTo(newStatus: ReportStatus): void {
         const allowed = Report.validTransitions[this.currentStatus]
 
@@ -183,7 +238,7 @@ export class Report {
     private static readonly validTransitions: Record<ReportStatus, ReportStatus[]> = {
         [ReportStatus.ACTIVE]: [ReportStatus.RESOLVED, ReportStatus.CLOSED],
         [ReportStatus.RESOLVED]: [ReportStatus.CLOSED],
-        [ReportStatus.CLOSED]: []
+        [ReportStatus.CLOSED]: [ReportStatus.ACTIVE]
     }
 
 

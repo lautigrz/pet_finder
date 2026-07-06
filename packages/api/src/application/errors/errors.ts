@@ -13,12 +13,7 @@ export class InvalidReportTypeError extends Error {
   }
 }
 
-export class InvalidFieldError extends Error {
-    constructor(field: string, message: string) {
-      super(`Invalid field "${field}": ${message}`)
-      this.name = 'InvalidFieldError'   
-    }
-}
+export { InvalidFieldError } from '../../domain/errors/InvalidFieldError';
 
 export class MappingError extends Error {
   constructor(message: string) {

@@ -17,6 +17,7 @@ export class CreateConversationUseCase {
         private readonly userRepository: IUserRepository,
     ) { }
 
+
     async execute(request: CreateConversationRequest): Promise<CreateConversationOutput> {
         const user = await this.userRepository.findByPublicId(request.publicRequesterId);
         if (!user) throw new UserNotFoundError();

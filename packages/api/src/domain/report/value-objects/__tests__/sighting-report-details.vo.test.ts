@@ -4,17 +4,20 @@ import { SightingImage } from "../sighting.images";
 import { AnimalType } from "@domain/shared/animal-type/animal-type";
 import { GenderType } from "@domain/shared/gender-type/gender.type";
 import { SizeType } from "@domain/shared/size-type/size.type";
+import { InvalidFieldError } from "../../../errors/InvalidFieldError";
 
 describe("SightingReportDetails", () => {
+  const mockImage = SightingImage.create({ cloudinaryId: "id1", photoUrl: "https://url.com/1.jpg" });
+
   const baseParams = {
     animalType: AnimalType.DOG,
     hasIdCollar: true,
     color: "brown",
     isInTransit: false,
-    images: [] as SightingImage[],
+    images: [mockImage],
   };
 
-  describe("create — sin imágenes", () => {
+  describe("create — con valores básicos", () => {
     it("crea SightingReportDetails con los valores correctos y campos opcionales nulos", () => {
       const details = SightingReportDetails.create(baseParams);
 
@@ -22,7 +25,7 @@ describe("SightingReportDetails", () => {
       expect(details.hasIdCollar).toBe(true);
       expect(details.color).toBe("brown");
       expect(details.isInTransit).toBe(false);
-      expect(details.images).toHaveLength(0);
+      expect(details.images).toHaveLength(1);
       expect(details.petName).toBeNull();
       expect(details.genderType).toBeNull();
       expect(details.sizeType).toBeNull();
@@ -34,7 +37,7 @@ describe("SightingReportDetails", () => {
         hasIdCollar: false,
         color: "orange",
         isInTransit: true,
-        images: [],
+        images: [mockImage],
       });
 
       expect(details.animalType).toBe(AnimalType.CAT);
@@ -57,7 +60,7 @@ describe("SightingReportDetails", () => {
     });
   });
 
-  describe("create — con imágenes", () => {
+  describe("create — con múltiples imágenes", () => {
     it("incluye las imágenes correctamente", () => {
       const img1 = SightingImage.create({ cloudinaryId: "id1", photoUrl: "https://url.com/1.jpg" });
       const img2 = SightingImage.create({ cloudinaryId: "id2", photoUrl: "https://url.com/2.jpg" });
@@ -70,6 +73,15 @@ describe("SightingReportDetails", () => {
       expect(details.images).toHaveLength(2);
       expect(details.images[0]?.cloudinaryId).toBe("id1");
       expect(details.images[1]?.photoUrl).toBe("https://url.com/2.jpg");
+    });
+  });
+
+  describe("create — validación de imágenes", () => {
+    it("lanza InvalidFieldError si se crea sin imágenes", () => {
+      expect(() => SightingReportDetails.create({
+        ...baseParams,
+        images: [],
+      })).toThrow(InvalidFieldError);
     });
   });
 });

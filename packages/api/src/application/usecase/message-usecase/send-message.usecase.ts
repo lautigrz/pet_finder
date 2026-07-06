@@ -5,6 +5,7 @@ import { MessageOutput, SendMessageRequest } from "./dto/message.dto";
 import { UserNotFoundError } from "@domain/errors/UserNotFoundError";
 import { ConversationNotFoundError } from "@domain/errors/ConversationNotFoundError";
 import { UnauthorizedConversationError } from "@domain/errors/UnauthorizedConversationError";
+import { ConversationSuspendedError } from "@domain/errors/ConversationSuspendedError";
 import { MessageText } from "@domain/message/value-objects/message.vo";
 import { Message } from "@domain/message/aggregate/MessageAgregate";
 import { randomUUID } from "crypto";
@@ -36,6 +37,8 @@ export class SendMessageUseCase {
         if (!conversation) throw new ConversationNotFoundError(request.publicConversationId);
 
         if (!conversation.hasParticipant(user.internalId!)) throw new UnauthorizedConversationError();
+
+        if (conversation.isSuspended) throw new ConversationSuspendedError();
 
         const otherUserId = conversation.getOtherParticipant(user.internalId!);
         const receiver = await this.userRepository.findById(otherUserId);

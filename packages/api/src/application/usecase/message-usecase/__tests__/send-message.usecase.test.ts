@@ -4,6 +4,7 @@ import { UserNotFoundError } from "@domain/errors/UserNotFoundError";
 import { ConversationNotFoundError } from "@domain/errors/ConversationNotFoundError";
 import { UnauthorizedConversationError } from "@domain/errors/UnauthorizedConversationError";
 import { InvalidMessageTextError } from "@domain/errors/InvalidMessageTextError";
+import { ConversationSuspendedError } from "@domain/errors/ConversationSuspendedError";
 import { Conversation } from "@domain/conversation/Conversation";
 import { User } from "@domain/entities/User";
 import type { ConversationRepository } from "@domain/conversation/repositories/conversation.repository";
@@ -27,9 +28,16 @@ describe("SendMessageUseCase", () => {
   let useCase: SendMessageUseCase;
 
   beforeEach(() => {
-    convRepo = { findAllByUserId: vi.fn(), findByPublicId: vi.fn(), findByParticipants: vi.fn(), findById: vi.fn(), save: vi.fn(), delete: vi.fn() };
+    convRepo = { findAllByUserId: vi.fn(), findByPublicId: vi.fn(), findByParticipants: vi.fn(), findById: vi.fn(), save: vi.fn(), update: vi.fn(), delete: vi.fn() };
     msgRepo = { findById: vi.fn(), findByPublicId: vi.fn(), findByConversationId: vi.fn(), findLastMessageByConversationIds: vi.fn(), findUnreadByUserId: vi.fn(), countUnreadByConversationId: vi.fn(), save: vi.fn(), markAsRead: vi.fn(), delete: vi.fn() };
-    userRepo = { save: vi.fn(), findByEmail: vi.fn(), markVerified: vi.fn(), findByPublicId: vi.fn(), findByIds: vi.fn(), findById: vi.fn(), updateProfile: vi.fn(), updatePassword: vi.fn(), deleteById: vi.fn() };
+    userRepo = {
+      save: vi.fn(), findByEmail: vi.fn(), findRoleByPublicId: vi.fn(), markVerified: vi.fn(), markSuspended: vi.fn(), unsuspend: vi.fn(), findByPublicId: vi.fn(), findByIds: vi.fn(), findById: vi.fn(), updateProfile: vi.fn(), updatePassword: vi.fn(), deleteById: vi.fn(), getProfileStatsByPublicId: vi.fn().mockResolvedValue({
+        reportsCreated: 0,
+        successfulReturns: 0,
+        activeDays: 1,
+        petsHelped: 0,
+      }),
+    };
     storageService = { upload: vi.fn(), delete: vi.fn() };
     useCase = new SendMessageUseCase(convRepo, msgRepo, userRepo, storageService);
   });
@@ -102,6 +110,18 @@ describe("SendMessageUseCase", () => {
     vi.mocked(userRepo.findByPublicId).mockResolvedValue(makeUser(99, "u"));
     vi.mocked(convRepo.findByPublicId).mockResolvedValue(makeConv(10, 20));
     await expect(useCase.execute({ publicUserId: "u", publicConversationId: "conv-uuid", text: "hi" })).rejects.toThrow(UnauthorizedConversationError);
+    expect(msgRepo.save).not.toHaveBeenCalled();
+  });
+
+  it("lanza ConversationSuspendedError cuando la conversación está suspendida", async () => {
+    const sender = makeUser(10, "sender-uuid");
+    const suspendedConv = Conversation.create({ conversationId: 1, publicId: "conv-uuid", userOneId: 10, userTwoId: 20, createdAt: new Date(), isSuspended: true });
+    vi.mocked(userRepo.findByPublicId).mockResolvedValue(sender);
+    vi.mocked(convRepo.findByPublicId).mockResolvedValue(suspendedConv);
+
+    await expect(
+      useCase.execute({ publicUserId: "sender-uuid", publicConversationId: "conv-uuid", text: "hola" })
+    ).rejects.toThrow(ConversationSuspendedError);
     expect(msgRepo.save).not.toHaveBeenCalled();
   });
 

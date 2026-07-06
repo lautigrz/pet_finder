@@ -1,22 +1,30 @@
 import { Router } from "express";
-import rateLimit from "express-rate-limit";
 import { container } from "tsyringe";
-import { AuthController } from "../../controller/AuthController";
-import { ITokenSigner } from "../../../domain/services/ITokenSigner";
-import { requireAuth } from "../../middleware/requireAuth.middleware";
-import { validateRequest } from "../../middleware/validate.request";
+import rateLimit from "express-rate-limit";
+import { ITokenSigner } from "@domain/services/ITokenSigner";
+import { requireAuth } from "@presentation/middleware/requireAuth.middleware";
+import { validateRequest } from "@presentation/middleware/validate.request";
 import {
   loginRequestSchema,
   logoutRequestSchema,
   refreshRequestSchema,
   forgotPasswordRequestSchema,
   resetPasswordRequestSchema,
-} from "../../schemas/auth/auth.schema";
+} from "@presentation/schemas/auth/auth.schema";
+import { LoginController } from "@presentation/controller/auth/login.controller";
+import { LogoutController } from "@presentation/controller/auth/logout.controller";
+import { RefreshTokenController } from "@presentation/controller/auth/refresh-token.controller";
+import { ForgotPasswordController } from "@presentation/controller/auth/forgot-password.controller";
+import { ResetPasswordController } from "@presentation/controller/auth/reset-password.controller";
 
 const router = Router();
 
 const tokenSigner = container.resolve<ITokenSigner>("TokenSigner");
-const authController = container.resolve(AuthController);
+const loginController = container.resolve(LoginController);
+const logoutController = container.resolve(LogoutController);
+const refreshTokenController = container.resolve(RefreshTokenController);
+const forgotPasswordController = container.resolve(ForgotPasswordController);
+const resetPasswordController = container.resolve(ResetPasswordController);
 
 const loginLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
@@ -34,10 +42,10 @@ const passwordResetLimiter = rateLimit({
   legacyHeaders: false,
 });
 
-router.post("/login", loginLimiter, validateRequest(loginRequestSchema), authController.login);
-router.post("/logout", validateRequest(logoutRequestSchema), authController.logout);
-router.post("/refresh", validateRequest(refreshRequestSchema), authController.refresh);
-router.post("/forgot-password", passwordResetLimiter, validateRequest(forgotPasswordRequestSchema), authController.forgotPassword);
-router.post("/reset-password", validateRequest(resetPasswordRequestSchema), authController.resetPassword);
+router.post("/login", loginLimiter, validateRequest(loginRequestSchema), loginController.handle);
+router.post("/logout", validateRequest(logoutRequestSchema), logoutController.handle);
+router.post("/refresh", validateRequest(refreshRequestSchema), refreshTokenController.handle);
+router.post("/forgot-password", passwordResetLimiter, validateRequest(forgotPasswordRequestSchema), forgotPasswordController.handle);
+router.post("/reset-password", validateRequest(resetPasswordRequestSchema), resetPasswordController.handle);
 
 export default router;

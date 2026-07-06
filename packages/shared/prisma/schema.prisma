@@ -33,8 +33,10 @@ model User {
   created_at DateTime  @default(now()) @db.Timestamp(6)
   updated_at DateTime? @updatedAt @db.Timestamp(6)
 
-  is_verified Boolean @default(false)
-  photo_url   String? @db.VarChar
+  is_verified  Boolean @default(false)
+  is_suspended Boolean @default(false)
+  exp          Int     @default(0)
+  photo_url    String? @db.VarChar
 
   refresh_tokens            RefreshToken[]
   password_reset_tokens     PasswordResetToken[]
@@ -50,6 +52,10 @@ model User {
   report_followers          ReportFollower[]
   content_reports           ContentReport[]
   match_views               MatchView[]
+  payments                  Payment[]
+  appeals                   Appeal[]
+  reviews_written           UserReview[]              @relation("ReviewsWritten")
+  reviews_received          UserReview[]              @relation("ReviewsReceived")
 
   @@map("users")
 }
@@ -107,6 +113,10 @@ model Report {
   report_status_id Int     @db.SmallInt
   description      String? @db.Text
 
+  closed_by_moderation Boolean @default(false)
+  resolved             Boolean @default(false)
+  resolved_at          DateTime? @db.Timestamp(6)
+
   occurred_at DateTime
 
   location_address String?
@@ -115,6 +125,8 @@ model Report {
 
   created_at DateTime  @db.Timestamp(6)
   updated_at DateTime? @updatedAt
+
+  featured Boolean @default(false)
 
   embedding_description Unsupported("vector(384)")?
 
@@ -130,7 +142,31 @@ model Report {
 
   matchedAsCandidate MatchResult[] @relation("CandidateReport")
 
+  payments Payment[]
+
   @@map("reports")
+}
+
+model Payment {
+  payment_id       Int    @id @default(autoincrement())
+  public_id        String @unique @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  report_id        Int
+  user_id          Int
+  mp_preference_id String?
+  mp_payment_id    String? @unique
+  status           String
+  amount           Decimal @db.Decimal(12, 2)
+  currency         String  @default("ARS")
+
+  created_at DateTime  @default(now()) @db.Timestamp(6)
+  updated_at DateTime? @updatedAt @db.Timestamp(6)
+
+  report Report @relation(fields: [report_id], references: [report_id])
+  user   User   @relation(fields: [user_id], references: [user_id])
+
+  @@index([report_id])
+  @@index([user_id])
+  @@map("payments")
 }
 
 model MatchResult {
@@ -379,6 +415,7 @@ model Conversation {
   user_one_id     Int
   user_two_id     Int
   created_at      DateTime @default(now()) @db.Timestamp(6)
+  is_suspended    Boolean  @default(false)
 
   user_one User      @relation(fields: [user_one_id], references: [user_id], onDelete: Cascade, name: "ConversationUserOne")
   user_two User      @relation(fields: [user_two_id], references: [user_id], onDelete: Cascade, name: "ConversationUserTwo")
@@ -427,6 +464,7 @@ model ContentReport {
   reason_id         Int      @db.SmallInt
   status_id         Int      @db.SmallInt
   description       String?  @db.Text
+  suspension_reason String?  @db.Text
   auto_flagged      Boolean  @default(false)
   created_at        DateTime @default(now()) @db.Timestamp(6)
 
@@ -466,4 +504,60 @@ model ContentReportStatus {
   content_reports ContentReport[]
 
   @@map("content_report_statuses")
+}
+
+model Appeal {
+  appeal_id         Int       @id @default(autoincrement())
+  public_id         String    @unique @db.Uuid
+  appellant_user_id Int
+  target_type_id    Int       @db.SmallInt
+  target_public_id  String    @db.Uuid
+  message           String    @db.Text
+  status_id         Int       @db.SmallInt
+  created_at        DateTime  @default(now()) @db.Timestamp(6)
+  resolved_at       DateTime? @db.Timestamp(6)
+
+  appellant  User             @relation(fields: [appellant_user_id], references: [user_id], onDelete: Cascade)
+  targetType AppealTargetType @relation(fields: [target_type_id], references: [appeal_target_type_id])
+  status     AppealStatus     @relation(fields: [status_id], references: [appeal_status_id])
+
+  @@unique([target_type_id, target_public_id])
+  @@index([status_id])
+  @@map("appeals")
+}
+
+model AppealTargetType {
+  appeal_target_type_id Int    @id @db.SmallInt
+  name                  String
+
+  appeals Appeal[]
+
+  @@map("appeal_target_types")
+}
+
+model AppealStatus {
+  appeal_status_id Int    @id @db.SmallInt
+  name             String
+
+  appeals Appeal[]
+
+  @@map("appeal_statuses")
+}
+
+model UserReview {
+  user_review_id   Int      @id @default(autoincrement())
+  reviewer_user_id Int
+  reviewed_user_id Int
+  rating           Int      @db.SmallInt
+  description      String?  @db.Text
+  created_at       DateTime @default(now()) @db.Timestamp(6)
+  updated_at       DateTime @updatedAt @db.Timestamp(6)
+
+  reviewer User @relation("ReviewsWritten", fields: [reviewer_user_id], references: [user_id], onDelete: Cascade)
+  reviewed User @relation("ReviewsReceived", fields: [reviewed_user_id], references: [user_id], onDelete: Cascade)
+
+  @@unique([reviewer_user_id, reviewed_user_id])
+  @@index([reviewed_user_id])
+  @@index([reviewer_user_id])
+  @@map("user_reviews")
 }

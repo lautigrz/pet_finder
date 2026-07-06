@@ -1,10 +1,11 @@
-import { InvalidFieldError, InvalidReportTypeError } from "@application/errors/errors";
+import { InvalidReportTypeError } from "@application/errors/errors";
 import { User } from "@domain/entities/User";
 import { Pet } from "@domain/pet/aggregates/PetAggregate";
 import { Report } from "@domain/report/aggregates/ReportAggregate";
 import type { ReportRepository } from "@domain/report/repositories/report.repository";
 import { ReportDetails } from "@domain/report/types/report-details.type";
 import { ReportType, ReportTypeToNumber } from "@domain/report/types/report.type";
+import { UserExpAction } from "@domain/entities/UserExpAction";
 import { ReportDescription } from "@domain/report/value-objects/description.vo";
 import { Location } from "@domain/report/value-objects/location.vo";
 import { LostReportDetails } from "@domain/report/value-objects/lost-report-details.vo";
@@ -16,6 +17,10 @@ import { SightingImage } from "@domain/report/value-objects/sighting.images";
 import { CreateReportDTO, LocationDTO } from "./dto/create-report.dto";
 import { enqueueMatchingJob } from "@infrastructure/queue/embedding.queue";
 import { inject, injectable } from "tsyringe";
+import { TypeJob, logger } from "@pet-alert/shared";
+import type { NotifyNearbyLostOwnersUseCase } from "@application/usecase/notify-nearby-lost-owners/notify-nearby-lost-owners.usecase";
+import { AwardUserExpInput } from "@application/usecase/award-user-exp/award-user-exp.input";
+import type { AwardUserExpUseCase } from "@application/usecase/award-user-exp/award-user-exp.usecase";
 
 export type { CreateReportDTO, LocationDTO };
 
@@ -30,6 +35,10 @@ export class CreateReportUseCase {
         private petRepository: PetRepository,
         @inject("StorageService")
         private storageService: StorageService,
+        @inject("NotifyNearbyLostOwnersUseCase")
+        private notifyNearbyLostOwnersUseCase: NotifyNearbyLostOwnersUseCase,
+        @inject("AwardUserExpUseCase")
+        private awardUserExpUseCase?: AwardUserExpUseCase,
     ) { }
 
     async execute(dto: CreateReportDTO, userId: string): Promise<{ publicId: string }> {
@@ -44,8 +53,6 @@ export class CreateReportUseCase {
             petInternalId = pet.idPet;
         }
 
-        this.validateDTO(dto);
-
         const location = this.buildLocation(dto.location);
         const details = await this.buildDetails(dto, petInternalId!);
         const report = this.buildReport(dto, location, details, user);
@@ -53,10 +60,28 @@ export class CreateReportUseCase {
         const reportId = await this.reportRepository.save(report);
 
         if (reportId) {
-            await enqueueMatchingJob({ type: 'run_matching', reportId: reportId, reportType: ReportTypeToNumber[dto.type], reportTypeName: dto.type })
+            await enqueueMatchingJob({ type: TypeJob.RUN_MATCHING, reportId: reportId, reportType: ReportTypeToNumber[dto.type], reportTypeName: dto.type });
+        }
+
+        await this.awardExpForCreatedReport(user.id, dto.type);
+
+        if (dto.type === ReportType.SIGHTING) {
+            void this.notifyNearbyLostOwnersUseCase
+                .execute(report.publicId)
+                .catch((error) => logger.error("Failed to notify nearby lost owners", { error }));
         }
 
         return { publicId: report.publicId };
+    }
+
+    private async awardExpForCreatedReport(userPublicId: string, reportType: ReportType): Promise<void> {
+        if (!this.awardUserExpUseCase) return;
+
+        const action = reportType === ReportType.LOST
+            ? UserExpAction.CREATE_LOST_REPORT
+            : UserExpAction.CREATE_SIGHTING_REPORT;
+
+        await this.awardUserExpUseCase.execute(new AwardUserExpInput(userPublicId, action));
     }
 
 
@@ -116,11 +141,5 @@ export class CreateReportUseCase {
             cloudinaryId: res.publicId,
             photoUrl: res.url,
         }));
-    }
-
-    private validateDTO(dto: CreateReportDTO): void {
-        if (dto.occurredAt > new Date()) {
-            throw new InvalidFieldError('occurredAt', 'cannot be in the future');
-        }
     }
 }

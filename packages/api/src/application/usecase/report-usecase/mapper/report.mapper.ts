@@ -16,7 +16,8 @@ export class ReportOutputMapper {
             user: {
                 publicId: user?.id || report.userPublicId,
                 username: user?.username || "",
-                photoUrl: user?.photoUrl || ""
+                photoUrl: user?.photoUrl || "",
+                createdAt: user?.createdAt
             },
             type: report.reportType,
             status: report.status,
@@ -29,7 +30,10 @@ export class ReportOutputMapper {
             details: this.buildDetails(report, pet, reportImages),
             occurredAt: report.occurredAt,
             createdAt: report.createdAt,
-            updatedAt: report.updatedAt
+            updatedAt: report.updatedAt,
+            featured: report.isFeaturedActive(),
+            resolved: report.resolved,
+            resolvedAt: report.resolvedAt
         }
     }
 

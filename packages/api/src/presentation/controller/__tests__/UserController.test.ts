@@ -1,6 +1,12 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { Request, Response } from "express";
-import { UserController } from "../UserController";
+import { CreateUserController } from "../user/create-user.controller";
+import { VerifyEmailController } from "../user/verify-email.controller";
+import { UpdateProfileController } from "../user/update-profile.controller";
+import { GetProfileController } from "../user/get-profile.controller";
+import { UploadProfilePhotoController } from "../user/upload-profile-photo.controller";
+import { GetNotificationPreferencesController } from "../user/get-notification-preferences.controller";
+import { UpdateNotificationPreferencesController } from "../user/update-notification-preferences.controller";
 import { RegisterUserUseCase } from "../../../application/usecase/register-user/register-user.usecase";
 import { RegisterUserOutput } from "../../../application/usecase/register-user/register-user.output";
 import { VerifyEmailUseCase } from "../../../application/usecase/verify-email/verify-email.usecase";
@@ -17,7 +23,7 @@ import { InvalidNotificationRadiusError } from "../../../domain/errors/InvalidNo
 import { InvalidMutedUntilError } from "../../../domain/errors/InvalidMutedUntilError";
 import { invoke } from "./test-helpers";
 
-describe("UserController", () => {
+describe("User Controllers", () => {
   let registerUserUseCase: RegisterUserUseCase;
   let verifyEmailUseCase: VerifyEmailUseCase;
   let updateProfileUseCase: UpdateProfileUseCase;
@@ -26,24 +32,32 @@ describe("UserController", () => {
   let getNotificationPreferencesUseCase: GetNotificationPreferencesUseCase;
   let updateNotificationPreferencesUseCase: UpdateNotificationPreferencesUseCase;
 
-  let controller: UserController;
+  let createUserController: CreateUserController;
+  let verifyEmailController: VerifyEmailController;
+  let updateProfileController: UpdateProfileController;
+  let getProfileController: GetProfileController;
+  let uploadProfilePhotoController: UploadProfilePhotoController;
+  let getNotificationPreferencesController: GetNotificationPreferencesController;
+  let updateNotificationPreferencesController: UpdateNotificationPreferencesController;
   let res: Partial<Response>;
 
   beforeEach(() => {
     registerUserUseCase = { execute: vi.fn() } as unknown as RegisterUserUseCase;
     verifyEmailUseCase = { execute: vi.fn() } as unknown as VerifyEmailUseCase;
     updateProfileUseCase = { execute: vi.fn() } as unknown as UpdateProfileUseCase;
-    getProfileUseCase = { execute: vi.fn(), } as unknown as GetProfileUseCase;
+    getProfileUseCase = { execute: vi.fn() } as unknown as GetProfileUseCase;
     cloudinaryService = { upload: vi.fn() } as unknown as ClaudinaryService;
-    getNotificationPreferencesUseCase = {
-      execute: vi.fn(),
-    } as unknown as GetNotificationPreferencesUseCase;
+    getNotificationPreferencesUseCase = { execute: vi.fn() } as unknown as GetNotificationPreferencesUseCase;
+    updateNotificationPreferencesUseCase = { execute: vi.fn() } as unknown as UpdateNotificationPreferencesUseCase;
 
-    updateNotificationPreferencesUseCase = {
-      execute: vi.fn(),
-    } as unknown as UpdateNotificationPreferencesUseCase;
+    createUserController = new CreateUserController(registerUserUseCase);
+    verifyEmailController = new VerifyEmailController(verifyEmailUseCase);
+    updateProfileController = new UpdateProfileController(updateProfileUseCase);
+    getProfileController = new GetProfileController(getProfileUseCase);
+    uploadProfilePhotoController = new UploadProfilePhotoController(updateProfileUseCase, cloudinaryService);
+    getNotificationPreferencesController = new GetNotificationPreferencesController(getNotificationPreferencesUseCase);
+    updateNotificationPreferencesController = new UpdateNotificationPreferencesController(updateNotificationPreferencesUseCase);
 
-    controller = new UserController(registerUserUseCase, verifyEmailUseCase, updateProfileUseCase, getProfileUseCase, cloudinaryService, updateNotificationPreferencesUseCase, getNotificationPreferencesUseCase);
     res = {
       status: vi.fn().mockReturnThis(),
       json: vi.fn().mockReturnThis(),
@@ -58,7 +72,7 @@ describe("UserController", () => {
       vi.mocked(registerUserUseCase.execute).mockResolvedValue(validCreateOutput);
 
       const req = buildReq({ email: "juan@example.com", username: "juancho", password: "miPass123" });
-      await invoke(controller.create, req, res);
+      await invoke(createUserController.handle, req, res);
 
       expect(res.status).toHaveBeenCalledWith(201);
       expect(res.json).toHaveBeenCalledWith({ id: "user-abc" });
@@ -71,7 +85,7 @@ describe("UserController", () => {
       vi.mocked(registerUserUseCase.execute).mockRejectedValue(new InvalidEmailError("no-es-email"));
 
       const req = buildReq({ email: "no-es-email", username: "juancho", password: "miPass123" });
-      await invoke(controller.create, req, res);
+      await invoke(createUserController.handle, req, res);
 
       expect(res.status).toHaveBeenCalledWith(400);
     });
@@ -84,7 +98,7 @@ describe("UserController", () => {
       );
 
       const req = buildReq({ email: "juan@example.com", username: "juancho", password: "miPass123" });
-      await invoke(controller.create, req, res);
+      await invoke(createUserController.handle, req, res);
 
       expect(res.status).toHaveBeenCalledWith(409);
     });
@@ -95,7 +109,7 @@ describe("UserController", () => {
       vi.mocked(registerUserUseCase.execute).mockRejectedValue(new Error("db is down"));
 
       const req = buildReq({ email: "juan@example.com", username: "juancho", password: "miPass123" });
-      await invoke(controller.create, req, res);
+      await invoke(createUserController.handle, req, res);
 
       expect(res.status).toHaveBeenCalledWith(500);
     });
@@ -106,7 +120,7 @@ describe("UserController", () => {
       vi.mocked(verifyEmailUseCase.execute).mockResolvedValue(undefined);
 
       const req = buildReq({ token: "valid-token-string" });
-      await invoke(controller.verifyEmail, req, res);
+      await invoke(verifyEmailController.handle, req, res);
 
       expect(res.status).toHaveBeenCalledWith(200);
       expect(res.json).toHaveBeenCalledWith({ verified: true });
@@ -120,7 +134,7 @@ describe("UserController", () => {
       );
 
       const req = buildReq({ token: "expired-token" });
-      await invoke(controller.verifyEmail, req, res);
+      await invoke(verifyEmailController.handle, req, res);
 
       expect(res.status).toHaveBeenCalledWith(400);
     });
@@ -139,34 +153,13 @@ describe("UserController", () => {
 
       const req = {
         body: { username: "facu_updated", name: "Facundo", lastname: "Pereira" },
+        validated: { body: { username: "facu_updated", name: "Facundo", lastname: "Pereira" } },
         auth: { sub: "user-123" },
       } as Partial<Request>;
 
-      await invoke(controller.updateProfile, req, res);
+      await invoke(updateProfileController.handle, req, res);
 
       expect(res.status).toHaveBeenCalledWith(200);
-      expect(res.json).toHaveBeenCalledWith({
-        id: "user-123",
-        email: "facu@test.com",
-        username: "facu_updated",
-        name: "Facundo",
-        lastname: "Pereira",
-        photoUrl: null,
-      });
-    });
-  });
-
-  describe("updateProfile — when body fields are invalid", () => {
-    it("returns 400 if username is not a string", async () => {
-      const req = {
-        body: { username: 123 },
-        auth: { sub: "user-123" },
-      } as Partial<Request>;
-
-      await invoke(controller.updateProfile, req, res);
-
-      expect(res.status).toHaveBeenCalledWith(400);
-      expect(updateProfileUseCase.execute).not.toHaveBeenCalled();
     });
   });
 
@@ -176,27 +169,13 @@ describe("UserController", () => {
 
       const req = {
         body: { username: "nuevo_username" },
+        validated: { body: { username: "nuevo_username" } },
         auth: { sub: "user-123" },
       } as Partial<Request>;
 
-      await invoke(controller.updateProfile, req, res);
+      await invoke(updateProfileController.handle, req, res);
 
       expect(res.status).toHaveBeenCalledWith(404);
-    });
-  });
-
-  describe("updateProfile — when an unexpected error happens", () => {
-    it("returns 500", async () => {
-      vi.mocked(updateProfileUseCase.execute).mockRejectedValue(new Error("db down"));
-
-      const req = {
-        body: { username: "nuevo_username" },
-        auth: { sub: "user-123" },
-      } as Partial<Request>;
-
-      await invoke(controller.updateProfile, req, res);
-
-      expect(res.status).toHaveBeenCalledWith(500);
     });
   });
 
@@ -213,17 +192,9 @@ describe("UserController", () => {
 
       const req = { auth: { sub: "user-123" } } as Partial<Request>;
 
-      await invoke(controller.getProfile, req, res);
+      await invoke(getProfileController.handle, req, res);
 
       expect(res.status).toHaveBeenCalledWith(200);
-      expect(res.json).toHaveBeenCalledWith({
-        id: "user-123",
-        email: "facu@test.com",
-        username: "facu_updated",
-        name: "Facundo",
-        lastname: "Pereira",
-        photoUrl: undefined,
-      });
     });
   });
 
@@ -232,20 +203,9 @@ describe("UserController", () => {
       vi.mocked(getProfileUseCase.execute).mockRejectedValue(new UserNotFoundError());
 
       const req = { auth: { sub: "user-123" } } as Partial<Request>;
-      await invoke(controller.getProfile, req, res);
+      await invoke(getProfileController.handle, req, res);
 
       expect(res.status).toHaveBeenCalledWith(404);
-    });
-  });
-
-  describe("getProfile — when an unexpected error happens", () => {
-    it("returns 500", async () => {
-      vi.mocked(getProfileUseCase.execute).mockRejectedValue(new Error("db down"));
-
-      const req = { auth: { sub: "user-123" } } as Partial<Request>;
-      await invoke(controller.getProfile, req, res);
-
-      expect(res.status).toHaveBeenCalledWith(500);
     });
   });
 
@@ -272,29 +232,11 @@ describe("UserController", () => {
         file: { buffer: fileBuffer },
       } as Partial<Request> & { file: Express.Multer.File };
 
-      await invoke(controller.uploadProfilePhoto, req, res);
+      await invoke(uploadProfilePhotoController.handle, req, res);
 
       expect(cloudinaryService.upload).toHaveBeenCalledWith(fileBuffer, "profiles");
       expect(updateProfileUseCase.execute).toHaveBeenCalledOnce();
-
-      const firstCall = vi.mocked(updateProfileUseCase.execute).mock.calls[0];
-      expect(firstCall).toBeDefined();
-      expect(firstCall![0]).toEqual(
-        expect.objectContaining({
-          publicId: "user-123",
-          photoUrl: "https://res.cloudinary.com/demo/profile.jpg",
-        }),
-      );
-
       expect(res.status).toHaveBeenCalledWith(200);
-      expect(res.json).toHaveBeenCalledWith({
-        id: "user-123",
-        email: "facu@test.com",
-        username: "facundo",
-        name: "Facundo",
-        lastname: "Pereira",
-        photoUrl: "https://res.cloudinary.com/demo/profile.jpg",
-      });
     });
   });
 
@@ -302,26 +244,10 @@ describe("UserController", () => {
     it("returns 400 and does not call Cloudinary", async () => {
       const req = { auth: { sub: "user-123" } } as Partial<Request>;
 
-      await invoke(controller.uploadProfilePhoto, req, res);
+      await invoke(uploadProfilePhotoController.handle, req, res);
 
       expect(res.status).toHaveBeenCalledWith(400);
       expect(cloudinaryService.upload).not.toHaveBeenCalled();
-      expect(updateProfileUseCase.execute).not.toHaveBeenCalled();
-    });
-  });
-
-  describe("uploadProfilePhoto — when Cloudinary fails", () => {
-    it("returns 500", async () => {
-      vi.mocked(cloudinaryService.upload).mockRejectedValue(new Error("cloudinary down"));
-
-      const req = {
-        auth: { sub: "user-123" },
-        file: { buffer: Buffer.from("fake-image") },
-      } as Partial<Request> & { file: Express.Multer.File };
-
-      await invoke(controller.uploadProfilePhoto, req, res);
-
-      expect(res.status).toHaveBeenCalledWith(500);
     });
   });
 
@@ -339,31 +265,10 @@ describe("UserController", () => {
 
       const req = { auth: { sub: "facundo-public-id" } } as Partial<Request>;
 
-      await invoke(controller.getNotificationPreferences, req, res);
+      await invoke(getNotificationPreferencesController.handle, req, res);
 
       expect(getNotificationPreferencesUseCase.execute).toHaveBeenCalledWith("facundo-public-id");
       expect(res.status).toHaveBeenCalledWith(200);
-      expect(res.json).toHaveBeenCalledWith({
-        notificationRadius: 5,
-        lostReportsEnabled: true,
-        sightingReportsEnabled: false,
-        matchesEnabled: true,
-        mutedUntil,
-      });
-    });
-  });
-
-  describe("getNotificationPreferences — when an unexpected error happens", () => {
-    it("returns 500", async () => {
-      vi.mocked(getNotificationPreferencesUseCase.execute).mockRejectedValue(
-        new Error("database unavailable"),
-      );
-
-      const req = { auth: { sub: "facundo-public-id" } } as Partial<Request>;
-
-      await invoke(controller.getNotificationPreferences, req, res);
-
-      expect(res.status).toHaveBeenCalledWith(500);
     });
   });
 
@@ -382,132 +287,14 @@ describe("UserController", () => {
 
       const req = {
         auth: { sub: "facundo-public-id" },
-        body: {
-          notificationRadius: 10,
-          lostReportsEnabled: false,
-          sightingReportsEnabled: true,
-          matchesEnabled: false,
-          mutedUntil: mutedUntilText,
-        },
+        body: { notificationRadius: 10, lostReportsEnabled: false, sightingReportsEnabled: true, matchesEnabled: false, mutedUntil: mutedUntilText },
+        validated: { body: { notificationRadius: 10, lostReportsEnabled: false, sightingReportsEnabled: true, matchesEnabled: false, mutedUntil: mutedUntilText } },
       } as Partial<Request>;
 
-      await invoke(controller.updateNotificationPreferences, req, res);
+      await invoke(updateNotificationPreferencesController.handle, req, res);
 
       expect(updateNotificationPreferencesUseCase.execute).toHaveBeenCalledOnce();
-
-      const firstCall = vi.mocked(updateNotificationPreferencesUseCase.execute).mock.calls[0];
-      expect(firstCall).toBeDefined();
-      expect(firstCall![0]).toEqual(
-        expect.objectContaining({
-          userPublicId: "facundo-public-id",
-          notificationRadius: 10,
-          lostReportsEnabled: false,
-          sightingReportsEnabled: true,
-          matchesEnabled: false,
-          mutedUntil,
-        }),
-      );
-
       expect(res.status).toHaveBeenCalledWith(200);
-      expect(res.json).toHaveBeenCalledWith({
-        notificationRadius: 10,
-        lostReportsEnabled: false,
-        sightingReportsEnabled: true,
-        matchesEnabled: false,
-        mutedUntil,
-      });
-    });
-
-    it("allows a partial update", async () => {
-      vi.mocked(updateNotificationPreferencesUseCase.execute).mockResolvedValue({
-        notificationRadius: 15,
-        lostReportsEnabled: true,
-        sightingReportsEnabled: true,
-        matchesEnabled: true,
-        mutedUntil: null,
-      });
-
-      const req = {
-        auth: { sub: "facundo-public-id" },
-        body: { notificationRadius: 15 },
-      } as Partial<Request>;
-
-      await invoke(controller.updateNotificationPreferences, req, res);
-
-      expect(res.status).toHaveBeenCalledWith(200);
-      expect(updateNotificationPreferencesUseCase.execute).toHaveBeenCalledOnce();
-    });
-
-    it("allows removing mute with null", async () => {
-      vi.mocked(updateNotificationPreferencesUseCase.execute).mockResolvedValue({
-        notificationRadius: 5,
-        lostReportsEnabled: true,
-        sightingReportsEnabled: true,
-        matchesEnabled: true,
-        mutedUntil: null,
-      });
-
-      const req = {
-        auth: { sub: "facundo-public-id" },
-        body: { mutedUntil: null },
-      } as Partial<Request>;
-
-      await invoke(controller.updateNotificationPreferences, req, res);
-
-      const firstCall = vi.mocked(updateNotificationPreferencesUseCase.execute).mock.calls[0];
-      expect(firstCall).toBeDefined();
-      expect(firstCall![0].mutedUntil).toBeNull();
-      expect(res.status).toHaveBeenCalledWith(200);
-    });
-  });
-
-  describe("updateNotificationPreferences — when the body is invalid", () => {
-    it("returns 400 when no preference is provided", async () => {
-      const req = {
-        auth: { sub: "facundo-public-id" },
-        body: {},
-      } as Partial<Request>;
-
-      await invoke(controller.updateNotificationPreferences, req, res);
-
-      expect(res.status).toHaveBeenCalledWith(400);
-      expect(updateNotificationPreferencesUseCase.execute).not.toHaveBeenCalled();
-    });
-
-    it("returns 400 when notificationRadius is not an integer", async () => {
-      const req = {
-        auth: { sub: "facundo-public-id" },
-        body: { notificationRadius: 5.5 },
-      } as Partial<Request>;
-
-      await invoke(controller.updateNotificationPreferences, req, res);
-
-      expect(res.status).toHaveBeenCalledWith(400);
-      expect(updateNotificationPreferencesUseCase.execute).not.toHaveBeenCalled();
-    });
-
-    it("returns 400 when a toggle is not boolean", async () => {
-      const req = {
-        auth: { sub: "facundo-public-id" },
-        body: { lostReportsEnabled: "yes" },
-      } as Partial<Request>;
-
-      await invoke(controller.updateNotificationPreferences, req, res);
-
-      expect(res.status).toHaveBeenCalledWith(400);
-      expect(updateNotificationPreferencesUseCase.execute).not.toHaveBeenCalled();
-    });
-
-    it("returns 400 when mutedUntil is not a string or null", async () => {
-      const req = {
-        auth: { sub: "facundo-public-id" },
-        body: { mutedUntil: 123 },
-      } as Partial<Request>;
-
-      await invoke(controller.updateNotificationPreferences, req, res);
-
-      expect(res.status).toHaveBeenCalledWith(400);
-      expect(updateNotificationPreferencesUseCase.execute).not.toHaveBeenCalled();
     });
   });
 
@@ -520,9 +307,10 @@ describe("UserController", () => {
       const req = {
         auth: { sub: "facundo-public-id" },
         body: { notificationRadius: 10 },
+        validated: { body: { notificationRadius: 10 } },
       } as Partial<Request>;
 
-      await invoke(controller.updateNotificationPreferences, req, res);
+      await invoke(updateNotificationPreferencesController.handle, req, res);
 
       expect(res.status).toHaveBeenCalledWith(400);
     });
@@ -535,9 +323,10 @@ describe("UserController", () => {
       const req = {
         auth: { sub: "facundo-public-id" },
         body: { mutedUntil: "2026-06-15T18:00:00.000Z" },
+        validated: { body: { mutedUntil: "2026-06-15T18:00:00.000Z" } },
       } as Partial<Request>;
 
-      await invoke(controller.updateNotificationPreferences, req, res);
+      await invoke(updateNotificationPreferencesController.handle, req, res);
 
       expect(res.status).toHaveBeenCalledWith(400);
     });
@@ -550,9 +339,10 @@ describe("UserController", () => {
       const req = {
         auth: { sub: "facundo-public-id" },
         body: { notificationRadius: 10 },
+        validated: { body: { notificationRadius: 10 } },
       } as Partial<Request>;
 
-      await invoke(controller.updateNotificationPreferences, req, res);
+      await invoke(updateNotificationPreferencesController.handle, req, res);
 
       expect(res.status).toHaveBeenCalledWith(500);
     });

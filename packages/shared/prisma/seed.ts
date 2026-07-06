@@ -3,6 +3,7 @@ import { PrismaClient } from '@prisma/client'
 const prisma = new PrismaClient()
 
 async function main(): Promise<void> {
+  await seedRoles()
   await seedReportStatuses()
   await seedReportTypes()
   await seedAnimalTypes()
@@ -17,6 +18,16 @@ async function main(): Promise<void> {
 
 const DOG = 1
 const CAT = 2
+
+async function seedRoles(): Promise<void> {
+  await prisma.role.createMany({
+    data: [
+      { role_id: 1, name: 'ADMIN' },
+      { role_id: 2, name: 'USER' },
+    ],
+    skipDuplicates: true,
+  })
+}
 
 async function seedColors(): Promise<void> {
   const colors = [
@@ -174,6 +185,7 @@ async function seedContentReportTargetTypes(): Promise<void> {
     data: [
       { content_report_target_type_id: 1, name: 'CHAT' },
       { content_report_target_type_id: 2, name: 'POST' },
+      { content_report_target_type_id: 3, name: 'USER' },
     ],
     skipDuplicates: true,
   })
@@ -202,6 +214,7 @@ async function seedContentReportStatuses(): Promise<void> {
       { content_report_status_id: 1, name: 'PENDING' },
       { content_report_status_id: 2, name: 'REVIEWED' },
       { content_report_status_id: 3, name: 'DISMISSED' },
+      { content_report_status_id: 4, name: 'SUSPENDED' },
     ],
     skipDuplicates: true,
   })

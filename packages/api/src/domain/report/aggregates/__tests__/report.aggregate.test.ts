@@ -9,6 +9,7 @@ import { SightingReportDetails } from "@domain/report/value-objects/sighting-rep
 import { AnimalType } from "@domain/shared/animal-type/animal-type";
 import { InvalidStatusTransitionError } from "@domain/errors/InvalidStatusTransitionError";
 import { InvalidReportDetailsError } from "@domain/errors/InvalidReportDetailsError";
+import { SightingImage } from "@domain/report/value-objects/sighting.images";
 
 const validLocation = Location.create({
   address: "Av. Corrientes 1234",
@@ -22,7 +23,7 @@ const sightingDetails = SightingReportDetails.create({
   hasIdCollar: true,
   color: "brown",
   isInTransit: false,
-  images: []
+  images: [SightingImage.create({ cloudinaryId: "fake-id", photoUrl: "https://fake.com/img.jpg" })]
 });
 
 const baseLostParams = {
@@ -128,18 +129,32 @@ describe("Report.resolve", () => {
     expect(report.status).toBe(ReportStatus.ACTIVE);
 
 
-    report.resolve();
+    report.resolve(true);
 
 
     expect(report.status).toBe(ReportStatus.RESOLVED);
     expect(report.updatedAt).toBeInstanceOf(Date);
   });
 
+  it("marca resolved=true y setea resolvedAt cuando el dueño indica reencuentro", () => {
+    const report = Report.create(baseLostParams);
+    report.resolve(true);
+    expect(report.resolved).toBe(true);
+    expect(report.resolvedAt).toBeInstanceOf(Date);
+  });
+
+  it("resolver por otro motivo deja resolved=false pero igual setea resolvedAt", () => {
+    const report = Report.create(baseLostParams);
+    report.resolve(false);
+    expect(report.resolved).toBe(false);
+    expect(report.resolvedAt).toBeInstanceOf(Date);
+  });
+
   it("lanza InvalidStatusTransitionError al resolver un reporte CLOSED", () => {
 
     const report = Report.create(baseLostParams);
     report.close();
-    expect(() => report.resolve()).toThrow(InvalidStatusTransitionError);
+    expect(() => report.resolve(true)).toThrow(InvalidStatusTransitionError);
   });
 });
 
@@ -159,7 +174,7 @@ describe("Report.close", () => {
   it("transiciona de RESOLVED a CLOSED", () => {
 
     const report = Report.create(baseLostParams);
-    report.resolve();
+    report.resolve(true);
 
 
     report.close();

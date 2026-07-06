@@ -98,23 +98,22 @@ describe("GetFilteredReportsUseCase", () => {
   });
 
   it("debería retornar un array vacío inmediatamente si no se encuentran IDs", async () => {
-    // Given
+
     vi.mocked(reportRepository.findIdsByQuery).mockResolvedValue([]);
 
-    // When
     const result = await useCase.execute({
       reportType: ReportType.LOST,
       animalType: AnimalType.DOG,
     });
 
-    // Then
+
     expect(result).toEqual([]);
     expect(reportRepository.findIdsByQuery).toHaveBeenCalledOnce();
     expect(reportRepository.findByIds).not.toHaveBeenCalled();
   });
 
   it("debería buscar por IDs y mapear los reportes devueltos por el repositorio", async () => {
-    // Given
+
     const ids = ["report-sighting-uuid", "report-lost-uuid"];
     vi.mocked(reportRepository.findIdsByQuery).mockResolvedValue(ids);
     vi.mocked(reportRepository.findByIds).mockResolvedValue([
@@ -122,12 +121,12 @@ describe("GetFilteredReportsUseCase", () => {
       { report: fakeLostReport, pet: fakePet },
     ]);
 
-    // When
+
     const result = await useCase.execute({
       reportType: ReportType.LOST,
     });
 
-    // Then
+
     expect(result).toHaveLength(2);
     expect(reportRepository.findIdsByQuery).toHaveBeenCalledOnce();
     expect(reportRepository.findByIds).toHaveBeenCalledWith(ids);
@@ -154,37 +153,37 @@ describe("GetFilteredReportsUseCase", () => {
   });
 
   it("debería propagar errores si findIdsByQuery falla", async () => {
-    // Given
+
     const error = new Error("DB Error");
     vi.mocked(reportRepository.findIdsByQuery).mockRejectedValue(error);
 
-    // When / Then
+
     await expect(useCase.execute({})).rejects.toThrow("DB Error");
   });
 
   it("debería propagar errores si findByIds falla", async () => {
-    // Given
+
     vi.mocked(reportRepository.findIdsByQuery).mockResolvedValue(["some-id"]);
     vi.mocked(reportRepository.findByIds).mockRejectedValue(new Error("findByIds failed"));
 
-    // When / Then
+
     await expect(useCase.execute({})).rejects.toThrow("findByIds failed");
   });
 
   it("deberia filtrar reportes por userId", async () => {
-    // Given
+
     const ids = ["report-lost-uuid"];
     vi.mocked(reportRepository.findIdsByQuery).mockResolvedValue(ids);
     vi.mocked(reportRepository.findByIds).mockResolvedValue([
       { report: fakeLostReport, pet: fakePet },
     ]);
 
-    // When
+
     const result = await useCase.execute({
       userPublicId: "user-pub-id",
     });
 
-    // Then
+
     expect(result).toHaveLength(1);
     expect(reportRepository.findIdsByQuery).toHaveBeenCalledWith(
       expect.objectContaining({ userPublicId: "user-pub-id" })
@@ -196,7 +195,7 @@ describe("GetFilteredReportsUseCase", () => {
   });
 
   it("deberia filtrar reportes cerrados por userId", async () => {
-    // Given
+
     const closedReport = Report.restore({
       ...fakeLostReport,
       idReport: 3,
@@ -218,13 +217,12 @@ describe("GetFilteredReportsUseCase", () => {
       { report: closedReport, pet: fakePet },
     ]);
 
-    // When
+
     const result = await useCase.execute({
       status: ReportStatus.CLOSED,
       userPublicId: "user-pub-id",
     });
 
-    // Then
     expect(result).toHaveLength(1);
     expect(reportRepository.findIdsByQuery).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -246,7 +244,7 @@ describe("GetFilteredReportsUseCase", () => {
         hasIdCollar: false,
         color: "black",
         isInTransit: false,
-        images: [],
+        images: [SightingImage.create({ cloudinaryId: "fake-id", photoUrl: "https://fake.com/img.jpg" })],
       });
 
     const cerca = Report.restore({
@@ -315,7 +313,7 @@ describe("GetFilteredReportsUseCase", () => {
         hasIdCollar: false,
         color: "black",
         isInTransit: false,
-        images: [],
+        images: [SightingImage.create({ cloudinaryId: "fake-id", photoUrl: "https://fake.com/img.jpg" })],
       });
 
     const viejo = Report.restore({
@@ -366,7 +364,7 @@ describe("GetFilteredReportsUseCase", () => {
         hasIdCollar: false,
         color: "black",
         isInTransit: false,
-        images: [],
+        images: [SightingImage.create({ cloudinaryId: "fake-id", photoUrl: "https://fake.com/img.jpg" })],
       });
 
     const cerca = Report.restore({
