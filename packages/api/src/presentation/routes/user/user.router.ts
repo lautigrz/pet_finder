@@ -8,6 +8,8 @@ import {
   verifyEmailRequestSchema,
   updateProfileRequestSchema,
   updateNotificationPreferencesRequestSchema,
+  createUserReviewRequestSchema,
+  listUserReviewsRequestSchema,
 } from "@presentation/schemas/user/user.schema";
 import upload from "@infrastructure/storage/CloudinaryMulterUpload";
 import { CreateUserController } from "@presentation/controller/user/create-user.controller";
@@ -18,6 +20,10 @@ import { GetPublicProfileController } from "@presentation/controller/user/get-pu
 import { UploadProfilePhotoController } from "@presentation/controller/user/upload-profile-photo.controller";
 import { GetNotificationPreferencesController } from "@presentation/controller/user/get-notification-preferences.controller";
 import { UpdateNotificationPreferencesController } from "@presentation/controller/user/update-notification-preferences.controller";
+import { UpsertUserReviewController } from "@presentation/controller/user-review/upsert-user-review.controller";
+import { ListUserReviewsController } from "@presentation/controller/user-review/list-user-reviews.controller";
+import { ListPublicUserReviewsController } from "@presentation/controller/user-review/list-public-user-reviews.controller";
+import { GetUserRatingController } from "@presentation/controller/user-review/get-user-rating.controller";
 
 const router = Router();
 
@@ -30,16 +36,23 @@ const getPublicProfileController = container.resolve(GetPublicProfileController)
 const uploadProfilePhotoController = container.resolve(UploadProfilePhotoController);
 const getNotificationPreferencesController = container.resolve(GetNotificationPreferencesController);
 const updateNotificationPreferencesController = container.resolve(UpdateNotificationPreferencesController);
+const upsertUserReviewController = container.resolve(UpsertUserReviewController);
+const listUserReviewsController = container.resolve(ListUserReviewsController);
+const listPublicUserReviewsController = container.resolve(ListPublicUserReviewsController,);
+const getUserRatingController = container.resolve(GetUserRatingController);
 
 router.post("/", validateRequest(createUserRequestSchema), createUserController.handle);
 router.post("/verify-email", validateRequest(verifyEmailRequestSchema), verifyEmailController.handle);
 router.patch("/me", requireAuth(tokenSigner), validateRequest(updateProfileRequestSchema), updateProfileController.handle);
+router.get("/me/reviews", requireAuth(tokenSigner), validateRequest(listUserReviewsRequestSchema), listUserReviewsController.handle);
 router.get("/me", requireAuth(tokenSigner), getProfileController.handle);
 router.post("/me/photo", requireAuth(tokenSigner), upload.single("photo"), uploadProfilePhotoController.handle);
 router.get("/preferences", requireAuth(tokenSigner), getNotificationPreferencesController.handle);
-router.patch("/preferences", requireAuth(tokenSigner), validateRequest(updateNotificationPreferencesRequestSchema), updateNotificationPreferencesController.handle);
-router.get("/:publicId/profile", requireAuth(tokenSigner), getPublicProfileController.handle);
-router.get("/:publicId", requireAuth(tokenSigner), getPublicProfileController.handle);
-
+router.patch("/preferences",requireAuth(tokenSigner),validateRequest(updateNotificationPreferencesRequestSchema),updateNotificationPreferencesController.handle,);
+router.get("/:publicId/profile",requireAuth(tokenSigner),getPublicProfileController.handle,);
+router.post("/:publicId/reviews",requireAuth(tokenSigner),validateRequest(createUserReviewRequestSchema),upsertUserReviewController.handle,);
+router.get("/:publicId/reviews",requireAuth(tokenSigner),validateRequest(listUserReviewsRequestSchema),listPublicUserReviewsController.handle,);
+router.get("/:publicId/rating",requireAuth(tokenSigner),getUserRatingController.handle,);
+router.get("/:publicId",requireAuth(tokenSigner),getPublicProfileController.handle,);
 
 export default router;
