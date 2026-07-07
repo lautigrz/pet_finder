@@ -4,6 +4,7 @@ import { errorToHttpStatus } from '@presentation/errors/error-mapper';
 
 export const errorHandler = (err: unknown, req: Request, res: Response, _next: NextFunction) => {
     const { statusCode, code, message } = errorToHttpStatus(err as Error);
+    console.log(err);
     logError(statusCode, code, message, err, req);
     res.status(statusCode).json({ status: 'error', code, message });
 };
