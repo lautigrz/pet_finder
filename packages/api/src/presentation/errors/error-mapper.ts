@@ -55,6 +55,10 @@ export function errorToHttpStatus(error: Error): HttpError {
             case 'CONTENT_REPORT_NOT_FOUND': return { statusCode: 404, code: error.code, message: error.message };
             case 'SUSPENSION_REASON_REQUIRED': return { statusCode: 400, code: error.code, message: error.message };
             case 'MATCH_RESULT_NOT_FOUND': return { statusCode: 404, code: error.code, message: error.message };
+            case 'MISSION_NOT_FOUND': return { statusCode: 404, code: error.code, message: error.message };
+            case 'UNAUTHORIZED_MISSION_EDIT': return { statusCode: 403, code: error.code, message: error.message };
+            case 'MISSION_CLOSED': return { statusCode: 400, code: error.code, message: error.message };
+            case 'REPORT_CLOSED': return { statusCode: 400, code: error.code, message: error.message };
         }
     }
 

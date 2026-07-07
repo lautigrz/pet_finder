@@ -204,53 +204,57 @@ container.registerSingleton("GetBreedsUseCase", GetBreedsUseCase);
 container.registerSingleton("GetColorsUseCase", GetColorsUseCase);
 
 // Missions
-import { MissionRepository } from "@domain/repositories/mission.repository";
-import { PrismaMissionRepository } from "@infrastructure/repository/mission/PrismaMissionRepository";
+import { MissionRepository } from "@domain/mission/repositories/mission.repository";
+import { PrismaMissionRepository } from "@infrastructure/repository/mission/mission.repository";
 container.registerSingleton<MissionRepository>(
   "MissionRepository",
   PrismaMissionRepository
 );
 
 import { CreateMissionUseCase } from "@application/usecase/mission-usecase/create-mission.usecase";
-container.registerSingleton(
-  "CreateMissionUseCase",
-  CreateMissionUseCase
-);
-
 import { GetMissionsUseCase } from "@application/usecase/mission-usecase/get-missions.usecase";
+import { GetMissionDetailUseCase } from "@application/usecase/mission-usecase/get-mission-detail.usecase";
+import { JoinMissionUseCase } from "@application/usecase/mission-usecase/join-mission.usecase";
+import { LeaveMissionUseCase } from "@application/usecase/mission-usecase/leave-mission.usecase";
+import { CancelMissionUseCase } from "@application/usecase/mission-usecase/cancel-mission.usecase";
+import { GetJoinedMissionsUseCase } from "@application/usecase/mission-usecase/get-joined-missions.usecase";
+import { GetJoinedMissionsController } from "@presentation/controller/mission/get-joined-missions.controller";
 
+container.registerSingleton("CreateMissionUseCase", CreateMissionUseCase);
+container.registerSingleton("GetMissionsUseCase", GetMissionsUseCase);
+container.registerSingleton("GetMissionDetailUseCase", GetMissionDetailUseCase);
+container.registerSingleton("JoinMissionUseCase", JoinMissionUseCase);
+container.registerSingleton("LeaveMissionUseCase", LeaveMissionUseCase);
+container.registerSingleton("CancelMissionUseCase", CancelMissionUseCase);
+container.registerSingleton("GetJoinedMissionsUseCase", GetJoinedMissionsUseCase);
+container.registerSingleton(GetJoinedMissionsController);
+
+
+import { PrismaMissionUpdateRepository } from "@infrastructure/repository/mission/mission-update.repository";
 container.registerSingleton(
-  "GetMissionsUseCase",
-  GetMissionsUseCase
+  "MissionUpdateRepository",
+  PrismaMissionUpdateRepository
 );
 
-
-import { PrismaMissionResponseRepository } from "@infrastructure/repository/mission-response/PrismaMissionResponseRepository"; 
+import { CreateMissionUpdateUseCase } from "@application/usecase/mission-usecase/create-mission-update.usecase";
 container.registerSingleton(
-  "MissionResponseRepository",
-  PrismaMissionResponseRepository
+  "CreateMissionUpdateUseCase",
+  CreateMissionUpdateUseCase
 );
 
-import { CreateMissionResponseUseCase } from "@application/usecase/mission-response-usecase/create-mission-response.usecase";
+import { CreateMissionUpdateController } from "@presentation/controller/mission/create-mission-update.controller";
 container.registerSingleton(
-  "CreateMissionResponseUseCase",
-  CreateMissionResponseUseCase
+  CreateMissionUpdateController
 );
 
-import { CreateMissionResponseController } from "@presentation/controller/mission-response/create-mission-response.controller";
-
+import { GetMissionUpdatesUseCase } from "@application/usecase/mission-usecase/get-mission-updates.usecase";
 container.registerSingleton(
-  CreateMissionResponseController
+  "GetMissionUpdatesUseCase",
+  GetMissionUpdatesUseCase
 );
 
-import { GetMissionResponsesUseCase } from "@application/usecase/mission-response-usecase/get-mission-responses.usecase";
+import { GetMissionUpdatesController } from "@presentation/controller/mission/get-mission-updates.controller";
 container.registerSingleton(
-  "GetMissionResponsesUseCase",
-  GetMissionResponsesUseCase
-);
-
-import { GetMissionResponsesController } from "@presentation/controller/mission-response/get-mission-responses.controller";
-container.registerSingleton(
-  GetMissionResponsesController
+  GetMissionUpdatesController
 );
 

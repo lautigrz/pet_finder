@@ -14,6 +14,7 @@ async function main(): Promise<void> {
   await seedContentReportTargetTypes()
   await seedContentReportReasons()
   await seedContentReportStatuses()
+  await seedMissionStatuses()
 }
 
 const DOG = 1
@@ -215,6 +216,17 @@ async function seedContentReportStatuses(): Promise<void> {
       { content_report_status_id: 2, name: 'REVIEWED' },
       { content_report_status_id: 3, name: 'DISMISSED' },
       { content_report_status_id: 4, name: 'SUSPENDED' },
+    ],
+    skipDuplicates: true,
+  })
+}
+
+async function seedMissionStatuses(): Promise<void> {
+  await prisma.missionStatus.createMany({
+    data: [
+      { mission_status_id: 1, name: 'OPEN' },
+      { mission_status_id: 2, name: 'IN_PROGRESS' },
+      { mission_status_id: 3, name: 'CLOSED' },
     ],
     skipDuplicates: true,
   })

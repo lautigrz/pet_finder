@@ -5,6 +5,8 @@ import { UpdateStatusDTO } from "./dto/update-status.dto";
 import { ReportNotFoundError } from "@domain/errors/ReportNotFoundError";
 import { NotifyReportFollowersOfStatusChangeUseCase } from "./notify-report-followers-of-status-change.usecase";
 import { inject, injectable } from "tsyringe";
+import type { MissionRepository } from "@domain/mission/repositories/mission.repository";
+import { MissionStatus } from "@domain/mission/types/mission.status";
 
 @injectable()
 export class UpdateStatus {
@@ -13,7 +15,9 @@ export class UpdateStatus {
     private readonly reportRepository: ReportRepository,
     @inject("NotifyReportFollowersOfStatusChangeUseCase")
     private readonly notifyReportFollowersOfStatusChange: NotifyReportFollowersOfStatusChangeUseCase,
-  ) {}
+    @inject("MissionRepository")
+    private readonly missionRepository: MissionRepository,
+  ) { }
 
   async execute(dto: UpdateStatusDTO): Promise<void> {
     const report: Report | null =
@@ -34,13 +38,17 @@ export class UpdateStatus {
     await this.reportRepository.update(report);
 
     const statusChanged = previousStatus !== report.status;
+    const isOver = report.status === ReportStatus.RESOLVED || report.status === ReportStatus.CLOSED;
 
-    const shouldNotifyFollowers =
-      statusChanged &&
-      (
-        report.status === ReportStatus.RESOLVED ||
-        report.status === ReportStatus.CLOSED
-      );
+    if (statusChanged && isOver) {
+      const mission = await this.missionRepository.findByReportId(report.idReport!);
+      if (mission && mission.status !== MissionStatus.CLOSED) {
+        mission.close();
+        await this.missionRepository.update(mission);
+      }
+    }
+
+    const shouldNotifyFollowers = statusChanged && isOver;
 
     if (shouldNotifyFollowers) {
       await this.notifyReportFollowersOfStatusChange.execute({

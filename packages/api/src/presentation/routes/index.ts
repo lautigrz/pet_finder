@@ -11,7 +11,7 @@ import notificationRouter from "./notifications/notification.router";
 import { messageRouter } from "./message/message.router";
 import { contentReportRoute } from "./content-report/content-report.router";
 import { missionRoute } from "./mission/mission.routes";
-import { missionResponseRoute } from "./mission-response/mission-response.routes";
+import { missionUpdateRoute } from "./mission/mission-update.routes";
 
 const router = Router();
 
@@ -27,6 +27,6 @@ router.use('/notifications', notificationRouter);
 router.use('/auth', authRouter);
 router.use('/messages', messageRouter);
 router.use('/content-reports', contentReportRoute);
-router.use('/mission-responses', missionResponseRoute);
+router.use('/mission-updates', missionUpdateRoute);
 
 export default router;
