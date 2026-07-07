@@ -28,13 +28,19 @@ describe("RefreshAccessTokenUseCase", () => {
     userRepository = {
       save: vi.fn(),
       findByEmail: vi.fn(), findRoleByPublicId: vi.fn(),
-      markVerified: vi.fn(),
+      markVerified: vi.fn(), markSuspended: vi.fn(), unsuspend: vi.fn(),
       findByPublicId: vi.fn(),
       updateProfile: vi.fn(),
       findById: vi.fn(),
       updatePassword: vi.fn(),
       findByIds: vi.fn(),
       deleteById: vi.fn(),
+      getProfileStatsByPublicId: vi.fn().mockResolvedValue({
+        reportsCreated: 0,
+        successfulReturns: 0,
+        activeDays: 1,
+        petsHelped: 0,
+      }),
     };
     tokenSigner = { sign: vi.fn(), verify: vi.fn() };
     useCase = new RefreshAccessTokenUseCase(refreshTokenRepository, userRepository, tokenSigner);

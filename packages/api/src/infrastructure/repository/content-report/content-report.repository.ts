@@ -63,16 +63,6 @@ export class PrismaContentReportRepository implements ContentReportRepository {
         });
     }
 
-    async countApprovedByTarget(targetType: ContentReportTargetType, targetPublicId: string): Promise<number> {
-        return this.prisma.contentReport.count({
-            where: {
-                target_type_id: contentReportTargetTypeMap[targetType],
-                target_public_id: targetPublicId,
-                status_id: contentReportStatusMap[ContentReportStatus.REVIEWED],
-            },
-        });
-    }
-
     async flagTarget(targetType: ContentReportTargetType, targetPublicId: string): Promise<void> {
         await this.prisma.contentReport.updateMany({
             where: {
@@ -87,8 +77,8 @@ export class PrismaContentReportRepository implements ContentReportRepository {
         targetType: ContentReportTargetType,
         targetPublicId: string,
         reason: string,
-    ): Promise<void> {
-        await this.prisma.contentReport.updateMany({
+    ): Promise<number> {
+        const result = await this.prisma.contentReport.updateMany({
             where: {
                 target_type_id: contentReportTargetTypeMap[targetType],
                 target_public_id: targetPublicId,
@@ -96,12 +86,122 @@ export class PrismaContentReportRepository implements ContentReportRepository {
                     in: [
                         contentReportStatusMap[ContentReportStatus.PENDING],
                         contentReportStatusMap[ContentReportStatus.REVIEWED],
+                        contentReportStatusMap[ContentReportStatus.DISMISSED],
                     ],
                 },
             },
             data: {
                 status_id: contentReportStatusMap[ContentReportStatus.SUSPENDED],
                 suspension_reason: reason,
+            },
+        });
+        return result.count;
+    }
+
+    async approveOpenByTarget(targetType: ContentReportTargetType, targetPublicId: string): Promise<number> {
+        const result = await this.prisma.contentReport.updateMany({
+            where: {
+                target_type_id: contentReportTargetTypeMap[targetType],
+                target_public_id: targetPublicId,
+                status_id: {
+                    in: [
+                        contentReportStatusMap[ContentReportStatus.PENDING],
+                        contentReportStatusMap[ContentReportStatus.DISMISSED],
+                    ],
+                },
+            },
+            data: {
+                status_id: contentReportStatusMap[ContentReportStatus.REVIEWED],
+            },
+        });
+        return result.count;
+    }
+
+    async countDistinctApprovedPublications(reportPublicIds: string[]): Promise<number> {
+        if (reportPublicIds.length === 0) return 0;
+        const rows = await this.prisma.contentReport.findMany({
+            where: {
+                target_type_id: contentReportTargetTypeMap[ContentReportTargetType.POST],
+                status_id: contentReportStatusMap[ContentReportStatus.REVIEWED],
+                target_public_id: { in: reportPublicIds },
+            },
+            select: { target_public_id: true },
+            distinct: ["target_public_id"],
+        });
+        return rows.length;
+    }
+
+    async suspendOpenForUser(userPublicId: string, reportPublicIds: string[], reason: string): Promise<number> {
+        const result = await this.prisma.contentReport.updateMany({
+            where: {
+                status_id: {
+                    in: [
+                        contentReportStatusMap[ContentReportStatus.PENDING],
+                        contentReportStatusMap[ContentReportStatus.REVIEWED],
+                        contentReportStatusMap[ContentReportStatus.DISMISSED],
+                    ],
+                },
+                OR: [
+                    {
+                        target_type_id: contentReportTargetTypeMap[ContentReportTargetType.USER],
+                        target_public_id: userPublicId,
+                    },
+                    {
+                        target_type_id: contentReportTargetTypeMap[ContentReportTargetType.POST],
+                        target_public_id: { in: reportPublicIds },
+                    },
+                ],
+            },
+            data: {
+                status_id: contentReportStatusMap[ContentReportStatus.SUSPENDED],
+                suspension_reason: reason,
+            },
+        });
+        return result.count;
+    }
+
+    async dismissByTarget(targetType: ContentReportTargetType, targetPublicId: string): Promise<void> {
+        await this.prisma.contentReport.updateMany({
+            where: {
+                target_type_id: contentReportTargetTypeMap[targetType],
+                target_public_id: targetPublicId,
+                status_id: {
+                    in: [
+                        contentReportStatusMap[ContentReportStatus.REVIEWED],
+                        contentReportStatusMap[ContentReportStatus.SUSPENDED],
+                    ],
+                },
+            },
+            data: {
+                status_id: contentReportStatusMap[ContentReportStatus.DISMISSED],
+                suspension_reason: null,
+            },
+        });
+    }
+
+    async dismissResolvedForUser(userPublicId: string, reportPublicIds: string[]): Promise<void> {
+        await this.prisma.contentReport.updateMany({
+            where: {
+                status_id: {
+                    in: [
+                        contentReportStatusMap[ContentReportStatus.REVIEWED],
+                        contentReportStatusMap[ContentReportStatus.SUSPENDED],
+                    ],
+                },
+                OR: [
+                    {
+                        target_type_id: contentReportTargetTypeMap[ContentReportTargetType.USER],
+                        target_public_id: userPublicId,
+                    },
+                    {
+                        target_type_id: contentReportTargetTypeMap[ContentReportTargetType.POST],
+                        target_public_id: { in: reportPublicIds },
+                    },
+                ],
+            },
+            data: {
+                status_id: contentReportStatusMap[ContentReportStatus.DISMISSED],
+                suspension_reason: null,
             },
         });
     }

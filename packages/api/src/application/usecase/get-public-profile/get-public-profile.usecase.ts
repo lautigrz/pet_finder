@@ -13,9 +13,12 @@ export class GetPublicProfileUseCase {
     async execute(publicId: string): Promise<GetPublicProfileOutput> {
         const user = await this.userRepository.findByPublicId(publicId);
 
-        if (!user) {
+
+        if (!user || user.isSuspended) {
             throw new UserNotFoundError();
         }
+        const stats = await this.userRepository.getProfileStatsByPublicId(publicId);
+
 
         return new GetPublicProfileOutput(
             user.id,
@@ -23,6 +26,7 @@ export class GetPublicProfileUseCase {
             user.name ?? undefined,
             user.lastname ?? undefined,
             user.photoUrl ?? undefined,
+            stats,
         );
     }
 }

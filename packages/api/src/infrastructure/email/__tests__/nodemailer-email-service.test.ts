@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { NodemailerEmailService } from "../NodemailerEmailService";
 import { InvalidEmailError } from "@domain/errors/InvalidEmailError";
+import { AppealTargetType } from "@domain/appeal/types/appeal-target-type";
 
 describe("NodemailerEmailService", () => {
   let sendMail: ReturnType<typeof vi.fn>;
@@ -74,6 +75,54 @@ describe("NodemailerEmailService", () => {
       expect.objectContaining({ cid: "petfinder-logo" }),
       expect.objectContaining({ cid: "petfinder-isotipo", filename: "petfinder-isotipo.png" }),
     ]);
+  });
+
+  it("publicación dada de baja: asunto y botón para apelar con el token", async () => {
+    await service.sendPublicationRemovedNotice("juan@example.com", "tok-appeal");
+
+    const html = sendMail.mock.calls[0]![0].html;
+    expect(sendMail).toHaveBeenCalledWith(expect.objectContaining({ to: "juan@example.com", subject: expect.stringContaining("dada de baja") }));
+    expect(html).toContain("dio de baja");
+    expect(html).toContain("Apelar");
+    expect(html).toContain("http://localhost:4200/appeals/new?token=tok-appeal");
+  });
+
+  it("cuenta suspendida: incluye el motivo del admin y el botón para apelar", async () => {
+    await service.sendAccountSuspendedNotice("juan@example.com", "Contenido fraudulento", "tok-appeal");
+
+    const html = sendMail.mock.calls[0]![0].html;
+    expect(html).toContain("suspendió tu cuenta");
+    expect(html).toContain("Motivo:");
+    expect(html).toContain("Contenido fraudulento");
+    expect(html).toContain("http://localhost:4200/appeals/new?token=tok-appeal");
+  });
+
+  it("cuenta suspendida: escapa el HTML del motivo", async () => {
+    await service.sendAccountSuspendedNotice("juan@example.com", "<script>alert(1)</script>", "tok-appeal");
+
+    const html = sendMail.mock.calls[0]![0].html;
+    expect(html).toContain("&lt;script&gt;");
+    expect(html).not.toContain("<script>alert(1)</script>");
+  });
+
+  it("cuenta suspendida sin motivo: no incluye la caja de motivo", async () => {
+    await service.sendAccountSuspendedNotice("juan@example.com", null, "tok-appeal");
+
+    const html = sendMail.mock.calls[0]![0].html;
+    expect(html).not.toContain("Motivo:");
+  });
+
+  it("apelación aceptada (publicación): asunto y cuerpo de recuperación", async () => {
+    await service.sendAppealAcceptedNotice("juan@example.com", AppealTargetType.POST);
+
+    expect(sendMail).toHaveBeenCalledWith(expect.objectContaining({ subject: expect.stringContaining("aceptada") }));
+    expect(sendMail.mock.calls[0]![0].html).toContain("recuperaste tu publicación");
+  });
+
+  it("apelación rechazada (cuenta): se mantuvo la suspensión", async () => {
+    await service.sendAppealRejectedNotice("juan@example.com", AppealTargetType.ACCOUNT);
+
+    expect(sendMail.mock.calls[0]![0].html).toContain("se mantuvo la suspensión de tu cuenta");
   });
 
   it("email inválido: lanza InvalidEmailError y no manda", async () => {

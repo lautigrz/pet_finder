@@ -33,6 +33,10 @@ interface RestoreReportParams {
     occurredAt: Date
     createdAt: Date
     updatedAt: Date | null
+    featured?: boolean
+    closedByModeration?: boolean
+    resolved?: boolean
+    resolvedAt?: Date | null
 }
 
 
@@ -51,6 +55,10 @@ export class Report {
         private _occurredAt: Date,
         private readonly _createdAt: Date,
         private _updatedAt: Date | null = null,
+        private _featured: boolean = false,
+        private _closedByModeration: boolean = false,
+        private _resolved: boolean = false,
+        private _resolvedAt: Date | null = null,
     ) { }
 
 
@@ -87,7 +95,11 @@ export class Report {
             params.details,
             params.occurredAt,
             params.createdAt,
-            params.updatedAt
+            params.updatedAt,
+            params.featured ?? false,
+            params.closedByModeration ?? false,
+            params.resolved ?? false,
+            params.resolvedAt ?? null,
         )
     }
 
@@ -128,8 +140,10 @@ export class Report {
         return this._userPublicId
     }
 
-    resolve(): void {
+    resolve(reunited: boolean): void {
         this.transitionTo(ReportStatus.RESOLVED)
+        this._resolved = reunited
+        this._resolvedAt = new Date()
     }
 
     close(): void {
@@ -138,6 +152,12 @@ export class Report {
 
     suspend(): void {
         this.transitionTo(ReportStatus.CLOSED)
+        this._closedByModeration = true
+    }
+
+    reopen(): void {
+        this.transitionTo(ReportStatus.ACTIVE)
+        this._closedByModeration = false
     }
 
     /**
@@ -158,6 +178,18 @@ export class Report {
 
     get status(): ReportStatus {
         return this.currentStatus
+    }
+
+    get closedByModeration(): boolean {
+        return this._closedByModeration
+    }
+
+    get resolved(): boolean {
+        return this._resolved
+    }
+
+    get resolvedAt(): Date | null {
+        return this._resolvedAt
     }
 
     get reportType(): ReportType {
@@ -184,6 +216,14 @@ export class Report {
         return this._details
     }
 
+    get featured(): boolean {
+        return this._featured
+    }
+
+    isFeaturedActive(): boolean {
+        return this._featured && this.currentStatus === ReportStatus.ACTIVE
+    }
+
     private transitionTo(newStatus: ReportStatus): void {
         const allowed = Report.validTransitions[this.currentStatus]
 
@@ -198,7 +238,7 @@ export class Report {
     private static readonly validTransitions: Record<ReportStatus, ReportStatus[]> = {
         [ReportStatus.ACTIVE]: [ReportStatus.RESOLVED, ReportStatus.CLOSED],
         [ReportStatus.RESOLVED]: [ReportStatus.CLOSED],
-        [ReportStatus.CLOSED]: []
+        [ReportStatus.CLOSED]: [ReportStatus.ACTIVE]
     }
 
 

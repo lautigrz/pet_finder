@@ -3,6 +3,7 @@ import { LoginUserUseCase } from "../login-user.usecase";
 import { LoginUserInput } from "../login-user.input";
 import { User } from "../../../../domain/entities/User";
 import { InvalidCredentialsError } from "../../../../domain/errors/InvalidCredentialsError";
+import { UserSuspendedError } from "../../../../domain/errors/UserSuspendedError";
 import type { IUserRepository } from "../../../../domain/repositories/IUserRepository";
 import type { IRefreshTokenRepository } from "../../../../domain/repositories/IRefreshTokenRepository";
 import type { IPasswordHasher } from "../../../../domain/services/IPasswordHasher";
@@ -14,7 +15,7 @@ const REFRESH_TOKEN_VALUE = "a".repeat(64);
 const ACCESS_JWT = "header.payload.signature";
 const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
 
-const existingUser = (overrides: Partial<{ isVerified: boolean }> = {}): User =>
+const existingUser = (overrides: Partial<{ isVerified: boolean; isSuspended: boolean }> = {}): User =>
   User.reconstruct(
     42,
     "uuid-fake",
@@ -26,6 +27,7 @@ const existingUser = (overrides: Partial<{ isVerified: boolean }> = {}): User =>
     null,
     null,
     null,
+    overrides.isSuspended ?? false,
   );
 
 describe("LoginUserUseCase", () => {
@@ -38,9 +40,15 @@ describe("LoginUserUseCase", () => {
 
   beforeEach(() => {
     userRepository = {
-      save: vi.fn(), findByEmail: vi.fn(), findRoleByPublicId: vi.fn(), markVerified: vi.fn(),
+      save: vi.fn(), findByEmail: vi.fn(), findRoleByPublicId: vi.fn(), markVerified: vi.fn(), markSuspended: vi.fn(), unsuspend: vi.fn(),
       findByPublicId: vi.fn(), updateProfile: vi.fn(), findById: vi.fn(), updatePassword: vi.fn(),
       findByIds: vi.fn(), deleteById: vi.fn(),
+      getProfileStatsByPublicId: vi.fn().mockResolvedValue({
+        reportsCreated: 0,
+        successfulReturns: 0,
+        activeDays: 1,
+        petsHelped: 0,
+      }),
     };
     refreshTokenRepository = { save: vi.fn(), findByValue: vi.fn(), revoke: vi.fn(), revokeAllByUser: vi.fn() };
     passwordHasher = { hash: vi.fn(), verify: vi.fn() };
@@ -124,6 +132,23 @@ describe("LoginUserUseCase", () => {
       // Then tira InvalidCredentialsError y NO se intenta validar password
       await expect(accion).rejects.toThrow(InvalidCredentialsError);
       expect(passwordHasher.verify).not.toHaveBeenCalled();
+      expect(refreshTokenRepository.save).not.toHaveBeenCalled();
+    });
+  });
+
+  describe("when the account is suspended", () => {
+    it("throws UserSuspendedError without issuing tokens", async () => {
+      // Given un usuario con credenciales válidas pero suspendido por moderación
+      vi.mocked(userRepository.findByEmail).mockResolvedValue(existingUser({ isSuspended: true }));
+      vi.mocked(passwordHasher.verify).mockResolvedValue(true);
+
+      // When intento loguear
+      const accion = () =>
+        useCase.execute(new LoginUserInput("juan@example.com", "miPass123"));
+
+      // Then tira UserSuspendedError y NO se firman ni persisten tokens
+      await expect(accion).rejects.toThrow(UserSuspendedError);
+      expect(tokenSigner.sign).not.toHaveBeenCalled();
       expect(refreshTokenRepository.save).not.toHaveBeenCalled();
     });
   });

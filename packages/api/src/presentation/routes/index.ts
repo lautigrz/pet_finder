@@ -1,4 +1,5 @@
 import { Router } from "express";
+import { container } from "tsyringe";
 import healthRouter from "./health/health.router";
 import userRouter from "./user/user.router";
 import { createReportRoute } from "./report/report.router";
@@ -12,10 +13,19 @@ import { messageRouter } from "./message/message.router";
 import { contentReportRoute } from "./content-report/content-report.router";
 import { missionRoute } from "./mission/mission.routes";
 import { missionUpdateRoute } from "./mission/mission-update.routes";
+import { paymentRoute } from "./payment/payment.router";
+import { appealRoute } from "./appeal/appeal.router";
+import { statsRoute } from "./stats/stats.router";
+import { ITokenSigner } from "@domain/services/ITokenSigner";
+import { requireAuth } from "@presentation/middleware/requireAuth.middleware";
+import { GetUserExperienceController } from "@presentation/controller/user/get-user-experience.controller";
 
 const router = Router();
+const tokenSigner = container.resolve<ITokenSigner>("TokenSigner");
+const getUserExperienceController = container.resolve(GetUserExperienceController);
 
 router.use('/health', healthRouter);
+router.get('/me/xp', requireAuth(tokenSigner), getUserExperienceController.handle);
 router.use('/users', userRouter);
 router.use('/reports', createReportRoute);
 router.use('/missions', missionRoute);
@@ -28,5 +38,9 @@ router.use('/auth', authRouter);
 router.use('/messages', messageRouter);
 router.use('/content-reports', contentReportRoute);
 router.use('/mission-updates', missionUpdateRoute);
+router.use('/payments', paymentRoute);
+router.use('/appeals', appealRoute);
+router.use('/admin/stats', statsRoute);
+
 
 export default router;

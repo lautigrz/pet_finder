@@ -34,18 +34,25 @@ describe("CreateConversationUseCase", () => {
       findByParticipants: vi.fn(),
       findById: vi.fn(),
       save: vi.fn(),
+      update: vi.fn(),
       delete: vi.fn(),
     };
     userRepository = {
       save: vi.fn(),
       findByEmail: vi.fn(), findRoleByPublicId: vi.fn(),
-      markVerified: vi.fn(),
+      markVerified: vi.fn(), markSuspended: vi.fn(), unsuspend: vi.fn(),
       findByPublicId: vi.fn(),
       findByIds: vi.fn(),
       findById: vi.fn(),
       updateProfile: vi.fn(),
       updatePassword: vi.fn(),
       deleteById: vi.fn(),
+      getProfileStatsByPublicId: vi.fn().mockResolvedValue({
+        reportsCreated: 0,
+        successfulReturns: 0,
+        activeDays: 1,
+        petsHelped: 0,
+      }),
     };
     useCase = new CreateConversationUseCase(conversationRepository, userRepository);
   });

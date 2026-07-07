@@ -41,15 +41,23 @@ export interface ContentReportRepository {
 
     countByTarget(targetType: ContentReportTargetType, targetPublicId: string): Promise<number>;
 
-    countApprovedByTarget(targetType: ContentReportTargetType, targetPublicId: string): Promise<number>;
-
     flagTarget(targetType: ContentReportTargetType, targetPublicId: string): Promise<void>;
 
     suspendOpenByTarget(
         targetType: ContentReportTargetType,
         targetPublicId: string,
         reason: string,
-    ): Promise<void>;
+    ): Promise<number>;
+
+    approveOpenByTarget(targetType: ContentReportTargetType, targetPublicId: string): Promise<number>;
+
+    suspendOpenForUser(userPublicId: string, reportPublicIds: string[], reason: string): Promise<number>;
+
+    dismissByTarget(targetType: ContentReportTargetType, targetPublicId: string): Promise<void>;
+
+    dismissResolvedForUser(userPublicId: string, reportPublicIds: string[]): Promise<void>;
+
+    countDistinctApprovedPublications(reportPublicIds: string[]): Promise<number>;
 
     findQueueByStatus(status: ContentReportStatus): Promise<ContentReportQueueItem[]>;
 }

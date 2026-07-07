@@ -4,13 +4,14 @@ interface ConversationProps {
     userOneId: number;
     userTwoId: number;
     createdAt: Date;
+    isSuspended?: boolean;
 }
 
 export class Conversation {
     private constructor(private readonly props: ConversationProps) { }
 
     static create(props: ConversationProps): Conversation {
-        const conversation = new Conversation(props);
+        const conversation = new Conversation({ ...props, isSuspended: props.isSuspended ?? false });
         conversation.normalizeParticipants();
         return conversation;
     }
@@ -30,9 +31,14 @@ export class Conversation {
         }
     }
 
+    suspend(): void {
+        this.props.isSuspended = true;
+    }
+
     get conversationId() { return this.props.conversationId; }
     get publicId() { return this.props.publicId; }
     get userOneId() { return this.props.userOneId; }
     get userTwoId() { return this.props.userTwoId; }
     get createdAt() { return this.props.createdAt; }
+    get isSuspended() { return this.props.isSuspended ?? false; }
 }

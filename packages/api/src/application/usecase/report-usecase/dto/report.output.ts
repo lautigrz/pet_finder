@@ -45,4 +45,7 @@ export interface ReportOutput {
     occurredAt: Date;
     createdAt: Date;
     updatedAt: Date | null;
+    featured: boolean;
+    resolved: boolean;
+    resolvedAt: Date | null;
 }

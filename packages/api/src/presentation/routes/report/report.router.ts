@@ -1,7 +1,9 @@
 import { Router } from "express";
 import { container } from "tsyringe";
 import { ITokenSigner } from "@domain/services/ITokenSigner";
+import { IUserRepository } from "@domain/repositories/IUserRepository";
 import { requireAuth } from "src/presentation/middleware/requireAuth.middleware";
+import { requireAdmin } from "src/presentation/middleware/requireAdmin.middleware";
 import { validateRequest } from "src/presentation/middleware/validate.request";
 import upload from "@infrastructure/storage/CloudinaryMulterUpload";
 import { createReportRequestSchema } from "src/presentation/schemas/report/create-report.schema";
@@ -19,9 +21,12 @@ import { UpdateReportStatusController } from "@presentation/controller/report/up
 import { FollowReportController } from "@presentation/controller/report/follow-report.controller";
 import { UnfollowReportController } from "@presentation/controller/report/unfollow-report.controller";
 import { IsFollowingReportController } from "@presentation/controller/report/is-following-report.controller";
+import { GetReportForModerationController } from "@presentation/controller/report/get-report-for-moderation.controller";
 
 const router = Router();
 const tokenSigner = container.resolve<ITokenSigner>("TokenSigner");
+const userRepository = container.resolve<IUserRepository>("UserRepository");
+const getReportForModeration = container.resolve(GetReportForModerationController);
 
 const createReport = container.resolve(CreateReportController);
 const getReport = container.resolve(GetReportController);
@@ -38,6 +43,7 @@ router.post("/", requireAuth(tokenSigner), upload.array("photos", 5), validateRe
 router.get("/", requireAuth(tokenSigner), validateRequest(listUserReportsSchema), listUserReports.handle);
 router.get("/filter", requireAuth(tokenSigner), validateRequest(getFilteredReportsSchema), getFilteredReports.handle);
 router.get("/user/:publicId", requireAuth(tokenSigner), listReportsByUser.handle);
+router.get("/:publicId/moderation", requireAuth(tokenSigner), requireAdmin(userRepository), getReportForModeration.handle);
 router.get("/:publicId", getReport.handle);
 router.patch("/status/:publicId", requireAuth(tokenSigner), validateRequest(updateStatusReportSchema), updateReportStatus.handle);
 router.patch("/:publicId", requireAuth(tokenSigner), upload.array("photos", 4), validateRequest(updateReportSchema), updateReport.handle);

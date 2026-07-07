@@ -7,6 +7,12 @@ import { logger } from '@pet-alert/shared';
 
 export let io: Server;
 
+const onlineUsers = new Map<string, number>();
+
+function isOnline(userPublicId: string): boolean {
+    return (onlineUsers.get(userPublicId) ?? 0) > 0;
+}
+
 export function initSocket(httpServer: HttpServer) {
     const { jwtSecret, accessTtl } = readAuthConfig();
     const tokenSigner = new JwtTokenSigner(jwtSecret, accessTtl);
@@ -50,10 +56,31 @@ export function initSocket(httpServer: HttpServer) {
         logger.info(`User connected to websocket`, { userPublicId, socketId: socket.id });
         socket.join(`user:${userPublicId}`);
 
+        const previousConnections = onlineUsers.get(userPublicId) ?? 0;
+        onlineUsers.set(userPublicId, previousConnections + 1);
+        if (previousConnections === 0) {
+            io.emit('presence:changed', { userPublicId, online: true });
+        }
+
         registerChatHandlers(io, socket);
+
+        socket.on('presence:get', (data: { userPublicId: string }) => {
+            socket.emit('presence:status', {
+                userPublicId: data.userPublicId,
+                online: isOnline(data.userPublicId),
+            });
+        });
 
         socket.on("disconnect", () => {
             logger.info(`User disconnected from websocket`, { userPublicId, socketId: socket.id });
+
+            const remaining = (onlineUsers.get(userPublicId) ?? 1) - 1;
+            if (remaining <= 0) {
+                onlineUsers.delete(userPublicId);
+                io.emit('presence:changed', { userPublicId, online: false });
+            } else {
+                onlineUsers.set(userPublicId, remaining);
+            }
         })
 
     })
