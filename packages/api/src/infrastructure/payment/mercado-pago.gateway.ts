@@ -25,7 +25,6 @@ export class MercadoPagoGateway implements PaymentGateway {
         const notificationUrl = input.notificationUrl.startsWith("https://")
             ? input.notificationUrl
             : undefined;
-        const backUrlsArePublic = input.backUrls.success.startsWith("https://");
 
         try {
             const result = await preference.create({
@@ -45,7 +44,6 @@ export class MercadoPagoGateway implements PaymentGateway {
                         failure: input.backUrls.failure,
                         pending: input.backUrls.pending,
                     },
-                    ...(backUrlsArePublic ? { auto_return: "approved" } : {}),
                     ...(notificationUrl ? { notification_url: notificationUrl } : {}),
                 },
             });
