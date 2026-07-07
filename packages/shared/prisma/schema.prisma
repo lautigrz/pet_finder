@@ -12,157 +12,161 @@ datasource db {
 model Role {
   role_id Int    @id @default(autoincrement()) @db.SmallInt
   name    String @db.Char(20)
-
-  users User[]
+  users   User[]
 
   @@map("roles")
 }
 
 model User {
-  user_id   Int     @id @default(autoincrement())
-  public_id String  @unique @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  name      String? @db.VarChar
-  lastname  String? @db.VarChar
-  email     String  @unique @db.VarChar(255)
-  username  String  @db.VarChar(30)
-  password  String  @db.VarChar(100)
-
-  role_id Int?
-  role    Role? @relation(fields: [role_id], references: [role_id])
-
-  created_at DateTime  @default(now()) @db.Timestamp(6)
-  updated_at DateTime? @updatedAt @db.Timestamp(6)
-
-  is_verified  Boolean @default(false)
-  is_suspended Boolean @default(false)
-  exp          Int     @default(0)
-  photo_url    String? @db.VarChar
-
-  refresh_tokens            RefreshToken[]
-  password_reset_tokens     PasswordResetToken[]
-  email_verification_tokens EmailVerificationToken[]
-  reports                   Report[]
-  pets                      Pet[]
-  messages_sent             Message[]                @relation("MessageSender")
-  messages_received         Message[]                @relation("MessageReceiver")
+  user_id                   Int                      @id @default(autoincrement())
+  public_id                 String                   @unique @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  email                     String                   @unique @db.VarChar(255)
+  password                  String                   @db.VarChar(100)
+  role_id                   Int?
+  updated_at                DateTime?                @updatedAt @db.Timestamp(6)
+  is_verified               Boolean                  @default(false)
+  photo_url                 String?                  @db.VarChar
+  created_at                DateTime                 @default(now()) @db.Timestamp(6)
+  lastname                  String?                  @db.VarChar
+  name                      String?                  @db.VarChar
+  username                  String                   @db.VarChar(30)
+  is_suspended              Boolean                  @default(false)
+  exp                       Int                      @default(0)
+  appeals                   Appeal[]
+  content_reports           ContentReport[]
   conversations_one         Conversation[]           @relation("ConversationUserOne")
   conversations_two         Conversation[]           @relation("ConversationUserTwo")
-  notification_preference   NotificationPreference?
   device_tokens             DeviceToken[]
-  report_followers          ReportFollower[]
-  content_reports           ContentReport[]
+  email_verification_tokens EmailVerificationToken[]
   match_views               MatchView[]
+  messages_received         Message[]                @relation("MessageReceiver")
+  messages_sent             Message[]                @relation("MessageSender")
+  notification_preference   NotificationPreference?
+  password_reset_tokens     PasswordResetToken[]
   payments                  Payment[]
-  appeals                   Appeal[]
-  reviews_written           UserReview[]              @relation("ReviewsWritten")
-  reviews_received          UserReview[]              @relation("ReviewsReceived")
+  pets                      Pet[]
+  refresh_tokens            RefreshToken[]
+  report_followers          ReportFollower[]
+  reports                   Report[]
+  user_exp_events           UserExpEvent[]
+  reviews_received          UserReview[]             @relation("ReviewsReceived")
+  reviews_written           UserReview[]             @relation("ReviewsWritten")
+  role                      Role?                    @relation(fields: [role_id], references: [role_id])
 
   @@map("users")
 }
 
+model UserExpEvent {
+  user_exp_event_id Int      @id @default(autoincrement())
+  user_id           Int
+  action            String   @db.VarChar(50)
+  amount            Int
+  created_at        DateTime @default(now()) @db.Timestamp(6)
+  user              User     @relation(fields: [user_id], references: [user_id], onDelete: Cascade)
+
+  @@index([user_id, created_at])
+  @@map("user_exp_events")
+}
+
+model AchievementDefinition {
+  achievement_definition_id Int       @id @default(autoincrement())
+  code                      String    @unique @db.VarChar(100)
+  name                      String    @db.VarChar(100)
+  description               String
+  required_xp               Int
+  icon                      String?   @db.VarChar(20)
+  created_at                DateTime  @default(now()) @db.Timestamp(6)
+  updated_at                DateTime? @updatedAt @db.Timestamp(6)
+
+  @@map("achievement_definitions")
+}
+
 model RefreshToken {
-  refresh_token_id Int @id @default(autoincrement())
-
-  user_id Int
-  user    User @relation(fields: [user_id], references: [user_id])
-
-  token String @unique @db.VarChar
-
-  expires_at DateTime  @db.Timestamp(6)
-  revoked_at DateTime? @db.Timestamp(6) /// NULL si el token sigue activo. Se setea al hacer logout o al rotar el token
-  created_at DateTime  @default(now()) @db.Timestamp(6)
+  refresh_token_id Int       @id @default(autoincrement())
+  user_id          Int
+  token            String    @unique @db.VarChar
+  expires_at       DateTime  @db.Timestamp(6)
+  /// NULL si el token sigue activo. Se setea al hacer logout o al rotar el token
+  revoked_at       DateTime? @db.Timestamp(6)
+  created_at       DateTime  @default(now()) @db.Timestamp(6)
+  user             User      @relation(fields: [user_id], references: [user_id])
 
   @@map("refresh_tokens")
 }
 
 model PasswordResetToken {
-  password_reset_token_id Int @id @default(autoincrement())
-
-  user_id Int
-  user    User @relation(fields: [user_id], references: [user_id])
-
-  token String @db.VarChar
-
-  used_at    DateTime? @db.Timestamp(6) /// NULL si no fue usado. Se setea al momento en que el usuario resetea la contraseña
-  expires_at DateTime  @db.Timestamp(6)
-  created_at DateTime  @default(now()) @db.Timestamp(6)
+  password_reset_token_id Int       @id @default(autoincrement())
+  user_id                 Int
+  token                   String    @db.VarChar
+  /// NULL si no fue usado. Se setea al momento en que el usuario resetea la contraseña
+  used_at                 DateTime? @db.Timestamp(6)
+  expires_at              DateTime  @db.Timestamp(6)
+  created_at              DateTime  @default(now()) @db.Timestamp(6)
+  user                    User      @relation(fields: [user_id], references: [user_id])
 
   @@map("password_reset_tokens")
 }
 
 model EmailVerificationToken {
-  email_verification_token_id Int @id @default(autoincrement())
-
-  user_id Int
-  user    User @relation(fields: [user_id], references: [user_id])
-
-  token String @unique @db.VarChar
-
-  used_at    DateTime? @db.Timestamp(6) /// NULL si no fue usado. Se setea cuando el usuario confirma el email
-  expires_at DateTime  @db.Timestamp(6)
-  created_at DateTime  @default(now()) @db.Timestamp(6)
+  email_verification_token_id Int       @id @default(autoincrement())
+  user_id                     Int
+  token                       String    @unique @db.VarChar
+  /// NULL si no fue usado. Se setea cuando el usuario confirma el email
+  used_at                     DateTime? @db.Timestamp(6)
+  expires_at                  DateTime  @db.Timestamp(6)
+  created_at                  DateTime  @default(now()) @db.Timestamp(6)
+  user                        User      @relation(fields: [user_id], references: [user_id])
 
   @@map("email_verification_tokens")
 }
 
+/// This model contains an expression index which requires additional setup for migrations. Visit https://pris.ly/d/expression-indexes for more info.
 model Report {
-  report_id        Int     @id @default(autoincrement())
-  public_id        String  @unique @db.Uuid
-  user_id          Int
-  report_type_id   Int     @db.SmallInt
-  report_status_id Int     @db.SmallInt
-  description      String? @db.Text
-
-  closed_by_moderation Boolean @default(false)
-  resolved             Boolean @default(false)
-  resolved_at          DateTime? @db.Timestamp(6)
-
-  occurred_at DateTime
-
-  location_address String?
-  location_lat     Decimal
-  location_lng     Decimal
-
-  created_at DateTime  @db.Timestamp(6)
-  updated_at DateTime? @updatedAt
-
-  featured Boolean @default(false)
-
-  embedding_description Unsupported("vector(384)")?
-
-  user                   User                  @relation(fields: [user_id], references: [user_id])
-  reportType             ReportType            @relation(fields: [report_type_id], references: [report_type_id])
-  reportStatus           ReportStatus          @relation(fields: [report_status_id], references: [report_status_id])
+  report_id              Int                    @id @default(autoincrement())
+  public_id              String                 @unique @db.Uuid
+  user_id                Int
+  report_type_id         Int                    @db.SmallInt
+  report_status_id       Int                    @db.SmallInt
+  description            String?
+  occurred_at            DateTime
+  location_address       String?
+  location_lat           Decimal
+  location_lng           Decimal
+  created_at             DateTime               @db.Timestamp(6)
+  updated_at             DateTime?              @updatedAt
+  embedding_description  Unsupported("vector")?
+  featured               Boolean                @default(false)
+  closed_by_moderation   Boolean                @default(false)
+  resolved               Boolean                @default(false)
+  resolved_at            DateTime?              @db.Timestamp(6)
   lost_report_detail     LostReportDetail?
-  sighting_report_detail SightingReportDetail?
-  reportImages           ReportImage[]
+  matchedAsCandidate     MatchResult[]          @relation("CandidateReport")
+  matchResults           MatchResult[]          @relation("SourceReport")
+  payments               Payment[]
   report_followers       ReportFollower[]
-
-  matchResults MatchResult[] @relation("SourceReport")
-
-  matchedAsCandidate MatchResult[] @relation("CandidateReport")
-
-  payments Payment[]
+  reportImages           ReportImage[]
+  reportStatus           ReportStatus           @relation(fields: [report_status_id], references: [report_status_id])
+  reportType             ReportType             @relation(fields: [report_type_id], references: [report_type_id])
+  user                   User                   @relation(fields: [user_id], references: [user_id])
+  sighting_report_detail SightingReportDetail?
 
   @@map("reports")
 }
 
 model Payment {
-  payment_id       Int    @id @default(autoincrement())
-  public_id        String @unique @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  payment_id       Int       @id @default(autoincrement())
+  public_id        String    @unique @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   report_id        Int
   user_id          Int
   mp_preference_id String?
-  mp_payment_id    String? @unique
+  mp_payment_id    String?   @unique
   status           String
-  amount           Decimal @db.Decimal(12, 2)
-  currency         String  @default("ARS")
-
-  created_at DateTime  @default(now()) @db.Timestamp(6)
-  updated_at DateTime? @updatedAt @db.Timestamp(6)
-
-  report Report @relation(fields: [report_id], references: [report_id])
-  user   User   @relation(fields: [user_id], references: [user_id])
+  amount           Decimal   @db.Decimal(12, 2)
+  currency         String    @default("ARS")
+  created_at       DateTime  @default(now()) @db.Timestamp(6)
+  updated_at       DateTime? @updatedAt @db.Timestamp(6)
+  report           Report    @relation(fields: [report_id], references: [report_id])
+  user             User      @relation(fields: [user_id], references: [user_id])
 
   @@index([report_id])
   @@index([user_id])
@@ -170,22 +174,19 @@ model Payment {
 }
 
 model MatchResult {
-  match_result_id     Int    @id @default(autoincrement())
-  public_id           String @unique @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  match_result_id     Int         @id @default(autoincrement())
   source_report_id    Int
   candidate_report_id Int
-
-  score             Float
-  image_score       Float
-  description_score Float
-  structured_score  Float
-  shared_fields     Int
-
-  created_at DateTime @default(now()) @db.Timestamp(6)
-
-  source_report    Report @relation("SourceReport", fields: [source_report_id], references: [report_id])
-  candidate_report Report @relation("CandidateReport", fields: [candidate_report_id], references: [report_id])
-  views            MatchView[]
+  score               Float
+  image_score         Float
+  description_score   Float
+  created_at          DateTime    @default(now()) @db.Timestamp(6)
+  shared_fields       Int
+  structured_score    Float
+  public_id           String      @unique @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  candidate_report    Report      @relation("CandidateReport", fields: [candidate_report_id], references: [report_id])
+  source_report       Report      @relation("SourceReport", fields: [source_report_id], references: [report_id])
+  views               MatchView[]
 
   @@unique([source_report_id, candidate_report_id])
   @@index([source_report_id])
@@ -194,13 +195,12 @@ model MatchResult {
 }
 
 model MatchView {
-  match_view_id   Int      @id @default(autoincrement())
+  match_view_id   Int         @id @default(autoincrement())
   user_id         Int
   match_result_id Int
-  seen_at         DateTime @default(now()) @db.Timestamp(6)
-
-  user         User        @relation(fields: [user_id], references: [user_id], onDelete: Cascade)
-  match_result MatchResult @relation(fields: [match_result_id], references: [match_result_id], onDelete: Cascade)
+  seen_at         DateTime    @default(now()) @db.Timestamp(6)
+  match_result    MatchResult @relation(fields: [match_result_id], references: [match_result_id], onDelete: Cascade)
+  user            User        @relation(fields: [user_id], references: [user_id], onDelete: Cascade)
 
   @@unique([user_id, match_result_id])
   @@index([user_id])
@@ -209,29 +209,26 @@ model MatchView {
 }
 
 model ReportStatus {
-  report_status_id Int    @id @db.SmallInt
+  report_status_id Int      @id @db.SmallInt
   name             String
-
-  reports Report[]
+  reports          Report[]
 
   @@map("report_statuses")
 }
 
 model ReportType {
-  report_type_id Int    @id @db.SmallInt
+  report_type_id Int      @id @db.SmallInt
   name           String
-
-  reports Report[]
+  reports        Report[]
 
   @@map("report_types")
 }
 
 model LostReportDetail {
-  report_id Int @id
+  report_id Int    @id
   pet_id    Int
-
-  report Report @relation(fields: [report_id], references: [report_id])
-  pet    Pet    @relation(fields: [pet_id], references: [pet_id])
+  pet       Pet    @relation(fields: [pet_id], references: [pet_id])
+  report    Report @relation(fields: [report_id], references: [report_id])
 
   @@map("lost_report_details")
 }
@@ -239,92 +236,88 @@ model LostReportDetail {
 model SightingReportDetail {
   report_id      Int        @id
   animal_type_id Int
-  color_id       Int        @db.SmallInt
-  pet_name       String?    @db.VarChar(30)
-  gender_id      Int?       @db.SmallInt
-  size_id        Int?       @db.SmallInt
   has_id_collar  Boolean    @default(false)
   is_in_transit  Boolean    @default(false)
+  gender_id      Int?       @db.SmallInt
+  pet_name       String?    @db.VarChar(30)
+  size_id        Int?       @db.SmallInt
+  color_id       Int        @db.SmallInt
   breed_id       Int?       @db.SmallInt
-  report         Report     @relation(fields: [report_id], references: [report_id])
   animal_type    AnimalType @relation(fields: [animal_type_id], references: [animal_type_id])
-  gender         Gender?    @relation(fields: [gender_id], references: [gender_id])
-  size           PetSize?   @relation(fields: [size_id], references: [size_id])
-  color          Color      @relation(fields: [color_id], references: [color_id])
   breed          Breed?     @relation(fields: [breed_id], references: [breed_id])
+  color          Color      @relation(fields: [color_id], references: [color_id])
+  gender         Gender?    @relation(fields: [gender_id], references: [gender_id])
+  report         Report     @relation(fields: [report_id], references: [report_id])
+  size           PetSize?   @relation(fields: [size_id], references: [size_id])
 
   @@map("sighting_report_details")
 }
 
 model Pet {
-  pet_id         Int       @id @default(autoincrement())
-  public_id      String    @unique @db.Uuid
-  user_id        Int
-  animal_type_id Int
-  gender_id      Int       @db.SmallInt
-  size_id        Int       @db.SmallInt
-  pet_name       String    @db.VarChar(30)
-  color_id       Int       @db.SmallInt
-  has_id_collar  Boolean   @default(false)
-  is_vaccinated  Boolean   @default(false)
-  breed_id       Int?      @db.SmallInt
-  created_at     DateTime  @db.Timestamp(6)
-  updated_at     DateTime? @updatedAt
-
-  user                User               @relation(fields: [user_id], references: [user_id])
+  animal_type_id      Int
+  created_at          DateTime           @db.Timestamp(6)
+  gender_id           Int                @db.SmallInt
+  has_id_collar       Boolean            @default(false)
+  is_vaccinated       Boolean            @default(false)
+  pet_id              Int                @id @default(autoincrement())
+  pet_name            String             @db.VarChar(30)
+  public_id           String             @unique @db.Uuid
+  size_id             Int                @db.SmallInt
+  updated_at          DateTime?          @updatedAt
+  user_id             Int
+  color_id            Int                @db.SmallInt
+  breed_id            Int?               @db.SmallInt
+  lost_report_details LostReportDetail[]
+  petImages           PetImage[]
   animal_type         AnimalType         @relation(fields: [animal_type_id], references: [animal_type_id])
+  breed               Breed?             @relation(fields: [breed_id], references: [breed_id])
+  color               Color              @relation(fields: [color_id], references: [color_id])
   gender              Gender             @relation(fields: [gender_id], references: [gender_id])
   size                PetSize            @relation(fields: [size_id], references: [size_id])
-  color               Color              @relation(fields: [color_id], references: [color_id])
-  breed               Breed?             @relation(fields: [breed_id], references: [breed_id])
-  petImages           PetImage[]
-  lost_report_details LostReportDetail[]
+  user                User               @relation(fields: [user_id], references: [user_id])
 
   @@map("pets")
 }
 
 model PetImage {
-  imageId         Int                         @id @default(autoincrement()) @map("image_id")
-  cloudinaryId    String                      @unique @map("cloudinary_id")
-  petId           Int                         @map("pet_id")
-  photoUrl        String                      @map("photo_url") @db.VarChar(500)
-  createdAt       DateTime                    @default(now()) @map("created_at")
-  embedding_photo Unsupported("vector(384)")?
-  pet             Pet                         @relation(fields: [petId], references: [pet_id])
+  imageId         Int                    @id @default(autoincrement()) @map("image_id")
+  cloudinaryId    String                 @unique @map("cloudinary_id")
+  petId           Int                    @map("pet_id")
+  photoUrl        String                 @map("photo_url") @db.VarChar(500)
+  createdAt       DateTime               @default(now()) @map("created_at")
+  embedding_photo Unsupported("vector")?
+  pet             Pet                    @relation(fields: [petId], references: [pet_id])
 
   @@map("pet_images")
 }
 
 model ReportImage {
-  imageId         Int                         @id @default(autoincrement()) @map("image_id")
-  cloudinaryId    String                      @unique @map("cloudinary_id")
-  reportId        Int                         @map("report_id")
-  photoUrl        String                      @map("photo_url") @db.VarChar(500)
-  createdAt       DateTime                    @default(now()) @map("created_at")
-  embedding_photo Unsupported("vector(384)")?
-  report          Report                      @relation(fields: [reportId], references: [report_id])
+  imageId         Int                    @id @default(autoincrement()) @map("image_id")
+  cloudinaryId    String                 @unique @map("cloudinary_id")
+  reportId        Int                    @map("report_id")
+  photoUrl        String                 @map("photo_url") @db.VarChar(500)
+  createdAt       DateTime               @default(now()) @map("created_at")
+  embedding_photo Unsupported("vector")?
+  report          Report                 @relation(fields: [reportId], references: [report_id])
 
   @@map("report_images")
 }
 
 model AnimalType {
-  animal_type_id Int    @id @db.SmallInt
-  name           String @db.VarChar(50)
-
-  sighting_report_details SightingReportDetail[]
-  pets                    Pet[]
+  animal_type_id          Int                    @id @db.SmallInt
+  name                    String                 @db.VarChar(50)
   breeds                  Breed[]
+  pets                    Pet[]
+  sighting_report_details SightingReportDetail[]
 
   @@map("animal_types")
 }
 
 model Breed {
-  breed_id       Int    @id @default(autoincrement()) @db.SmallInt
-  name           String @db.VarChar(100)
-  animal_type_id Int    @db.SmallInt
-
-  animal_type AnimalType @relation(fields: [animal_type_id], references: [animal_type_id])
-
+  breed_id                Int                    @id @default(autoincrement()) @db.SmallInt
+  name                    String                 @db.VarChar(100)
+  animal_type_id          Int                    @db.SmallInt
+  animal_type             AnimalType             @relation(fields: [animal_type_id], references: [animal_type_id])
   pets                    Pet[]
   sighting_report_details SightingReportDetail[]
 
@@ -333,9 +326,8 @@ model Breed {
 }
 
 model Color {
-  color_id Int    @id @default(autoincrement()) @db.SmallInt
-  name     String @unique @db.VarChar(150)
-
+  color_id                Int                    @id @default(autoincrement()) @db.SmallInt
+  name                    String                 @unique @db.VarChar(150)
   pets                    Pet[]
   sighting_report_details SightingReportDetail[]
 
@@ -370,8 +362,7 @@ model NotificationPreference {
   notifications_muted_until  DateTime? @db.Timestamp(6)
   created_at                 DateTime  @default(now()) @db.Timestamp(6)
   updated_at                 DateTime  @default(now()) @updatedAt @db.Timestamp(6)
-
-  user User @relation(fields: [user_id], references: [user_id], onDelete: Cascade)
+  user                       User      @relation(fields: [user_id], references: [user_id], onDelete: Cascade)
 
   @@map("notification_preferences")
 }
@@ -382,26 +373,24 @@ model DeviceToken {
   token           String   @unique @db.VarChar(512)
   created_at      DateTime @default(now()) @db.Timestamp(6)
   updated_at      DateTime @default(now()) @updatedAt @db.Timestamp(6)
-
-  user User @relation(fields: [user_id], references: [user_id], onDelete: Cascade)
+  user            User     @relation(fields: [user_id], references: [user_id], onDelete: Cascade)
 
   @@map("device_tokens")
 }
 
 model Message {
-  message_id       Int      @id @default(autoincrement())
-  public_id        String   @unique @db.Uuid
-  message_text     String   @db.Text
-  is_read          Boolean  @default(false)
-  sender_user_id   Int
-  receiver_user_id Int
+  message_id       Int            @id @default(autoincrement())
+  public_id        String         @unique @db.Uuid
+  message_text     String
+  is_read          Boolean        @default(false)
   conversation_id  Int
-  created_at       DateTime @default(now()) @db.Timestamp(6)
-
-  senderUser   User           @relation(fields: [sender_user_id], references: [user_id], onDelete: Cascade, name: "MessageSender")
-  receiverUser User           @relation(fields: [receiver_user_id], references: [user_id], onDelete: Cascade, name: "MessageReceiver")
-  conversation Conversation   @relation(fields: [conversation_id], references: [conversation_id], onDelete: Cascade)
-  images       MessageImage[]
+  created_at       DateTime       @default(now()) @db.Timestamp(6)
+  receiver_user_id Int
+  sender_user_id   Int
+  images           MessageImage[]
+  conversation     Conversation   @relation(fields: [conversation_id], references: [conversation_id], onDelete: Cascade)
+  receiverUser     User           @relation("MessageReceiver", fields: [receiver_user_id], references: [user_id], onDelete: Cascade)
+  senderUser       User           @relation("MessageSender", fields: [sender_user_id], references: [user_id], onDelete: Cascade)
 
   @@index([conversation_id])
   @@index([sender_user_id])
@@ -410,16 +399,15 @@ model Message {
 }
 
 model Conversation {
-  conversation_id Int      @id @default(autoincrement())
-  public_id       String   @unique @db.Uuid
+  conversation_id Int       @id @default(autoincrement())
+  public_id       String    @unique @db.Uuid
   user_one_id     Int
   user_two_id     Int
-  created_at      DateTime @default(now()) @db.Timestamp(6)
-  is_suspended    Boolean  @default(false)
-
-  user_one User      @relation(fields: [user_one_id], references: [user_id], onDelete: Cascade, name: "ConversationUserOne")
-  user_two User      @relation(fields: [user_two_id], references: [user_id], onDelete: Cascade, name: "ConversationUserTwo")
-  messages Message[]
+  created_at      DateTime  @default(now()) @db.Timestamp(6)
+  is_suspended    Boolean   @default(false)
+  user_one        User      @relation("ConversationUserOne", fields: [user_one_id], references: [user_id], onDelete: Cascade)
+  user_two        User      @relation("ConversationUserTwo", fields: [user_two_id], references: [user_id], onDelete: Cascade)
+  messages        Message[]
 
   @@unique([user_one_id, user_two_id])
   @@index([user_one_id])
@@ -433,8 +421,7 @@ model MessageImage {
   photoUrl   String   @map("photo_url") @db.VarChar(500)
   message_id Int
   created_at DateTime @default(now()) @db.Timestamp(6)
-
-  message Message @relation(fields: [message_id], references: [message_id], onDelete: Cascade)
+  message    Message  @relation(fields: [message_id], references: [message_id], onDelete: Cascade)
 
   @@index([message_id])
   @@map("message_images")
@@ -445,9 +432,8 @@ model ReportFollower {
   user_id            Int
   report_id          Int
   created_at         DateTime @default(now()) @db.Timestamp(6)
-
-  user   User   @relation(fields: [user_id], references: [user_id], onDelete: Cascade)
-  report Report @relation(fields: [report_id], references: [report_id], onDelete: Cascade)
+  report             Report   @relation(fields: [report_id], references: [report_id], onDelete: Cascade)
+  user               User     @relation(fields: [user_id], references: [user_id], onDelete: Cascade)
 
   @@unique([user_id, report_id])
   @@index([user_id])
@@ -456,22 +442,21 @@ model ReportFollower {
 }
 
 model ContentReport {
-  content_report_id Int      @id @default(autoincrement())
-  public_id         String   @unique @db.Uuid
+  content_report_id Int                     @id @default(autoincrement())
+  public_id         String                  @unique @db.Uuid
   reporter_user_id  Int
-  target_type_id    Int      @db.SmallInt
-  target_public_id  String   @db.Uuid
-  reason_id         Int      @db.SmallInt
-  status_id         Int      @db.SmallInt
-  description       String?  @db.Text
-  suspension_reason String?  @db.Text
-  auto_flagged      Boolean  @default(false)
-  created_at        DateTime @default(now()) @db.Timestamp(6)
-
-  reporter   User                    @relation(fields: [reporter_user_id], references: [user_id], onDelete: Cascade)
-  targetType ContentReportTargetType @relation(fields: [target_type_id], references: [content_report_target_type_id])
-  reason     ContentReportReason     @relation(fields: [reason_id], references: [content_report_reason_id])
-  status     ContentReportStatus     @relation(fields: [status_id], references: [content_report_status_id])
+  target_type_id    Int                     @db.SmallInt
+  target_public_id  String                  @db.Uuid
+  reason_id         Int                     @db.SmallInt
+  status_id         Int                     @db.SmallInt
+  description       String?
+  auto_flagged      Boolean                 @default(false)
+  created_at        DateTime                @default(now()) @db.Timestamp(6)
+  suspension_reason String?
+  reason            ContentReportReason     @relation(fields: [reason_id], references: [content_report_reason_id])
+  reporter          User                    @relation(fields: [reporter_user_id], references: [user_id], onDelete: Cascade)
+  status            ContentReportStatus     @relation(fields: [status_id], references: [content_report_status_id])
+  targetType        ContentReportTargetType @relation(fields: [target_type_id], references: [content_report_target_type_id])
 
   @@unique([reporter_user_id, target_type_id, target_public_id])
   @@index([target_type_id, target_public_id])
@@ -480,46 +465,42 @@ model ContentReport {
 }
 
 model ContentReportTargetType {
-  content_report_target_type_id Int    @id @db.SmallInt
+  content_report_target_type_id Int             @id @db.SmallInt
   name                          String
-
-  content_reports ContentReport[]
+  content_reports               ContentReport[]
 
   @@map("content_report_target_types")
 }
 
 model ContentReportReason {
-  content_report_reason_id Int    @id @db.SmallInt
+  content_report_reason_id Int             @id @db.SmallInt
   name                     String
-
-  content_reports ContentReport[]
+  content_reports          ContentReport[]
 
   @@map("content_report_reasons")
 }
 
 model ContentReportStatus {
-  content_report_status_id Int    @id @db.SmallInt
+  content_report_status_id Int             @id @db.SmallInt
   name                     String
-
-  content_reports ContentReport[]
+  content_reports          ContentReport[]
 
   @@map("content_report_statuses")
 }
 
 model Appeal {
-  appeal_id         Int       @id @default(autoincrement())
-  public_id         String    @unique @db.Uuid
+  appeal_id         Int              @id @default(autoincrement())
+  public_id         String           @unique @db.Uuid
   appellant_user_id Int
-  target_type_id    Int       @db.SmallInt
-  target_public_id  String    @db.Uuid
-  message           String    @db.Text
-  status_id         Int       @db.SmallInt
-  created_at        DateTime  @default(now()) @db.Timestamp(6)
-  resolved_at       DateTime? @db.Timestamp(6)
-
-  appellant  User             @relation(fields: [appellant_user_id], references: [user_id], onDelete: Cascade)
-  targetType AppealTargetType @relation(fields: [target_type_id], references: [appeal_target_type_id])
-  status     AppealStatus     @relation(fields: [status_id], references: [appeal_status_id])
+  target_type_id    Int              @db.SmallInt
+  target_public_id  String           @db.Uuid
+  message           String
+  status_id         Int              @db.SmallInt
+  created_at        DateTime         @default(now()) @db.Timestamp(6)
+  resolved_at       DateTime?        @db.Timestamp(6)
+  appellant         User             @relation(fields: [appellant_user_id], references: [user_id], onDelete: Cascade)
+  status            AppealStatus     @relation(fields: [status_id], references: [appeal_status_id])
+  targetType        AppealTargetType @relation(fields: [target_type_id], references: [appeal_target_type_id])
 
   @@unique([target_type_id, target_public_id])
   @@index([status_id])
@@ -527,19 +508,17 @@ model Appeal {
 }
 
 model AppealTargetType {
-  appeal_target_type_id Int    @id @db.SmallInt
+  appeal_target_type_id Int      @id @db.SmallInt
   name                  String
-
-  appeals Appeal[]
+  appeals               Appeal[]
 
   @@map("appeal_target_types")
 }
 
 model AppealStatus {
-  appeal_status_id Int    @id @db.SmallInt
+  appeal_status_id Int      @id @db.SmallInt
   name             String
-
-  appeals Appeal[]
+  appeals          Appeal[]
 
   @@map("appeal_statuses")
 }
@@ -549,15 +528,23 @@ model UserReview {
   reviewer_user_id Int
   reviewed_user_id Int
   rating           Int      @db.SmallInt
-  description      String?  @db.Text
+  description      String?
   created_at       DateTime @default(now()) @db.Timestamp(6)
   updated_at       DateTime @updatedAt @db.Timestamp(6)
-
-  reviewer User @relation("ReviewsWritten", fields: [reviewer_user_id], references: [user_id], onDelete: Cascade)
-  reviewed User @relation("ReviewsReceived", fields: [reviewed_user_id], references: [user_id], onDelete: Cascade)
+  reviewed         User     @relation("ReviewsReceived", fields: [reviewed_user_id], references: [user_id], onDelete: Cascade)
+  reviewer         User     @relation("ReviewsWritten", fields: [reviewer_user_id], references: [user_id], onDelete: Cascade)
 
   @@unique([reviewer_user_id, reviewed_user_id])
   @@index([reviewed_user_id])
   @@index([reviewer_user_id])
   @@map("user_reviews")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model spatial_ref_sys {
+  srid      Int     @id
+  auth_name String? @db.VarChar(256)
+  auth_srid Int?
+  srtext    String? @db.VarChar(2048)
+  proj4text String? @db.VarChar(2048)
 }
