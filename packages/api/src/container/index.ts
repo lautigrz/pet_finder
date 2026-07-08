@@ -357,8 +357,10 @@ container.registerSingleton(
 // Payments
 import { CreateFeaturedPreferenceUseCase } from "@application/usecase/payment-usecase/create-featured-preference.usecase";
 import { ProcessPaymentWebhookUseCase } from "@application/usecase/payment-usecase/process-payment-webhook.usecase";
+import { NotifyFeaturedPaymentUseCase } from "@application/usecase/notify-featured-payment/notify-featured-payment.usecase";
 
 container.registerSingleton("CreateFeaturedPreferenceUseCase", CreateFeaturedPreferenceUseCase);
+container.registerSingleton("NotifyFeaturedPaymentUseCase", NotifyFeaturedPaymentUseCase);
 container.registerSingleton("ProcessPaymentWebhookUseCase", ProcessPaymentWebhookUseCase);
 
 // Content reports (moderation)

@@ -20,6 +20,11 @@ export class LogEmailService implements IEmailService {
     logger.info(`[EMAIL MOCK] Coincidencia ${scorePercentage}% con ${petName} (img: ${imageUrl ?? "sin foto"}) para ${toEmail}: ${link}`);
   }
 
+  async sendFeaturedPaymentReceipt(toEmail: string, amount: number, currency: string, operationId: string, reportPublicId: string): Promise<void> {
+    const link = `${APP_BASE_URL}/reports/${reportPublicId}`;
+    logger.info(`[EMAIL MOCK] Comprobante de reporte destacado para ${toEmail}: ${amount} ${currency}, operación #${operationId} (${link})`);
+  }
+
   async sendPublicationRemovedNotice(toEmail: string, appealToken: string): Promise<void> {
     logger.info(`[EMAIL MOCK] Publicación dada de baja para ${toEmail} (apelar: ${APP_BASE_URL}/appeals/new?token=${appealToken})`);
   }

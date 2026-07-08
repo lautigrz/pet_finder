@@ -1,6 +1,6 @@
 import { IEmailService } from "@domain/services/IEmailService";
 import { EmailAddress } from "@domain/shared/email/email-address.vo";
-import { verificationEmail, passwordResetEmail, matchAlertEmail, publicationRemovedEmail, accountSuspendedEmail, appealAcceptedEmail, appealRejectedEmail } from "./email-templates";
+import { verificationEmail, passwordResetEmail, matchAlertEmail, featuredPaymentReceiptEmail, publicationRemovedEmail, accountSuspendedEmail, appealAcceptedEmail, appealRejectedEmail } from "./email-templates";
 import { AppealTargetType } from "@domain/appeal/types/appeal-target-type";
 import { PETFINDER_LOGO_BASE64, PETFINDER_LOGO_CID, PETFINDER_ISOTIPO_BASE64, PETFINDER_ISOTIPO_CID } from "./email-logo-asset";
 
@@ -27,6 +27,10 @@ export class SendgridEmailService implements IEmailService {
     const html = matchAlertEmail(this.appBaseUrl, petName, scorePercentage, lostReportPublicId, imageUrl);
     const extras = imageUrl ? [] : [inlineImage(PETFINDER_ISOTIPO_BASE64, "petfinder-isotipo.png", PETFINDER_ISOTIPO_CID)];
     await this.send(toEmail, "Encontramos una posible coincidencia en PetFinder", html, extras);
+  }
+
+  async sendFeaturedPaymentReceipt(toEmail: string, amount: number, currency: string, operationId: string, reportPublicId: string): Promise<void> {
+    await this.send(toEmail, "Comprobante de tu reporte destacado en PetFinder", featuredPaymentReceiptEmail(this.appBaseUrl, amount, currency, operationId, reportPublicId));
   }
 
   async sendPublicationRemovedNotice(toEmail: string, appealToken: string): Promise<void> {
