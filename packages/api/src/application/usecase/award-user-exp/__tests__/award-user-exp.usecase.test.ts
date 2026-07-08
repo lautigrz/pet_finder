@@ -27,6 +27,7 @@ describe("AwardUserExpUseCase", () => {
         ),
       ),
       findRecentEvents: vi.fn(),
+      findAchievementDefinitions: vi.fn(),
     };
 
     const useCase = new AwardUserExpUseCase(repository);
