@@ -52,6 +52,7 @@ const createFakeClosedReport = () => {
 describe("UpdateStatus UseCase", () => {
   let reportRepository: ReportRepository;
   let notifyReportFollowersOfStatusChange: NotifyReportFollowersOfStatusChangeUseCase;
+  let missionRepository: any;
   let useCase: UpdateStatus;
 
   beforeEach(() => {
@@ -72,9 +73,15 @@ describe("UpdateStatus UseCase", () => {
       execute: vi.fn().mockResolvedValue(undefined),
     } as unknown as NotifyReportFollowersOfStatusChangeUseCase;
 
+    missionRepository = {
+      findByReportId: vi.fn(),
+      update: vi.fn(),
+    };
+
     useCase = new UpdateStatus(
       reportRepository,
       notifyReportFollowersOfStatusChange,
+      missionRepository,
     );
   });
 
@@ -178,5 +185,37 @@ describe("UpdateStatus UseCase", () => {
     ).rejects.toThrow("DB error");
 
     expect(notifyReportFollowersOfStatusChange.execute).not.toHaveBeenCalled();
+  });
+
+  it("debería cerrar la misión asociada si el reporte cambia a RESOLVED o CLOSED", async () => {
+    const report = createFakeActiveReport();
+    vi.mocked(reportRepository.findByPublicId).mockResolvedValue(report);
+
+    const { Mission } = await import("@domain/mission/Mission.js");
+    const { SearchArea } = await import("@domain/mission/value-objects/search-area.vo.js");
+    const { MissionStatus } = await import("@domain/mission/types/mission.status.js");
+
+    const mission = Mission.restore({
+      missionId: 10,
+      publicId: "mission-uuid",
+      reportId: 1,
+      searchArea: SearchArea.create(-34.6037, -58.3816, 300),
+      title: "Buscar",
+      description: "Ayuda",
+      status: MissionStatus.OPEN,
+      createdAt: new Date(),
+      updatedAt: null,
+      volunteerIds: [],
+    });
+
+    vi.mocked(missionRepository.findByReportId).mockResolvedValue(mission);
+
+    await useCase.execute({
+      publicId: "report-uuid",
+      status: ReportStatus.RESOLVED,
+    });
+
+    expect(mission.status).toBe(MissionStatus.CLOSED);
+    expect(missionRepository.update).toHaveBeenCalledWith(mission);
   });
 });

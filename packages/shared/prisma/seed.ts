@@ -14,6 +14,7 @@ async function main(): Promise<void> {
   await seedContentReportTargetTypes()
   await seedContentReportReasons()
   await seedContentReportStatuses()
+  await seedMissionStatuses()
   await seedAchievementDefinitions()
 }
 
@@ -221,6 +222,15 @@ async function seedContentReportStatuses(): Promise<void> {
   })
 }
 
+async function seedMissionStatuses(): Promise<void> {
+  await prisma.missionStatus.createMany({
+    data: [
+      { mission_status_id: 1, name: 'OPEN' },
+      { mission_status_id: 2, name: 'IN_PROGRESS' },
+      { mission_status_id: 3, name: 'CLOSED' },
+    ],
+  })
+}
 async function seedAchievementDefinitions(): Promise<void> {
   await prisma.achievementDefinition.createMany({
     data: [
@@ -280,6 +290,7 @@ async function seedAchievementDefinitions(): Promise<void> {
         required_xp: 1250,
         icon: '🛡️',
       },
+
     ],
     skipDuplicates: true,
   })

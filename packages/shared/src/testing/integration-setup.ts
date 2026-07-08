@@ -34,12 +34,6 @@ export async function setupTestDatabase(): Promise<TestDatabase> {
     return { prisma, container };
 }
 
-/**
- * Truncates all mutable data tables by running DELETE FROM statements in the order
- * of foreign key dependency.
- * This is 10x-100x faster than TRUNCATE CASCADE in PostgreSQL because it does not
- * incur filesystem lock and fsync metadata operations for every table.
- */
 export async function truncateAll(prisma: PrismaClient): Promise<void> {
     const tables = [
         "appeals",
@@ -64,7 +58,6 @@ export async function truncateAll(prisma: PrismaClient): Promise<void> {
         "users"
     ];
 
-    // Delete rows sequentially from child to parent tables to respect foreign keys
     for (const table of tables) {
         await prisma.$executeRawUnsafe(`DELETE FROM "${table}";`);
     }
