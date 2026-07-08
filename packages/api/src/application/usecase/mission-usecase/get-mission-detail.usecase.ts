@@ -43,7 +43,7 @@ export class GetMissionDetailUseCase {
 
         const { report, pet } = reportItem;
 
-        let reportPhotoUrl: string | null = this.resolveReportPhotoUrl(report, pet);
+        const reportPhotoUrl: string | null = this.resolveReportPhotoUrl(report, pet);
 
         const users = mission.volunteerIds.length > 0
             ? await this.userRepository.findByIds(mission.volunteerIds)
