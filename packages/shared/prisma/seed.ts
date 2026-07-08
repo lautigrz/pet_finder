@@ -254,8 +254,8 @@ async function seedAchievementDefinitions(): Promise<void> {
       },
       {
         code: 'WEEKLY_STREAK',
-        name: 'Racha semanal',
-        description: 'Alcanzá 500 XP manteniendo actividad constante.',
+        name: 'Fuerza imparable',
+        description: 'Alcanzá 500 XP impulsando a la comunidad.',
         required_xp: 500,
         icon: '🔥',
       },
