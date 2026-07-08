@@ -77,6 +77,21 @@ describe("NodemailerEmailService", () => {
     ]);
   });
 
+  it("comprobante de pago: incluye monto, N° de operación y link al reporte", async () => {
+    await service.sendFeaturedPaymentReceipt("juan@example.com", 100, "ARS", "op-123", "rep-1");
+
+    expect(sendMail).toHaveBeenCalledWith(
+      expect.objectContaining({
+        to: "juan@example.com",
+        subject: expect.stringContaining("Comprobante"),
+        html: expect.stringContaining("http://localhost:4200/reports/rep-1"),
+      }),
+    );
+    const html = sendMail.mock.calls[0]![0].html;
+    expect(html).toContain("$100");
+    expect(html).toContain("#op-123");
+  });
+
   it("publicación dada de baja: asunto y botón para apelar con el token", async () => {
     await service.sendPublicationRemovedNotice("juan@example.com", "tok-appeal");
 

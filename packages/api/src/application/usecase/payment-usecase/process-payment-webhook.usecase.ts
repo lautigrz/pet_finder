@@ -5,6 +5,8 @@ import type { PaymentConfig } from "@application/ports/PaymentConfig";
 import { PaymentNotFoundError } from "@domain/payment/errors/PaymentNotFoundError";
 import { InvalidWebhookSignatureError } from "@domain/payment/errors/InvalidWebhookSignatureError";
 import { ProcessPaymentWebhookInput } from "./dto/process-payment-webhook.dto";
+import { NotifyFeaturedPaymentUseCase } from "../notify-featured-payment/notify-featured-payment.usecase";
+import { logger } from "@pet-alert/shared";
 import { inject, injectable } from "tsyringe";
 
 @injectable()
@@ -18,6 +20,8 @@ export class ProcessPaymentWebhookUseCase {
         private readonly paymentGateway: PaymentGateway,
         @inject("PaymentConfig")
         private readonly config: PaymentConfig,
+        @inject("NotifyFeaturedPaymentUseCase")
+        private readonly notifyFeaturedPayment: NotifyFeaturedPaymentUseCase,
     ) { }
 
     async execute(input: ProcessPaymentWebhookInput): Promise<void> {
@@ -47,6 +51,18 @@ export class ProcessPaymentWebhookUseCase {
             await this.paymentRepository.update(payment);
 
             await this.reportRepository.markFeatured(payment.reportId);
+
+            try {
+                await this.notifyFeaturedPayment.execute({
+                    userId: payment.userId,
+                    reportId: payment.reportId,
+                    amount: payment.amount,
+                    currency: payment.currency,
+                    operationId: details.mpPaymentId,
+                });
+            } catch (error) {
+                logger.warn(`No se pudo enviar el comprobante de pago del reporte ${payment.reportId}: ${error instanceof Error ? error.message : String(error)}`);
+            }
             return;
         }
 
