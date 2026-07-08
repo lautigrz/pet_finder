@@ -30,69 +30,103 @@ export class UpdateReportUseCase {
   ) { }
 
   async execute(dto: UpdateReportDTO, userPublicId: string): Promise<void> {
-    const report = await this.reportRepository.findByPublicId(dto.publicId);
-    if (!report) {
-      throw new ReportNotFoundError(dto.publicId);
-    }
-
+    const report = await this.findReportOrFail(dto.publicId);
     this.validateAuthorization(report, userPublicId);
 
-    let pet: Pet | null = null;
-    if (report.reportType === ReportType.LOST && dto.lostDetails) {
-      pet = await this.petRepository.findByPublicId(dto.lostDetails.petPublicId);
-      if (!pet || pet.idPet === null) {
-        throw new InvalidFieldError('petPublicId', 'Mascota no encontrada');
-      }
-    }
-
-    const changes: DataChangeType[] = [];
-
-    const currentDesc = report.description?.value ?? null;
-    const newDesc = dto.description ?? null;
-    if (dto.description !== undefined && currentDesc !== newDesc) {
-      changes.push(DataChangeType.DESCRIPTION);
-    }
-
-    if (dto.location) {
-      const currentLoc = report.location;
-      if (
-        !currentLoc ||
-        currentLoc.address !== dto.location.address ||
-        currentLoc.latitude !== dto.location.latitude ||
-        currentLoc.longitude !== dto.location.longitude
-      ) {
-        changes.push(DataChangeType.LOCATION);
-      }
-    }
-
-    if (this.detectAttributeChanges(dto, report, pet)) {
-      changes.push(DataChangeType.ATTRIBUTES);
-    }
+    const pet = await this.loadLostPetIfNeeded(dto, report);
     const { allImages, imagesChanged } = await this.handleImages(dto, report);
-    if (imagesChanged) {
-      changes.push(DataChangeType.IMAGE);
-    }
+    const changes = this.collectChanges(dto, report, pet, imagesChanged);
 
     const updatePayload = await this.buildUpdatePayload(dto, report, allImages, pet);
 
     report.updateFields(updatePayload);
     await this.reportRepository.updateFields(report, allImages);
 
-    if (changes.length > 0 && report.idReport !== null) {
-      await enqueueMatchingJob({
-        type: TypeJob.REFRESH_MATCHING,
-        reportId: report.idReport,
-        reportType: ReportTypeToNumber[report.reportType],
-        reportTypeName: report.reportType,
-        changes,
-      });
+    await this.enqueueRefreshMatching(report, changes);
+  }
+
+  private async findReportOrFail(publicId: string): Promise<Report> {
+    const report = await this.reportRepository.findByPublicId(publicId);
+    if (!report) {
+      throw new ReportNotFoundError(publicId);
     }
+    return report;
   }
 
   private validateAuthorization(report: Report, userPublicId: string): void {
     if (report.userPublicId !== userPublicId) {
       throw new UnauthorizedReportEditError();
     }
+  }
+
+  private async loadLostPetIfNeeded(dto: UpdateReportDTO, report: Report): Promise<Pet | null> {
+    if (report.reportType !== ReportType.LOST || !dto.lostDetails) {
+      return null;
+    }
+
+    const pet = await this.petRepository.findByPublicId(dto.lostDetails.petPublicId);
+    if (!pet || pet.idPet === null) {
+      throw new InvalidFieldError('petPublicId', 'Mascota no encontrada');
+    }
+
+    if (pet.idPet !== (report.details as LostReportDetails).petId) {
+      throw new UnauthorizedReportEditError();
+    }
+    return pet;
+  }
+
+  private collectChanges(
+    dto: UpdateReportDTO,
+    report: Report,
+    pet: Pet | null,
+    imagesChanged: boolean
+  ): DataChangeType[] {
+    const changes: DataChangeType[] = [];
+
+    if (this.detectDescriptionChange(dto, report)) {
+      changes.push(DataChangeType.DESCRIPTION);
+    }
+    if (this.detectLocationChange(dto, report)) {
+      changes.push(DataChangeType.LOCATION);
+    }
+    if (this.detectAttributeChanges(dto, report, pet)) {
+      changes.push(DataChangeType.ATTRIBUTES);
+    }
+    if (imagesChanged) {
+      changes.push(DataChangeType.IMAGE);
+    }
+
+    return changes;
+  }
+
+  private detectDescriptionChange(dto: UpdateReportDTO, report: Report): boolean {
+    if (dto.description === undefined) return false;
+    const currentDesc = report.description?.value ?? null;
+    const newDesc = dto.description ?? null;
+    return currentDesc !== newDesc;
+  }
+
+  private detectLocationChange(dto: UpdateReportDTO, report: Report): boolean {
+    if (!dto.location) return false;
+    const currentLoc = report.location;
+    return (
+      !currentLoc ||
+      currentLoc.address !== dto.location.address ||
+      currentLoc.latitude !== dto.location.latitude ||
+      currentLoc.longitude !== dto.location.longitude
+    );
+  }
+
+  private async enqueueRefreshMatching(report: Report, changes: DataChangeType[]): Promise<void> {
+    if (changes.length === 0 || report.idReport === null) return;
+
+    await enqueueMatchingJob({
+      type: TypeJob.REFRESH_MATCHING,
+      reportId: report.idReport,
+      reportType: ReportTypeToNumber[report.reportType],
+      reportTypeName: report.reportType,
+      changes,
+    });
   }
 
   private detectAttributeChanges(dto: UpdateReportDTO, report: Report, pet: Pet | null): boolean {
@@ -106,8 +140,7 @@ export class UpdateReportUseCase {
         (sd.sizeType !== undefined && (sd.sizeType ?? null) !== (cur.sizeType ?? null)) ||
         (sd.breed !== undefined && (sd.breed ?? null) !== (cur.breed ?? null)) ||
         (sd.hasIdCollar !== undefined && sd.hasIdCollar !== cur.hasIdCollar) ||
-        (sd.color !== undefined && sd.color !== cur.color) ||
-        (sd.isInTransit !== undefined && sd.isInTransit !== cur.isInTransit)
+        (sd.color !== undefined && sd.color !== cur.color)
       );
     }
 
@@ -226,7 +259,7 @@ export class UpdateReportUseCase {
       breed: this.getOrKeepValue(sd?.breed, currentDetails.breed),
       hasIdCollar: sd?.hasIdCollar ?? currentDetails.hasIdCollar,
       color: sd?.color ?? currentDetails.color,
-      isInTransit: sd?.isInTransit ?? currentDetails.isInTransit,
+      isInTransit: currentDetails.isInTransit,
       images,
     });
   }
