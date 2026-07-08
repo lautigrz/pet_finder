@@ -5,6 +5,7 @@ export interface AchievementOutput {
   name: string;
   description: string;
   requiredXp: number;
+  icon?: string | null;
   unlocked: boolean;
 }
 
