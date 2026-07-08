@@ -38,7 +38,7 @@ describe("RegisterUserUseCase", () => {
     passwordHasher = { hash: vi.fn(), verify: vi.fn() };
     tokenRepository = { save: vi.fn(), findByValue: vi.fn(), markAsUsed: vi.fn() };
     tokenGenerator = { generate: vi.fn() };
-    emailService = { sendVerificationLink: vi.fn(), sendPasswordResetLink: vi.fn(), sendMatchAlert: vi.fn(), sendPublicationRemovedNotice: vi.fn(), sendAccountSuspendedNotice: vi.fn(), sendAppealAcceptedNotice: vi.fn(), sendAppealRejectedNotice: vi.fn() };
+    emailService = { sendVerificationLink: vi.fn(), sendPasswordResetLink: vi.fn(), sendMatchAlert: vi.fn(), sendFeaturedPaymentReceipt: vi.fn(), sendPublicationRemovedNotice: vi.fn(), sendAccountSuspendedNotice: vi.fn(), sendAppealAcceptedNotice: vi.fn(), sendAppealRejectedNotice: vi.fn() };
     useCase = new RegisterUserUseCase(userRepository, passwordHasher, tokenRepository, tokenGenerator, emailService);
   });
 

@@ -14,6 +14,57 @@ describe("GetUserExperienceUseCase", () => {
       ),
     } as unknown as IUserRepository;
     const userExperienceRepository = {
+      findAchievementDefinitions: vi.fn().mockResolvedValue([
+        {
+          code: "FIRST_RESCUE",
+          name: "Primer rescate",
+          description: "Alcanzo 10 XP colaborando en la comunidad.",
+          requiredXp: 10,
+          icon: "🐾",
+        },
+        {
+          code: "SOLIDARY_NEIGHBOR",
+          name: "Vecino solidario",
+          description: "Alcanzo 50 XP aportando a busquedas y reportes.",
+          requiredXp: 50,
+          icon: "🏠",
+        },
+        {
+          code: "URBAN_EXPLORER",
+          name: "Explorador urbano",
+          description: "Alcanzo 100 XP ayudando a reunir mascotas con sus familias.",
+          requiredXp: 100,
+          icon: "👁️",
+        },
+        {
+          code: "GIANT_HEART",
+          name: "Corazón gigante",
+          description: "Alcanzo 250 XP sosteniendo la red de ayuda.",
+          requiredXp: 250,
+          icon: "❤️",
+        },
+        {
+          code: "COMMUNITY_BOND",
+          name: "Vínculo comunitario",
+          description: "Alcanzo 750 XP fortaleciendo la red de ayuda.",
+          requiredXp: 750,
+          icon: "🔗",
+        },
+        {
+          code: "FREQUENT_SIGHTER",
+          name: "Avistador frecuente",
+          description: "Alcanzo 1000 XP participando activamente en reportes.",
+          requiredXp: 1000,
+          icon: "👁️",
+        },
+        {
+          code: "CERTIFIED_CAREGIVER",
+          name: "Cuidador certificado",
+          description: "Alcanzo 1250 XP demostrando compromiso con la comunidad.",
+          requiredXp: 1250,
+          icon: "🛡️",
+        },
+      ]),
       findRecentEvents: vi.fn().mockResolvedValue([
         {
           action: UserExpAction.CREATE_SIGHTING_REPORT,
@@ -30,15 +81,18 @@ describe("GetUserExperienceUseCase", () => {
     expect(result.totalXp).toBe(120);
     expect(result.level).toBe(2);
     expect(result.achievements).toEqual([
-      expect.objectContaining({ code: "FIRST_STEPS", requiredXp: 10, unlocked: true }),
-      expect.objectContaining({ code: "ACTIVE_HELPER", requiredXp: 50, unlocked: true }),
-      expect.objectContaining({ code: "COMMUNITY_ALLY", requiredXp: 100, unlocked: true }),
-      expect.objectContaining({ code: "PET_GUARDIAN", requiredXp: 250, unlocked: false }),
+      expect.objectContaining({ code: "FIRST_RESCUE", requiredXp: 10, unlocked: true, icon: "🐾" }),
+      expect.objectContaining({ code: "SOLIDARY_NEIGHBOR", requiredXp: 50, unlocked: true, icon: "🏠" }),
+      expect.objectContaining({ code: "URBAN_EXPLORER", requiredXp: 100, unlocked: true, icon: "👁️" }),
+      expect.objectContaining({ code: "GIANT_HEART", requiredXp: 250, unlocked: false, icon: "❤️" }),
+      expect.objectContaining({ code: "COMMUNITY_BOND", requiredXp: 750, unlocked: false, icon: "🔗" }),
+      expect.objectContaining({ code: "FREQUENT_SIGHTER", requiredXp: 1000, unlocked: false, icon: "👁️" }),
+      expect.objectContaining({ code: "CERTIFIED_CAREGIVER", requiredXp: 1250, unlocked: false, icon: "🛡️" }),
     ]);
     expect(result.unlockedAchievements.map((achievement) => achievement.code)).toEqual([
-      "FIRST_STEPS",
-      "ACTIVE_HELPER",
-      "COMMUNITY_ALLY",
+      "FIRST_RESCUE",
+      "SOLIDARY_NEIGHBOR",
+      "URBAN_EXPLORER",
     ]);
     expect(result.recentEvents).toEqual([
       {
@@ -48,6 +102,7 @@ describe("GetUserExperienceUseCase", () => {
       },
     ]);
     expect(userRepository.findByPublicId).toHaveBeenCalledWith("user-123");
+    expect(userExperienceRepository.findAchievementDefinitions).toHaveBeenCalled();
     expect(userExperienceRepository.findRecentEvents).toHaveBeenCalledWith("user-123", 10);
   });
 

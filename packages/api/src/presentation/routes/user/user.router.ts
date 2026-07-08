@@ -25,6 +25,7 @@ import { ListUserReviewsController } from "@presentation/controller/user-review/
 import { ListPublicUserReviewsController } from "@presentation/controller/user-review/list-public-user-reviews.controller";
 import { GetUserRatingController } from "@presentation/controller/user-review/get-user-rating.controller";
 import { GetUserExperienceController } from "@presentation/controller/user/get-user-experience.controller";
+import { GetPublicUserExperienceController } from "@presentation/controller/user/get-public-user-experience.controller";
 
 const router = Router();
 
@@ -42,6 +43,7 @@ const listUserReviewsController = container.resolve(ListUserReviewsController);
 const listPublicUserReviewsController = container.resolve(ListPublicUserReviewsController);
 const getUserRatingController = container.resolve(GetUserRatingController);
 const getUserExperienceController = container.resolve(GetUserExperienceController);
+const getPublicUserExperienceController = container.resolve(GetPublicUserExperienceController);
 
 router.post("/", validateRequest(createUserRequestSchema), createUserController.handle);
 router.post("/verify-email", validateRequest(verifyEmailRequestSchema), verifyEmailController.handle);
@@ -56,6 +58,7 @@ router.get("/:publicId/profile",requireAuth(tokenSigner),getPublicProfileControl
 router.post("/:publicId/reviews",requireAuth(tokenSigner),validateRequest(createUserReviewRequestSchema),upsertUserReviewController.handle,);
 router.get("/:publicId/reviews",requireAuth(tokenSigner),validateRequest(listUserReviewsRequestSchema),listPublicUserReviewsController.handle,);
 router.get("/:publicId/rating",requireAuth(tokenSigner),getUserRatingController.handle,);
+router.get("/:publicId/xp",requireAuth(tokenSigner),getPublicUserExperienceController.handle,);
 router.get("/:publicId",requireAuth(tokenSigner),getPublicProfileController.handle,);
 
 export default router;

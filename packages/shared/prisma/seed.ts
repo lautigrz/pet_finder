@@ -15,6 +15,7 @@ async function main(): Promise<void> {
   await seedContentReportReasons()
   await seedContentReportStatuses()
   await seedMissionStatuses()
+  await seedAchievementDefinitions()
 }
 
 const DOG = 1
@@ -227,6 +228,69 @@ async function seedMissionStatuses(): Promise<void> {
       { mission_status_id: 1, name: 'OPEN' },
       { mission_status_id: 2, name: 'IN_PROGRESS' },
       { mission_status_id: 3, name: 'CLOSED' },
+    ],
+  })
+}
+async function seedAchievementDefinitions(): Promise<void> {
+  await prisma.achievementDefinition.createMany({
+    data: [
+      {
+        code: 'FIRST_RESCUE',
+        name: 'Primer rescate',
+        description: 'Alcanzá 10 XP colaborando en la comunidad.',
+        required_xp: 10,
+        icon: '🐾',
+      },
+      {
+        code: 'SOLIDARY_NEIGHBOR',
+        name: 'Vecino solidario',
+        description: 'Alcanzá 50 XP aportando a búsquedas y reportes.',
+        required_xp: 50,
+        icon: '🏠',
+      },
+      {
+        code: 'URBAN_EXPLORER',
+        name: 'Explorador urbano',
+        description: 'Alcanzá 100 XP ayudando a reunir mascotas con sus familias.',
+        required_xp: 100,
+        icon: '👁️',
+      },
+      {
+        code: 'GIANT_HEART',
+        name: 'Corazón gigante',
+        description: 'Alcanzá 250 XP sosteniendo la red de ayuda.',
+        required_xp: 250,
+        icon: '❤️',
+      },
+      {
+        code: 'WEEKLY_STREAK',
+        name: 'Fuerza imparable',
+        description: 'Alcanzá 500 XP impulsando a la comunidad.',
+        required_xp: 500,
+        icon: '🔥',
+      },
+      {
+        code: 'COMMUNITY_BOND',
+        name: 'Vínculo comunitario',
+        description: 'Alcanzá 750 XP fortaleciendo la red de ayuda.',
+        required_xp: 750,
+        icon: '🔗',
+      },
+      {
+        code: 'FREQUENT_SIGHTER',
+        name: 'Avistador frecuente',
+        description: 'Alcanzá 1000 XP participando activamente en reportes.',
+        required_xp: 1000,
+        icon: '👁️',
+      },
+      {
+        code: 'CERTIFIED_CAREGIVER',
+        name: 'Cuidador certificado',
+        description: 'Alcanzá 1250 XP demostrando compromiso con la comunidad.',
+        required_xp: 1250,
+        icon: '🛡️',
+      },
+
     ],
     skipDuplicates: true,
   })

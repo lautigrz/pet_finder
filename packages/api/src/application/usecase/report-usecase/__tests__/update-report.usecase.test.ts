@@ -142,7 +142,7 @@ describe('UpdateReportUseCase', () => {
       vi.mocked(reportRepository.findByPublicId).mockResolvedValue(report as any);
 
       await useCase.execute(baseDTO({
-        sightingDetails: { petName: 'Rex', color: 'blanco', hasIdCollar: true, isInTransit: false },
+        sightingDetails: { petName: 'Rex', color: 'blanco', hasIdCollar: true },
       }), OWNER_ID);
 
       expect(report.updateFields).toHaveBeenCalledOnce();
@@ -259,6 +259,19 @@ describe('UpdateReportUseCase', () => {
       await expect(useCase.execute(baseDTO({
         lostDetails: { petPublicId: PET_PUB_ID },
       }), OWNER_ID)).rejects.toThrow(InvalidFieldError);
+    });
+
+    it('lanza UnauthorizedReportEditError si la mascota no pertenece al reporte', async () => {
+      const report = makeLostReport();
+      const otherPet = { ...makePet(), idPet: 999 };
+      vi.mocked(reportRepository.findByPublicId).mockResolvedValue(report as any);
+      vi.mocked(petRepository.findByPublicId).mockResolvedValue(otherPet as any);
+
+      await expect(useCase.execute(baseDTO({
+        lostDetails: { petPublicId: 'pet-ajena-uuid' },
+      }), OWNER_ID)).rejects.toThrow(UnauthorizedReportEditError);
+
+      expect(petRepository.update).not.toHaveBeenCalled();
     });
   });
 
