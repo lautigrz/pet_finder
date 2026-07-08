@@ -23,7 +23,7 @@ export class CreateMissionController {
         }
         const parsed = req.validated?.body as CreateMissionInput;
         const result = await this.useCase.execute({
-            reportPublicId: publicId,
+            reportPublicId: parsed.reportPublicId,
             latitude: parsed.latitude,
             longitude: parsed.longitude,
             title: parsed.title,

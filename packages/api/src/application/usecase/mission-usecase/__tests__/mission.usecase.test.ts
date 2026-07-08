@@ -7,6 +7,7 @@ import { LeaveMissionUseCase } from "../leave-mission.usecase";
 import { CancelMissionUseCase } from "../cancel-mission.usecase";
 import { CreateMissionUpdateUseCase } from "../create-mission-update.usecase";
 import { GetMissionUpdatesUseCase } from "../get-mission-updates.usecase";
+import { UpdateMissionUseCase } from "../update-mission.usecase";
 import { Mission } from "@domain/mission/Mission";
 import { MissionUpdate } from "@domain/mission/MissionUpdate";
 import { SearchArea } from "@domain/mission/value-objects/search-area.vo";
@@ -542,6 +543,123 @@ describe("Pruebas Unitarias de Casos de Uso de Misiones", () => {
       mockMissionRepository.findByPublicId.mockResolvedValue(null);
 
       await expect(usecase.execute("non-existent")).rejects.toThrow(MissionNotFoundError);
+    });
+  });
+
+  describe("UpdateMissionUseCase", () => {
+    it("debe actualizar los detalles de la misión si es solicitada por el dueño del reporte", async () => {
+      const usecase = new UpdateMissionUseCase(mockMissionRepository, mockReportRepository, mockUserRepository);
+
+      const mission = Mission.create({
+        reportId: 10,
+        searchArea: SearchArea.create(-34.6037, -58.3816, 300),
+        title: "Old Title",
+        description: "Old Description"
+      });
+
+      const mockUser = User.reconstruct(
+        5,
+        "user-uuid",
+        "email@email.com",
+        "username",
+        "$2b$10$abcdefghijklmnopqrstuv",
+        true,
+        new Date(),
+        null,
+        null,
+        null
+      );
+
+      const mockReport = Report.restore({
+        idReport: 10,
+        publicId: "report-uuid",
+        userId: 5,
+        userPublicId: "user-uuid",
+        type: ReportType.LOST,
+        currentStatus: "ACTIVE" as any,
+        description: null,
+        location: Location.create({ address: "Test address", latitude: -34.6037, longitude: -58.3816 }),
+        details: {} as any,
+        occurredAt: new Date(),
+        createdAt: new Date(),
+        updatedAt: null
+      });
+
+      mockMissionRepository.findByPublicId.mockResolvedValue(mission);
+      mockUserRepository.findByPublicId.mockResolvedValue(mockUser);
+      mockReportRepository.findDetailsByIds.mockResolvedValue([{ report: mockReport, pet: undefined }]);
+
+      await usecase.execute({
+        missionPublicId: "mission-uuid",
+        userPublicId: "user-uuid",
+        title: "New Title",
+        description: "New Description",
+        latitude: -34.6040,
+        longitude: -58.3820,
+        radius: 500
+      });
+
+      expect(mission.title).toBe("New Title");
+      expect(mission.description).toBe("New Description");
+      expect(mission.searchArea.latitude).toBe(-34.6040);
+      expect(mission.searchArea.longitude).toBe(-58.3820);
+      expect(mission.searchArea.radius).toBe(500);
+      expect(mockMissionRepository.update).toHaveBeenCalledWith(mission);
+    });
+
+    it("debe lanzar UnauthorizedMissionEditError si no es el dueño del reporte", async () => {
+      const usecase = new UpdateMissionUseCase(mockMissionRepository, mockReportRepository, mockUserRepository);
+
+      const mission = Mission.create({
+        reportId: 10,
+        searchArea: SearchArea.create(-34.6037, -58.3816, 300),
+        title: "Old Title",
+        description: "Old Description"
+      });
+
+      const mockUser = User.reconstruct(
+        5,
+        "user-uuid",
+        "email@email.com",
+        "username",
+        "$2b$10$abcdefghijklmnopqrstuv",
+        true,
+        new Date(),
+        null,
+        null,
+        null
+      );
+
+      const mockReport = Report.restore({
+        idReport: 10,
+        publicId: "report-uuid",
+        userId: 999, // diferente al usuario ejecutor (5)
+        userPublicId: "owner-uuid",
+        type: ReportType.LOST,
+        currentStatus: "ACTIVE" as any,
+        description: null,
+        location: Location.create({ address: "Test address", latitude: -34.6037, longitude: -58.3816 }),
+        details: {} as any,
+        occurredAt: new Date(),
+        createdAt: new Date(),
+        updatedAt: null
+      });
+
+      mockMissionRepository.findByPublicId.mockResolvedValue(mission);
+      mockUserRepository.findByPublicId.mockResolvedValue(mockUser);
+      mockReportRepository.findDetailsByIds.mockResolvedValue([{ report: mockReport, pet: undefined }]);
+
+      await expect(
+        usecase.execute({
+          missionPublicId: "mission-uuid",
+          userPublicId: "user-uuid",
+          title: "New Title",
+          description: "New Description",
+          latitude: -34.6040,
+          longitude: -58.3820,
+          radius: 500
+        })
+      ).rejects.toThrow(UnauthorizedMissionEditError);
     });
   });
 });

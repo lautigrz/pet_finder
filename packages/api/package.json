@@ -8,7 +8,7 @@
     "test": "vitest run --passWithNoTests --exclude '**/*.integration.test.ts'",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage --passWithNoTests --exclude '**/*.integration.test.ts'",
-    "test:integration": "vitest run --config vitest.integration.config.ts",
+    "test:integration": "npx prisma generate --schema=../shared/prisma/schema.prisma && vitest run --config vitest.integration.config.ts",
     "lint": "eslint src --ext .ts",
     "start": "node dist/server.js",
     "build": "npx prisma generate --schema=../shared/prisma/schema.prisma && tsc",

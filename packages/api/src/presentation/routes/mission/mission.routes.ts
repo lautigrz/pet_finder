@@ -11,9 +11,10 @@ import { JoinMissionController } from "@presentation/controller/mission/join-mis
 import { LeaveMissionController } from "@presentation/controller/mission/leave-mission.controller";
 import { CancelMissionController } from "@presentation/controller/mission/cancel-mission.controller";
 import { GetJoinedMissionsController } from "@presentation/controller/mission/get-joined-missions.controller";
+import { UpdateMissionController } from "@presentation/controller/mission/update-mission.controller";
 
 import { validateRequest } from "@presentation/middleware/validate.request";
-import { createMissionRequestSchema } from "@presentation/schemas/mission/mission.schema";
+import { createMissionRequestSchema, updateMissionRequestSchema } from "@presentation/schemas/mission/mission.schema";
 
 const router = Router();
 
@@ -26,9 +27,11 @@ const joinController = container.resolve(JoinMissionController);
 const leaveController = container.resolve(LeaveMissionController);
 const cancelController = container.resolve(CancelMissionController);
 const getJoinedController = container.resolve(GetJoinedMissionsController);
+const updateController = container.resolve(UpdateMissionController);
 
 router.get(
   "/",
+  requireAuth(tokenSigner),
   getController.handle
 );
 
@@ -47,7 +50,15 @@ router.post(
 
 router.get(
   "/:publicId",
+  requireAuth(tokenSigner),
   getDetailController.handle
+);
+
+router.patch(
+  "/:publicId",
+  requireAuth(tokenSigner),
+  validateRequest(updateMissionRequestSchema),
+  updateController.handle
 );
 
 router.post(

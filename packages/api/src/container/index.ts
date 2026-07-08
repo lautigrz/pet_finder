@@ -439,6 +439,7 @@ import { LeaveMissionUseCase } from "@application/usecase/mission-usecase/leave-
 import { CancelMissionUseCase } from "@application/usecase/mission-usecase/cancel-mission.usecase";
 import { GetJoinedMissionsUseCase } from "@application/usecase/mission-usecase/get-joined-missions.usecase";
 import { GetJoinedMissionsController } from "@presentation/controller/mission/get-joined-missions.controller";
+import { UpdateMissionUseCase } from "@application/usecase/mission-usecase/update-mission.usecase";
 
 container.registerSingleton("CreateMissionUseCase", CreateMissionUseCase);
 container.registerSingleton("GetMissionsUseCase", GetMissionsUseCase);
@@ -447,6 +448,7 @@ container.registerSingleton("JoinMissionUseCase", JoinMissionUseCase);
 container.registerSingleton("LeaveMissionUseCase", LeaveMissionUseCase);
 container.registerSingleton("CancelMissionUseCase", CancelMissionUseCase);
 container.registerSingleton("GetJoinedMissionsUseCase", GetJoinedMissionsUseCase);
+container.registerSingleton("UpdateMissionUseCase", UpdateMissionUseCase);
 container.registerSingleton(GetJoinedMissionsController);
 
 

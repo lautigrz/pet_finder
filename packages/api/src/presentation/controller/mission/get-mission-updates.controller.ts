@@ -3,7 +3,7 @@ import { inject, injectable } from "tsyringe";
 
 import { asyncHandler } from "@presentation/handler/async-handler";
 import { GetMissionUpdatesUseCase } from "@application/usecase/mission-usecase/get-mission-updates.usecase";
-import { UserNotFoundError } from "@domain/errors/UserNotFoundError";
+
 
 @injectable()
 export class GetMissionUpdatesController {
@@ -14,12 +14,9 @@ export class GetMissionUpdatesController {
   ) { }
 
   handle = asyncHandler(async (req: Request, res: Response) => {
-    const publicId = req.auth?.sub;
-    if (!publicId) {
-      throw new UserNotFoundError();
-    }
+    const { publicId } = req.params;
     const responses = await this.useCase.execute(
-      publicId
+      publicId as string
     );
 
     res.status(200).json(responses);
