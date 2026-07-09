@@ -33,8 +33,13 @@ export const resetPasswordRequestSchema = z.object({
     }),
 });
 
+export const googleLoginRequestSchema = z.object({
+    body: z.object({ code: z.string().min(1) }),
+});
+
 export type LoginBody = z.infer<typeof loginRequestSchema>['body'];
 export type LogoutBody = z.infer<typeof logoutRequestSchema>['body'];
 export type RefreshBody = z.infer<typeof refreshRequestSchema>['body'];
 export type ForgotPasswordBody = z.infer<typeof forgotPasswordRequestSchema>['body'];
 export type ResetPasswordBody = z.infer<typeof resetPasswordRequestSchema>['body'];
+export type GoogleLoginBody = z.infer<typeof googleLoginRequestSchema>['body'];

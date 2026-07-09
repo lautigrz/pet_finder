@@ -16,6 +16,7 @@ export class UserMapper {
       record.photo_url,
       record.is_suspended,
       record.exp,
+      record.google_id,
     );
   }
 
@@ -31,6 +32,7 @@ export class UserMapper {
       name: user.name,
       lastname: user.lastname,
       photo_url: user.photoUrl,
+      google_id: user.googleId,
     };
   }
 }

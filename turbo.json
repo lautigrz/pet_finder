@@ -39,7 +39,9 @@
         "FEATURED_CURRENCY",
         "MP_VALIDATE_WEBHOOK_SIGNATURE",
         "LOG_LEVEL",
-        "LOG_DIR"
+        "LOG_DIR",
+        "GOOGLE_CLIENT_ID",
+        "GOOGLE_CLIENT_SECRET"
       ]
     },
     "test": {
@@ -89,7 +91,9 @@
         "FEATURED_CURRENCY",
         "MP_VALIDATE_WEBHOOK_SIGNATURE",
         "LOG_LEVEL",
-        "LOG_DIR"
+        "LOG_DIR",
+        "GOOGLE_CLIENT_ID",
+        "GOOGLE_CLIENT_SECRET"
       ]
     }
   }

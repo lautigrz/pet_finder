@@ -11,13 +11,17 @@ export interface AuthConfig {
   jwtSecret: string;
   accessTtl: SignOptions["expiresIn"];
   refreshTtlMs: number;
+  googleClientId: string;
+  googleClientSecret: string;
 }
 
 export function readAuthConfig(): AuthConfig {
   const jwtSecret = required("JWT_SECRET");
   const accessTtl = required("JWT_ACCESS_TTL") as SignOptions["expiresIn"];
   const refreshTtl = required("JWT_REFRESH_TTL");
-  return { jwtSecret, accessTtl, refreshTtlMs: parseDuration(refreshTtl) };
+  const googleClientId = process.env.GOOGLE_CLIENT_ID ?? "";
+  const googleClientSecret = process.env.GOOGLE_CLIENT_SECRET ?? "";
+  return { jwtSecret, accessTtl, refreshTtlMs: parseDuration(refreshTtl), googleClientId, googleClientSecret };
 }
 
 function required(key: string): string {
