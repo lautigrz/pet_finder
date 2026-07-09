@@ -9,6 +9,10 @@ export interface MissionUpdateOutput {
         username: string;
         photoUrl: string | null;
     };
+    pointValue?: {
+        points: number;
+        label: string;
+    } | null;
 }
 
 export interface CreateMissionUpdateDTO {

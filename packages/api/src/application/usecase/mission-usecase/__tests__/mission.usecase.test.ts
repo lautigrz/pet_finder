@@ -19,7 +19,7 @@ import { User } from "@domain/entities/User";
 import { MissionNotFoundError } from "@domain/errors/MissionNotFoundError";
 import { UserNotFoundError } from "@domain/errors/UserNotFoundError";
 import { UnauthorizedMissionEditError } from "@domain/errors/UnauthorizedMissionEditError";
-import { ReportNotFoundError } from "@domain/errors/ReportNotFoundError";
+
 
 describe("Pruebas Unitarias de Casos de Uso de Misiones", () => {
   let mockMissionRepository: any;
@@ -56,7 +56,7 @@ describe("Pruebas Unitarias de Casos de Uso de Misiones", () => {
   describe("CreateMissionUseCase", () => {
     it("debe crear una nueva misión si no existe", async () => {
       const usecase = new CreateMissionUseCase(mockMissionRepository, mockReportRepository);
-      
+
       const mockReport = Report.restore({
         idReport: 1,
         publicId: "report-uuid",
@@ -142,14 +142,14 @@ describe("Pruebas Unitarias de Casos de Uso de Misiones", () => {
   describe("JoinMissionUseCase", () => {
     it("debe permitir a un voluntario unirse a la misión", async () => {
       const joinUsecase = new JoinMissionUseCase(mockMissionRepository, mockUserRepository);
-      
+
       const mission = Mission.create({
         reportId: 1,
         searchArea: SearchArea.create(-34.6037, -58.3816, 300),
         title: "Search",
         description: "Help"
       });
-      
+
       const mockUser = User.reconstruct(
         5,
         "user-uuid",
@@ -203,7 +203,7 @@ describe("Pruebas Unitarias de Casos de Uso de Misiones", () => {
   describe("LeaveMissionUseCase", () => {
     it("debe permitir a un voluntario abandonar la misión", async () => {
       const leaveUsecase = new LeaveMissionUseCase(mockMissionRepository, mockUserRepository);
-      
+
       const mission = Mission.restore({
         missionId: 100,
         publicId: "mission-uuid",
@@ -268,7 +268,7 @@ describe("Pruebas Unitarias de Casos de Uso de Misiones", () => {
       const mockReport = Report.restore({
         idReport: 10,
         publicId: "report-uuid",
-        userId: 5, // coincide con el ID del voluntario/solicitante
+        userId: 5,
         userPublicId: "user-uuid",
         type: ReportType.LOST,
         currentStatus: "ACTIVE" as any,
@@ -316,7 +316,7 @@ describe("Pruebas Unitarias de Casos de Uso de Misiones", () => {
       const mockReport = Report.restore({
         idReport: 10,
         publicId: "report-uuid",
-        userId: 999, // NO coincide con el ID del usuario ejecutor (5)
+        userId: 999,
         userPublicId: "owner-uuid",
         type: ReportType.LOST,
         currentStatus: "ACTIVE" as any,
@@ -441,7 +441,12 @@ describe("Pruebas Unitarias de Casos de Uso de Misiones", () => {
 
   describe("GetMissionDetailUseCase", () => {
     it("debe retornar el detalle de la misión incluyendo reporte, mascota y voluntarios", async () => {
-      const usecase = new GetMissionDetailUseCase(mockMissionRepository, mockReportRepository, mockUserRepository);
+      const usecase = new GetMissionDetailUseCase(
+        mockMissionRepository,
+        mockReportRepository,
+        mockUserRepository,
+        mockMissionUpdateRepository
+      );
 
       const mission = Mission.restore({
         missionId: 100,
@@ -478,6 +483,7 @@ describe("Pruebas Unitarias de Casos de Uso de Misiones", () => {
       mockMissionRepository.findByPublicId.mockResolvedValue(mission);
       mockReportRepository.findDetailsByIds.mockResolvedValue([{ report: mockReport, pet: undefined }]);
       mockUserRepository.findByIds.mockResolvedValue(mockVolunteers);
+      mockMissionUpdateRepository.findByMissionId.mockResolvedValue([]);
 
       const result = await usecase.execute("mission-uuid");
 
@@ -487,7 +493,12 @@ describe("Pruebas Unitarias de Casos de Uso de Misiones", () => {
     });
 
     it("debe lanzar MissionNotFoundError si la misión no existe", async () => {
-      const usecase = new GetMissionDetailUseCase(mockMissionRepository, mockReportRepository, mockUserRepository);
+      const usecase = new GetMissionDetailUseCase(
+        mockMissionRepository,
+        mockReportRepository,
+        mockUserRepository,
+        mockMissionUpdateRepository
+      );
       mockMissionRepository.findByPublicId.mockResolvedValue(null);
 
       await expect(usecase.execute("non-existent")).rejects.toThrow(MissionNotFoundError);
@@ -519,7 +530,8 @@ describe("Pruebas Unitarias de Casos de Uso de Misiones", () => {
         comment: "Found tracks!",
         photoUrl: "http://photo.com/img.jpg",
         status: "APPROVED" as any,
-        createdAt: new Date()
+        createdAt: new Date(),
+        pointValue: null
       });
 
       const mockUsers = [
@@ -633,7 +645,7 @@ describe("Pruebas Unitarias de Casos de Uso de Misiones", () => {
       const mockReport = Report.restore({
         idReport: 10,
         publicId: "report-uuid",
-        userId: 999, // diferente al usuario ejecutor (5)
+        userId: 999,
         userPublicId: "owner-uuid",
         type: ReportType.LOST,
         currentStatus: "ACTIVE" as any,

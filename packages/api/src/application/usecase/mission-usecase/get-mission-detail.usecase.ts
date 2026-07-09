@@ -12,6 +12,9 @@ import { ReportType } from "@domain/report/types/report.type";
 import { SightingReportDetails } from "@domain/report/value-objects/sighting-report-details.vo";
 import { UserNotFoundError } from "@domain/errors/UserNotFoundError";
 
+import type { MissionUpdateRepository } from "@domain/mission/repositories/mission-update.repository";
+import { User } from "@domain/entities/User";
+
 @injectable()
 export class GetMissionDetailUseCase {
     constructor(
@@ -20,7 +23,9 @@ export class GetMissionDetailUseCase {
         @inject("ReportRepository")
         private readonly reportRepository: ReportRepository,
         @inject("UserRepository")
-        private readonly userRepository: IUserRepository
+        private readonly userRepository: IUserRepository,
+        @inject("MissionUpdateRepository")
+        private readonly updateRepository: MissionUpdateRepository
     ) { }
 
     async execute(publicId: string): Promise<MissionOutput> {
@@ -58,12 +63,42 @@ export class GetMissionDetailUseCase {
             return this.buildSummaryUser(user);
         });
 
+        const updates = await this.updateRepository.findByMissionId(mission.missionId!);
+        const updateUsers = updates.length > 0
+            ? await this.userRepository.findByIds([...new Set(updates.map(u => u.userId))])
+            : [];
+        const updateUsersMap = new Map(updateUsers.map(u => [u.user_id, u]));
+
+        const comments = updates.map(u => {
+            const author = updateUsersMap.get(u.userId);
+            if (!author) {
+                throw new UserNotFoundError();
+            }
+            return {
+                publicId: u.publicId,
+                comment: u.comment,
+                photoUrl: u.photoUrl,
+                status: u.status as 'PENDING' | 'APPROVED' | 'REJECTED',
+                createdAt: u.createdAt.toISOString(),
+                user: {
+                    publicId: author.public_id,
+                    username: author.username,
+                    photoUrl: author.photoUrl
+                },
+                pointValue: u.pointValue ? {
+                    points: u.pointValue.points,
+                    label: u.pointValue.label
+                } : null
+            };
+        });
+
         return MissionOutputMapper.toOutput({
             mission,
             report,
             pet,
             reportPhotoUrl,
-            volunteers
+            volunteers,
+            comments
         });
     }
 

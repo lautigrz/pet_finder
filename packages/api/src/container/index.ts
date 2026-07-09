@@ -482,3 +482,25 @@ container.registerSingleton(
   GetMissionUpdatesController
 );
 
+import { ScoreMissionUpdateUseCase } from "@application/usecase/mission-usecase/score-mission-update.usecase";
+container.registerSingleton(
+  "ScoreMissionUpdateUseCase",
+  ScoreMissionUpdateUseCase
+);
+
+import { GetCommentPointValuesUseCase } from "@application/usecase/mission-usecase/get-comment-point-values.usecase";
+container.registerSingleton(
+  "GetCommentPointValuesUseCase",
+  GetCommentPointValuesUseCase
+);
+
+import { ScoreMissionUpdateController } from "@presentation/controller/mission/score-mission-update.controller";
+container.registerSingleton(
+  ScoreMissionUpdateController
+);
+
+import { GetCommentPointValuesController } from "@presentation/controller/mission/get-comment-point-values.controller";
+container.registerSingleton(
+  GetCommentPointValuesController
+);
+

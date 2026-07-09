@@ -1,4 +1,6 @@
 
+import { MissionUpdateOutput } from "./mission-update.dto";
+
 export interface VolunteerOutput {
   publicId: string;
   username: string;
@@ -45,6 +47,7 @@ export interface MissionOutput {
   searchArea: SearchAreaOutput;
   report: MissionReportOutput;
   volunteers: VolunteerOutput[];
+  comments: MissionUpdateOutput[];
 }
 
 export interface MissionCardReportOutput {
