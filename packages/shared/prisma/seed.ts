@@ -16,6 +16,7 @@ async function main(): Promise<void> {
   await seedContentReportStatuses()
   await seedMissionStatuses()
   await seedAchievementDefinitions()
+  await seedPointValues()
 }
 
 const DOG = 1
@@ -229,6 +230,7 @@ async function seedMissionStatuses(): Promise<void> {
       { mission_status_id: 2, name: 'IN_PROGRESS' },
       { mission_status_id: 3, name: 'CLOSED' },
     ],
+    skipDuplicates: true,
   })
 }
 async function seedAchievementDefinitions(): Promise<void> {
@@ -294,6 +296,30 @@ async function seedAchievementDefinitions(): Promise<void> {
     ],
     skipDuplicates: true,
   })
+}
+
+async function seedPointValues(): Promise<void> {
+  const pointValues = [
+    { points: 10, label: "Básico", contexts: ["COMMENT"] },
+    { points: 25, label: "Bueno", contexts: ["COMMENT"] },
+    { points: 50, label: "Excelente", contexts: ["COMMENT", "MISSION_COMPLETION"] },
+    { points: 75, label: "Sobresaliente", contexts: ["MISSION_COMPLETION"] },
+    { points: 100, label: "Máximo", contexts: ["MISSION_COMPLETION"] },
+  ]
+
+  for (const pv of pointValues) {
+    await prisma.pointValue.upsert({
+      where: { points: pv.points },
+      update: {},
+      create: {
+        points: pv.points,
+        label: pv.label,
+        contexts: {
+          create: pv.contexts.map((context) => ({ context })),
+        },
+      },
+    })
+  }
 }
 
 main()

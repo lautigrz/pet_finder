@@ -144,7 +144,6 @@ describe("Pruebas Unitarias de GetJoinedMissionsUseCase", () => {
 
     const result = await useCase.execute("user-uuid");
 
-    // Expect expired mission to be updated/closed
     expect(expiredMission.status).toBe(MissionStatus.CLOSED);
     expect(mockMissionRepository.update).toHaveBeenCalledWith(expiredMission);
 

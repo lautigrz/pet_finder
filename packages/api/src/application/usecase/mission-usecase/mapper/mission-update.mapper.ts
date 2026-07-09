@@ -22,7 +22,11 @@ export class MissionUpdateMapper {
                 publicId: user.public_id,
                 username: user.username,
                 photoUrl: user.photoUrl
-            }
+            },
+            pointValue: update.pointValue ? {
+                points: update.pointValue.points,
+                label: update.pointValue.label
+            } : null
         }
     }
 }
