@@ -14,7 +14,7 @@ export class User {
     public readonly id: string,
     public readonly email: string,
     public readonly username: string,
-    public readonly passwordHash: string,
+    public readonly passwordHash: string | null,
     public readonly isVerified: boolean,
     public readonly createdAt: Date,
     public readonly name: string | null,
@@ -22,12 +22,18 @@ export class User {
     public readonly photoUrl: string | null,
     public readonly isSuspended: boolean,
     public readonly exp: number,
+    public readonly googleId: string | null,
   ) {}
 
   static create(email: EmailAddress, username: string, passwordHash: string): User {
     User.assertValidUsername(username);
     User.assertValidPasswordHash(passwordHash);
-    return new User(null, randomUUID(), email.value, username, passwordHash, false, new Date(), null, null, null, false, 0);
+    return new User(null, randomUUID(), email.value, username, passwordHash, false, new Date(), null, null, null, false, 0, null);
+  }
+
+  static createFromGoogle(email: EmailAddress, username: string, googleId: string, photoUrl: string | null): User {
+    User.assertValidUsername(username);
+    return new User(null, randomUUID(), email.value, username, null, true, new Date(), null, null, photoUrl, false, 0, googleId);
   }
 
   static reconstruct(
@@ -35,7 +41,7 @@ export class User {
     id: string,
     email: string,
     username: string,
-    passwordHash: string,
+    passwordHash: string | null,
     isVerified: boolean,
     createdAt: Date,
     name: string | null,
@@ -43,8 +49,9 @@ export class User {
     photoUrl: string | null,
     isSuspended = false,
     exp = 0,
+    googleId: string | null = null,
   ): User {
-    return new User(internalId, id, email, username, passwordHash, isVerified, createdAt, name, lastname, photoUrl, isSuspended, exp);
+    return new User(internalId, id, email, username, passwordHash, isVerified, createdAt, name, lastname, photoUrl, isSuspended, exp, googleId);
   }
 
   requireInternalId(): number {
@@ -67,6 +74,7 @@ export class User {
       this.photoUrl,
       this.isSuspended,
       this.exp + amount,
+      this.googleId,
     );
   }
 

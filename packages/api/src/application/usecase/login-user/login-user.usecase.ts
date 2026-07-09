@@ -44,8 +44,8 @@ export class LoginUserUseCase {
     return user;
   }
 
-  private async assertPasswordMatches(plain: string, hash: string): Promise<void> {
-    const matches = await this.passwordHasher.verify(plain, hash);
+  private async assertPasswordMatches(plain: string, hash: string | null): Promise<void> {
+    const matches = hash !== null && (await this.passwordHasher.verify(plain, hash));
     if (!matches) throw new InvalidCredentialsError();
   }
 

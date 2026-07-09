@@ -9,7 +9,7 @@ import { readAuthConfig } from "@presentation/config/authConfig";
 import { readPaymentConfig, readMercadoPagoCredentials } from "@presentation/config/paymentConfig";
 import { PaymentConfig } from "@application/ports/PaymentConfig";
 
-const { jwtSecret, accessTtl, refreshTtlMs } = readAuthConfig();
+const { jwtSecret, accessTtl, refreshTtlMs, googleClientId, googleClientSecret } = readAuthConfig();
 container.registerInstance("RefreshTtlMs", refreshTtlMs);
 
 const paymentConfig = readPaymentConfig();
@@ -195,9 +195,24 @@ container.registerSingleton<StorageService>(
 const mpCredentials = readMercadoPagoCredentials();
 container.registerInstance<PaymentGateway>("PaymentGateway", new MercadoPagoGateway(mpCredentials.accessToken, mpCredentials.webhookSecret));
 
+// ─── Google auth ─────────────────────────────────────────────────────────────
+import { IGoogleAuthenticator } from "@domain/services/IGoogleAuthenticator";
+import { GoogleOAuthAuthenticator } from "@infrastructure/security/GoogleOAuthAuthenticator";
+import { IGoogleAccountLinker } from "@domain/repositories/IGoogleAccountLinker";
+
+container.registerInstance<IGoogleAuthenticator>(
+  "GoogleAuthenticator",
+  new GoogleOAuthAuthenticator(googleClientId, googleClientSecret),
+);
+container.registerSingleton<IGoogleAccountLinker>(
+  "GoogleAccountLinker",
+  PrismaUserRepository,
+);
+
 // ─── Use Cases ─────────────────────────────────────────────────────────────────
 // Auth
 import { LoginUserUseCase } from "@application/usecase/login-user/login-user.usecase";
+import { LoginWithGoogleUseCase } from "@application/usecase/login-with-google/login-with-google.usecase";
 import { LogoutUserUseCase } from "@application/usecase/logout-user/logout-user.usecase";
 import { RefreshAccessTokenUseCase } from "@application/usecase/refresh-access-token/refresh-access-token.usecase";
 import { RegisterUserUseCase } from "@application/usecase/register-user/register-user.usecase";
@@ -206,6 +221,7 @@ import { RequestPasswordResetUseCase } from "@application/usecase/request-passwo
 import { ResetPasswordUseCase } from "@application/usecase/reset-password/reset-password.usecase";
 
 container.registerSingleton("LoginUserUseCase", LoginUserUseCase);
+container.registerSingleton("LoginWithGoogleUseCase", LoginWithGoogleUseCase);
 container.registerSingleton("LogoutUserUseCase", LogoutUserUseCase);
 container.registerSingleton(
   "RefreshAccessTokenUseCase",

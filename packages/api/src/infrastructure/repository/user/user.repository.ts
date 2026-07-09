@@ -2,6 +2,7 @@ import { PrismaClient } from "@prisma/client";
 
 import { User } from "@domain/entities/User";
 import { IUserRepository, UserProfileStats } from "@domain/repositories/IUserRepository";
+import { IGoogleAccountLinker } from "@domain/repositories/IGoogleAccountLinker";
 import { UserMapper } from "../user/user.mapper";
 
 import type { AchievementDefinition, IUserExperienceRepository, UserExperienceEvent } from "@domain/repositories/IUserExperienceRepository";
@@ -10,7 +11,7 @@ import type { UserExpAction } from "@domain/entities/UserExpAction";
 import { inject, injectable } from "tsyringe";
 
 @injectable()
-export class PrismaUserRepository implements IUserRepository, IUserExperienceRepository {
+export class PrismaUserRepository implements IUserRepository, IUserExperienceRepository, IGoogleAccountLinker {
 
   constructor(
     @inject("PrismaClient")
@@ -152,6 +153,13 @@ export class PrismaUserRepository implements IUserRepository, IUserExperienceRep
     await this.prisma.user.update({
       where: { user_id: internalUserId },
       data: { password: passwordHash },
+    });
+  }
+
+  async linkGoogleId(internalUserId: number, googleId: string): Promise<void> {
+    await this.prisma.user.update({
+      where: { user_id: internalUserId },
+      data: { google_id: googleId },
     });
   }
 
