@@ -40,6 +40,16 @@ export function matchAlertEmail(appBaseUrl: string, petName: string, scorePercen
     note("Es un resultado aproximado de nuestra IA: la decisión final es tuya."));
 }
 
+export function featuredPaymentReceiptEmail(appBaseUrl: string, amount: number, currency: string, operationId: string, reportPublicId: string): string {
+  const link = `${appBaseUrl}/reports/${reportPublicId}`;
+  return shell(
+    heading("¡Tu pago se acreditó!") +
+    text("Confirmamos el pago para destacar tu reporte. Ya aparece priorizado y con más visibilidad en PetFinder.") +
+    receiptBox(amount, currency, operationId) +
+    buttonRow("Ver mi reporte", link) +
+    note("Guardá este correo como comprobante de tu operación."));
+}
+
 export function publicationRemovedEmail(appealUrl: string): string {
   return shell(
     heading("Tu publicación fue dada de baja") +
@@ -125,6 +135,23 @@ function scoreBox(scorePercentage: number, petName: string): string {
     `<div style="font-family:${FONT};font-size:40px;font-weight:800;color:${ORANGE};line-height:1;">${scorePercentage}%</div>` +
     `<div style="font-family:${FONT};font-size:14px;color:${BLUE};margin-top:4px;">de coincidencia con <strong style="color:${NAVY};">${petName}</strong></div>` +
     `</td></tr></table></td></tr>`;
+}
+
+function receiptBox(amount: number, currency: string, operationId: string): string {
+  return `<tr><td align="center" style="padding:16px 44px 0 44px;">` +
+    `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f6f9fb;border:1px solid #e3edf4;border-radius:12px;"><tr>` +
+    `<td style="padding:16px 18px;">` +
+    `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="font-family:${FONT};font-size:14px;">` +
+    `<tr><td style="padding:3px 0;color:${MUTED};">Reporte destacado - PetFinder</td>` +
+    `<td align="right" style="padding:3px 0;font-weight:800;color:${NAVY};white-space:nowrap;">${formatMoney(amount, currency)}</td></tr>` +
+    `<tr><td style="padding:3px 0;color:${MUTED};">N° de operación</td>` +
+    `<td align="right" style="padding:3px 0;color:${INK};white-space:nowrap;">#${escapeHtml(operationId)}</td></tr>` +
+    `</table></td></tr></table></td></tr>`;
+}
+
+function formatMoney(amount: number, currency: string): string {
+  const symbol = currency === "ARS" || currency === "USD" ? "$" : `${currency} `;
+  return `${symbol}${amount}`;
 }
 
 function reasonBox(motive: string): string {

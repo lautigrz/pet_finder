@@ -8,6 +8,7 @@ import { Payment } from "@domain/payment/aggregates/PaymentAggregate";
 import { PaymentStatus } from "@domain/payment/types/payment.status";
 import { PaymentNotFoundError } from "@domain/payment/errors/PaymentNotFoundError";
 import { InvalidWebhookSignatureError } from "@domain/payment/errors/InvalidWebhookSignatureError";
+import { NotifyFeaturedPaymentUseCase } from "../../notify-featured-payment/notify-featured-payment.usecase";
 
 const config: PaymentConfig = {
   featuredPrice: 1500,
@@ -60,6 +61,7 @@ describe("ProcessPaymentWebhookUseCase", () => {
   let reportRepository: ReportRepository;
   let paymentRepository: PaymentRepository;
   let paymentGateway: PaymentGateway;
+  let notifyFeaturedPayment: NotifyFeaturedPaymentUseCase;
   let useCase: ProcessPaymentWebhookUseCase;
 
   beforeEach(() => {
@@ -80,7 +82,11 @@ describe("ProcessPaymentWebhookUseCase", () => {
       verifySignature: vi.fn().mockReturnValue(true),
     } as unknown as PaymentGateway;
 
-    useCase = new ProcessPaymentWebhookUseCase(paymentRepository, reportRepository, paymentGateway, config);
+    notifyFeaturedPayment = {
+      execute: vi.fn().mockResolvedValue(undefined),
+    } as unknown as NotifyFeaturedPaymentUseCase;
+
+    useCase = new ProcessPaymentWebhookUseCase(paymentRepository, reportRepository, paymentGateway, config, notifyFeaturedPayment);
   });
 
   it("aprueba el pago y destaca el reporte cuando el pago esta approved", async () => {
@@ -97,6 +103,27 @@ describe("ProcessPaymentWebhookUseCase", () => {
     expect(paymentRepository.update).toHaveBeenCalledOnce();
     expect(reportRepository.markFeatured).toHaveBeenCalledOnce();
     expect(reportRepository.markFeatured).toHaveBeenCalledWith(7);
+    expect(notifyFeaturedPayment.execute).toHaveBeenCalledWith({
+      userId: 5,
+      reportId: 7,
+      amount: 1500,
+      currency: "ARS",
+      operationId: "mp-999",
+    });
+  });
+
+  it("no envia el comprobante cuando el pago fue rechazado", async () => {
+    vi.mocked(paymentGateway.getPayment).mockResolvedValue({
+      mpPaymentId: "mp-999",
+      status: "rejected",
+      externalReference: "payment-uuid",
+      approvedAt: null,
+    });
+    vi.mocked(paymentRepository.findByPublicId).mockResolvedValue(pendingPayment());
+
+    await useCase.execute(validInput);
+
+    expect(notifyFeaturedPayment.execute).not.toHaveBeenCalled();
   });
 
   it("es idempotente: si el pago ya esta aprobado no vuelve a destacar", async () => {
@@ -136,6 +163,7 @@ describe("ProcessPaymentWebhookUseCase", () => {
       reportRepository,
       paymentGateway,
       { ...config, validateWebhookSignature: false },
+      notifyFeaturedPayment,
     );
 
     await useCaseSinValidacion.execute(validInput);

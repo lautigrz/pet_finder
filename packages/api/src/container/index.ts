@@ -357,8 +357,10 @@ container.registerSingleton(
 // Payments
 import { CreateFeaturedPreferenceUseCase } from "@application/usecase/payment-usecase/create-featured-preference.usecase";
 import { ProcessPaymentWebhookUseCase } from "@application/usecase/payment-usecase/process-payment-webhook.usecase";
+import { NotifyFeaturedPaymentUseCase } from "@application/usecase/notify-featured-payment/notify-featured-payment.usecase";
 
 container.registerSingleton("CreateFeaturedPreferenceUseCase", CreateFeaturedPreferenceUseCase);
+container.registerSingleton("NotifyFeaturedPaymentUseCase", NotifyFeaturedPaymentUseCase);
 container.registerSingleton("ProcessPaymentWebhookUseCase", ProcessPaymentWebhookUseCase);
 
 // Content reports (moderation)
@@ -422,3 +424,61 @@ import { GetColorsUseCase } from "@application/usecase/catalog/get-colors.usecas
 
 container.registerSingleton("GetBreedsUseCase", GetBreedsUseCase);
 container.registerSingleton("GetColorsUseCase", GetColorsUseCase);
+
+// Missions
+import { MissionRepository } from "@domain/mission/repositories/mission.repository";
+import { PrismaMissionRepository } from "@infrastructure/repository/mission/mission.repository";
+container.registerSingleton<MissionRepository>(
+  "MissionRepository",
+  PrismaMissionRepository
+);
+
+import { CreateMissionUseCase } from "@application/usecase/mission-usecase/create-mission.usecase";
+import { GetMissionsUseCase } from "@application/usecase/mission-usecase/get-missions.usecase";
+import { GetMissionDetailUseCase } from "@application/usecase/mission-usecase/get-mission-detail.usecase";
+import { JoinMissionUseCase } from "@application/usecase/mission-usecase/join-mission.usecase";
+import { LeaveMissionUseCase } from "@application/usecase/mission-usecase/leave-mission.usecase";
+import { CancelMissionUseCase } from "@application/usecase/mission-usecase/cancel-mission.usecase";
+import { GetJoinedMissionsUseCase } from "@application/usecase/mission-usecase/get-joined-missions.usecase";
+import { GetJoinedMissionsController } from "@presentation/controller/mission/get-joined-missions.controller";
+import { UpdateMissionUseCase } from "@application/usecase/mission-usecase/update-mission.usecase";
+
+container.registerSingleton("CreateMissionUseCase", CreateMissionUseCase);
+container.registerSingleton("GetMissionsUseCase", GetMissionsUseCase);
+container.registerSingleton("GetMissionDetailUseCase", GetMissionDetailUseCase);
+container.registerSingleton("JoinMissionUseCase", JoinMissionUseCase);
+container.registerSingleton("LeaveMissionUseCase", LeaveMissionUseCase);
+container.registerSingleton("CancelMissionUseCase", CancelMissionUseCase);
+container.registerSingleton("GetJoinedMissionsUseCase", GetJoinedMissionsUseCase);
+container.registerSingleton("UpdateMissionUseCase", UpdateMissionUseCase);
+container.registerSingleton(GetJoinedMissionsController);
+
+
+import { PrismaMissionUpdateRepository } from "@infrastructure/repository/mission/mission-update.repository";
+container.registerSingleton(
+  "MissionUpdateRepository",
+  PrismaMissionUpdateRepository
+);
+
+import { CreateMissionUpdateUseCase } from "@application/usecase/mission-usecase/create-mission-update.usecase";
+container.registerSingleton(
+  "CreateMissionUpdateUseCase",
+  CreateMissionUpdateUseCase
+);
+
+import { CreateMissionUpdateController } from "@presentation/controller/mission/create-mission-update.controller";
+container.registerSingleton(
+  CreateMissionUpdateController
+);
+
+import { GetMissionUpdatesUseCase } from "@application/usecase/mission-usecase/get-mission-updates.usecase";
+container.registerSingleton(
+  "GetMissionUpdatesUseCase",
+  GetMissionUpdatesUseCase
+);
+
+import { GetMissionUpdatesController } from "@presentation/controller/mission/get-mission-updates.controller";
+container.registerSingleton(
+  GetMissionUpdatesController
+);
+

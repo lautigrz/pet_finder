@@ -4,7 +4,7 @@ import { User } from "@domain/entities/User";
 import { IUserRepository, UserProfileStats } from "@domain/repositories/IUserRepository";
 import { UserMapper } from "../user/user.mapper";
 
-import type { IUserExperienceRepository, UserExperienceEvent } from "@domain/repositories/IUserExperienceRepository";
+import type { AchievementDefinition, IUserExperienceRepository, UserExperienceEvent } from "@domain/repositories/IUserExperienceRepository";
 import type { UserExpAction } from "@domain/entities/UserExpAction";
 
 import { inject, injectable } from "tsyringe";
@@ -88,6 +88,20 @@ export class PrismaUserRepository implements IUserRepository, IUserExperienceRep
       action: record.action as UserExpAction,
       amount: record.amount,
       occurredAt: record.created_at,
+    }));
+  }
+
+  async findAchievementDefinitions(): Promise<AchievementDefinition[]> {
+    const records = await this.prisma.achievementDefinition.findMany({
+      orderBy: { required_xp: "asc" },
+    });
+
+    return records.map((record) => ({
+      code: record.code,
+      name: record.name,
+      description: record.description,
+      requiredXp: record.required_xp,
+      icon: record.icon,
     }));
   }
 

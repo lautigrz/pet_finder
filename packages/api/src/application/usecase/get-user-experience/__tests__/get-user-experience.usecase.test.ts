@@ -44,13 +44,6 @@ describe("GetUserExperienceUseCase", () => {
           icon: "❤️",
         },
         {
-          code: "WEEKLY_STREAK",
-          name: "Racha semanal",
-          description: "Alcanzo 500 XP manteniendo actividad constante.",
-          requiredXp: 500,
-          icon: "🔥",
-        },
-        {
           code: "COMMUNITY_BOND",
           name: "Vínculo comunitario",
           description: "Alcanzo 750 XP fortaleciendo la red de ayuda.",
@@ -92,7 +85,6 @@ describe("GetUserExperienceUseCase", () => {
       expect.objectContaining({ code: "SOLIDARY_NEIGHBOR", requiredXp: 50, unlocked: true, icon: "🏠" }),
       expect.objectContaining({ code: "URBAN_EXPLORER", requiredXp: 100, unlocked: true, icon: "👁️" }),
       expect.objectContaining({ code: "GIANT_HEART", requiredXp: 250, unlocked: false, icon: "❤️" }),
-      expect.objectContaining({ code: "WEEKLY_STREAK", requiredXp: 500, unlocked: false, icon: "🔥" }),
       expect.objectContaining({ code: "COMMUNITY_BOND", requiredXp: 750, unlocked: false, icon: "🔗" }),
       expect.objectContaining({ code: "FREQUENT_SIGHTER", requiredXp: 1000, unlocked: false, icon: "👁️" }),
       expect.objectContaining({ code: "CERTIFIED_CAREGIVER", requiredXp: 1250, unlocked: false, icon: "🛡️" }),
@@ -110,6 +102,7 @@ describe("GetUserExperienceUseCase", () => {
       },
     ]);
     expect(userRepository.findByPublicId).toHaveBeenCalledWith("user-123");
+    expect(userExperienceRepository.findAchievementDefinitions).toHaveBeenCalled();
     expect(userExperienceRepository.findRecentEvents).toHaveBeenCalledWith("user-123", 10);
   });
 
