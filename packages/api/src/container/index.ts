@@ -56,6 +56,8 @@ import { AppealRepository } from "@domain/appeal/repositories/appeal.repository"
 import { PrismaAppealRepository } from "@infrastructure/repository/appeal/appeal.repository";
 import { IUserReviewRepository } from "@domain/repositories/IUserReviewRepository";
 import { PrismaUserReviewRepository } from "@infrastructure/repository/user-review/user-review.repository";
+import { ILostNearbyNotificationRepository } from "@domain/repositories/ILostNearbyNotificationRepository";
+import { PrismaLostNearbyNotificationRepository } from "@infrastructure/repository/lost-nearby-notification/lost-nearby-notification.repository";
 
 container.registerSingleton<IUserRepository>("UserRepository", PrismaUserRepository);
 container.registerSingleton<IUserExperienceRepository>("UserExperienceRepository", PrismaUserRepository);
@@ -76,6 +78,8 @@ container.registerSingleton<AdminStatsRepository>("AdminStatsRepository", Prisma
 container.registerSingleton<MatchViewsRepository>("MatchViewsRepository", PrismaMatchViewsRepository);
 container.registerSingleton<PaymentRepository>("PaymentRepository", PrismaPaymentRepository);
 container.registerSingleton<AppealRepository>("AppealRepository", PrismaAppealRepository);
+container.registerSingleton<ILostNearbyNotificationRepository>("LostNearbyNotificationRepository", PrismaLostNearbyNotificationRepository);
+
 
 container.registerSingleton<IUserRepository>(
   "UserRepository",
@@ -227,6 +231,7 @@ import { GetNotificationPreferencesUseCase } from "@application/usecase/get-noti
 import { UpdateNotificationPreferencesUseCase } from "@application/usecase/update-notification-preferences/update-notification-preferences.usecase";
 import { AwardUserExpUseCase } from "@application/usecase/award-user-exp/award-user-exp.usecase";
 import { GetUserExperienceUseCase } from "@application/usecase/get-user-experience/get-user-experience.usecase";
+import { UpdateCurrentLocationUseCase } from "@application/usecase/update-current-location/update-current-location.usecase";
 
 container.registerSingleton("GetProfileUseCase", GetProfileUseCase);
 container.registerSingleton("GetPublicProfileUseCase", GetPublicProfileUseCase);
@@ -241,6 +246,7 @@ container.registerSingleton(
 );
 container.registerSingleton("AwardUserExpUseCase", AwardUserExpUseCase);
 container.registerSingleton("GetUserExperienceUseCase", GetUserExperienceUseCase);
+container.registerSingleton("UpdateCurrentLocationUseCase", UpdateCurrentLocationUseCase);
 
 import { UpsertUserReviewUseCase } from "@application/usecase/user-review/upsert-user-review.usecase";
 import { ListUserReviewsUseCase } from "@application/usecase/user-review/list-user-reviews.usecase";
@@ -404,6 +410,10 @@ container.registerSingleton(
 import { NotifyNearbyLostOwnersUseCase } from "@application/usecase/notify-nearby-lost-owners/notify-nearby-lost-owners.usecase";
 import { NotifyOwnerOfMatchUseCase } from "@application/usecase/notify-owner-of-match/notify-owner-of-match.usecase";
 import { NotifyOwnerOfContentSentenceUseCase } from "@application/usecase/notify-owner-of-content-sentence/notify-owner-of-content-sentence.usecase";
+import { NotifyNearbySubscribersOfLostReportUseCase } from "@application/usecase/notify-nearby-subscribers-of-lost-report/notify-nearby-subscribers-of-lost-report.usecase";
+import { CreateLostNearbyNotificationUseCase } from "@application/usecase/create-lost-nearby-notification/create-lost-nearby-notification.usecase";
+import { GetLostNearbyNotificationsUseCase } from "@application/usecase/get-lost-nearby-notifications/get-lost-nearby-notifications.usecase";
+import { MarkLostNearbyNotificationSeenUseCase } from "@application/usecase/mark-lost-nearby-notification-seen/mark-lost-nearby-notification-seen.usecase";
 
 container.registerSingleton(
   "NotifyNearbyLostOwnersUseCase",
@@ -416,6 +426,22 @@ container.registerSingleton(
 container.registerSingleton(
   "NotifyOwnerOfContentSentenceUseCase",
   NotifyOwnerOfContentSentenceUseCase,
+);
+container.registerSingleton(
+  "NotifyNearbySubscribersOfLostReportUseCase",
+  NotifyNearbySubscribersOfLostReportUseCase,
+);
+container.registerSingleton(
+  "CreateLostNearbyNotificationUseCase",
+  CreateLostNearbyNotificationUseCase,
+);
+container.registerSingleton(
+  "GetLostNearbyNotificationsUseCase",
+  GetLostNearbyNotificationsUseCase,
+);
+container.registerSingleton(
+  "MarkLostNearbyNotificationSeenUseCase",
+  MarkLostNearbyNotificationSeenUseCase,
 );
 
 // Catalog

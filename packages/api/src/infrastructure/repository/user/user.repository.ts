@@ -1,7 +1,7 @@
 import { PrismaClient } from "@prisma/client";
 
 import { User } from "@domain/entities/User";
-import { IUserRepository, UserProfileStats } from "@domain/repositories/IUserRepository";
+import { IUserRepository,UserNotificationTarget, UserProfileStats } from "@domain/repositories/IUserRepository";
 import { UserMapper } from "../user/user.mapper";
 
 import type { AchievementDefinition, IUserExperienceRepository, UserExperienceEvent } from "@domain/repositories/IUserExperienceRepository";
@@ -118,6 +118,51 @@ export class PrismaUserRepository implements IUserRepository, IUserExperienceRep
     return record ? UserMapper.toDomain(record) : null;
   }
 
+  async findNotificationCandidates(): Promise<UserNotificationTarget[]> {
+  const users = await this.prisma.user.findMany({
+    select: {
+      public_id: true,
+      last_known_latitude: true,
+      last_known_longitude: true,
+      last_known_location_at: true,
+      role: {
+        select: {
+          name: true,
+        },
+      },
+      notification_preference: {
+        select: {
+          notification_radius: true,
+          lost_reports_enabled: true,
+          notifications_muted_until: true,
+        },
+      },
+    },
+  });
+
+  return users
+    .filter((user) => user.notification_preference !== null)
+    .map((user) => ({
+      publicId: user.public_id,
+      role: user.role?.name.trim() ?? "",
+      lastKnownLatitude:
+        user.last_known_latitude === null
+          ? null
+          : Number(user.last_known_latitude),
+      lastKnownLongitude:
+        user.last_known_longitude === null
+          ? null
+          : Number(user.last_known_longitude),
+      lastKnownLocationAt: user.last_known_location_at,
+      notificationRadius:
+        user.notification_preference!.notification_radius,
+      lostReportsEnabled:
+        user.notification_preference!.lost_reports_enabled,
+      mutedUntil:
+        user.notification_preference!.notifications_muted_until,
+    }));
+  }
+
   async findRoleByPublicId(publicId: string): Promise<string | null> {
     const record = await this.prisma.user.findUnique({
       where: { public_id: publicId },
@@ -148,6 +193,22 @@ export class PrismaUserRepository implements IUserRepository, IUserExperienceRep
     return UserMapper.toDomain(record);
   }
 
+
+  async updateCurrentLocation(
+    publicId: string,
+    latitude: number,
+    longitude: number,
+    updatedAt: Date
+  ): Promise<void> {
+    await this.prisma.user.update({
+    where: { public_id: publicId },
+    data: {
+      last_known_latitude: latitude,
+      last_known_longitude: longitude,
+      last_known_location_at: updatedAt,
+    },
+  });
+}
   async updatePassword(internalUserId: number, passwordHash: string): Promise<void> {
     await this.prisma.user.update({
       where: { user_id: internalUserId },

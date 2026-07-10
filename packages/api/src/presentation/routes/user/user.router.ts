@@ -8,6 +8,7 @@ import {
   verifyEmailRequestSchema,
   updateProfileRequestSchema,
   updateNotificationPreferencesRequestSchema,
+  updateCurrentLocationRequestSchema,
   createUserReviewRequestSchema,
   listUserReviewsRequestSchema,
 } from "@presentation/schemas/user/user.schema";
@@ -15,6 +16,7 @@ import upload from "@infrastructure/storage/CloudinaryMulterUpload";
 import { CreateUserController } from "@presentation/controller/user/create-user.controller";
 import { VerifyEmailController } from "@presentation/controller/user/verify-email.controller";
 import { UpdateProfileController } from "@presentation/controller/user/update-profile.controller";
+import { UpdateCurrentLocationController } from "@presentation/controller/user/update-current-location.controller";
 import { GetProfileController } from "@presentation/controller/user/get-profile.controller";
 import { GetPublicProfileController } from "@presentation/controller/user/get-public-profile.controller";
 import { UploadProfilePhotoController } from "@presentation/controller/user/upload-profile-photo.controller";
@@ -33,6 +35,7 @@ const tokenSigner = container.resolve<ITokenSigner>("TokenSigner");
 const createUserController = container.resolve(CreateUserController);
 const verifyEmailController = container.resolve(VerifyEmailController);
 const updateProfileController = container.resolve(UpdateProfileController);
+const updateCurrentLocationController = container.resolve(UpdateCurrentLocationController);
 const getProfileController = container.resolve(GetProfileController);
 const getPublicProfileController = container.resolve(GetPublicProfileController);
 const uploadProfilePhotoController = container.resolve(UploadProfilePhotoController);
@@ -48,6 +51,7 @@ const getPublicUserExperienceController = container.resolve(GetPublicUserExperie
 router.post("/", validateRequest(createUserRequestSchema), createUserController.handle);
 router.post("/verify-email", validateRequest(verifyEmailRequestSchema), verifyEmailController.handle);
 router.patch("/me", requireAuth(tokenSigner), validateRequest(updateProfileRequestSchema), updateProfileController.handle);
+router.patch("/me/location", requireAuth(tokenSigner), validateRequest(updateCurrentLocationRequestSchema), updateCurrentLocationController.handle);
 router.get("/me/reviews", requireAuth(tokenSigner), validateRequest(listUserReviewsRequestSchema), listUserReviewsController.handle);
 router.get("/me", requireAuth(tokenSigner), getProfileController.handle);
 router.get("/me/xp", requireAuth(tokenSigner), getUserExperienceController.handle);
