@@ -79,80 +79,7 @@ container.registerSingleton<MatchViewsRepository>("MatchViewsRepository", Prisma
 container.registerSingleton<PaymentRepository>("PaymentRepository", PrismaPaymentRepository);
 container.registerSingleton<AppealRepository>("AppealRepository", PrismaAppealRepository);
 container.registerSingleton<ILostNearbyNotificationRepository>("LostNearbyNotificationRepository", PrismaLostNearbyNotificationRepository);
-
-
-container.registerSingleton<IUserRepository>(
-  "UserRepository",
-  PrismaUserRepository,
-);
-container.registerSingleton<IUserExperienceRepository>(
-  "UserExperienceRepository",
-  PrismaUserRepository,
-);
-container.registerSingleton<IDeviceTokenRepository>(
-  "DeviceTokenRepository",
-  PrismaDeviceTokenRepository,
-);
-container.registerSingleton<IEmailVerificationTokenRepository>(
-  "EmailVerificationTokenRepository",
-  PrismaEmailVerificationTokenRepository,
-);
-container.registerSingleton<INotificationPreferencesRepository>(
-  "NotificationPreferencesRepository",
-  PrismaNotificationPreferencesRepository,
-);
-container.registerSingleton<IPasswordResetTokenRepository>(
-  "PasswordResetTokenRepository",
-  PrismaPasswordResetTokenRepository,
-);
-container.registerSingleton<IRefreshTokenRepository>(
-  "RefreshTokenRepository",
-  PrismaRefreshTokenRepository,
-);
-container.registerSingleton<ConversationRepository>(
-  "ConversationRepository",
-  PrismaConversationRepository,
-);
-container.registerSingleton<MessageRepository>(
-  "MessageRepository",
-  PrismaMessageRepository,
-);
-container.registerSingleton<MatchResultsRepository>(
-  "MatchResultsRepository",
-  PrismaMatchResultsRepository,
-);
-container.registerSingleton<PetRepository>(
-  "PetRepository",
-  PrismaPetRepository,
-);
-container.registerSingleton<ReportRepository>(
-  "ReportRepository",
-  PrismaReportRepository,
-);
-container.registerSingleton<ReportFollowerRepository>(
-  "ReportFollowerRepository",
-  PrismaReportFollowerRepository,
-);
-container.registerSingleton<CatalogRepository>(
-  "CatalogRepository",
-  PrismaCatalogRepository,
-);
-container.registerSingleton<ContentReportRepository>(
-  "ContentReportRepository",
-  PrismaContentReportRepository,
-);
-container.registerSingleton<MatchViewsRepository>(
-  "MatchViewsRepository",
-  PrismaMatchViewsRepository,
-);
-container.registerSingleton<AppealRepository>(
-  "AppealRepository",
-  PrismaAppealRepository,
-);
-container.registerSingleton<IUserReviewRepository>(
-  "UserReviewRepository",
-  PrismaUserReviewRepository,
-);
+container.registerSingleton<IUserReviewRepository>("UserReviewRepository", PrismaUserReviewRepository);
 
 
 // ─── Services ──────────────────────────────────────────────────────────────────
@@ -173,28 +100,13 @@ import { ClaudinaryService } from "@infrastructure/storage/CloudinaryService";
 import { PaymentGateway } from "@domain/payment/gateway/payment-gateway";
 import { MercadoPagoGateway } from "@infrastructure/payment/mercado-pago.gateway";
 
-container.registerInstance<ITokenSigner>(
-  "TokenSigner",
-  new JwtTokenSigner(jwtSecret, accessTtl),
-);
-container.registerInstance<IAppealTokenSigner>(
-  "AppealTokenSigner",
-  new JwtAppealTokenSigner(jwtSecret, "30d"),
-);
-container.registerSingleton<IPasswordHasher>(
-  "PasswordHasher",
-  BcryptPasswordHasher,
-);
-container.registerSingleton<ITokenGenerator>(
-  "TokenGenerator",
-  CryptoTokenGenerator,
-);
+container.registerInstance<ITokenSigner>("TokenSigner", new JwtTokenSigner(jwtSecret, accessTtl),);
+container.registerInstance<IAppealTokenSigner>("AppealTokenSigner", new JwtAppealTokenSigner(jwtSecret, "30d"),);
+container.registerSingleton<IPasswordHasher>("PasswordHasher", BcryptPasswordHasher);
+container.registerSingleton<ITokenGenerator>("TokenGenerator", CryptoTokenGenerator);
 container.registerInstance<IEmailService>("EmailService", createEmailService());
 container.registerInstance<IPushSender>("PushSender", createPushSender());
-container.registerSingleton<StorageService>(
-  "StorageService",
-  ClaudinaryService,
-);
+container.registerSingleton<StorageService>("StorageService", ClaudinaryService);
 
 const mpCredentials = readMercadoPagoCredentials();
 container.registerInstance<PaymentGateway>("PaymentGateway", new MercadoPagoGateway(mpCredentials.accessToken, mpCredentials.webhookSecret));
@@ -211,16 +123,10 @@ import { ResetPasswordUseCase } from "@application/usecase/reset-password/reset-
 
 container.registerSingleton("LoginUserUseCase", LoginUserUseCase);
 container.registerSingleton("LogoutUserUseCase", LogoutUserUseCase);
-container.registerSingleton(
-  "RefreshAccessTokenUseCase",
-  RefreshAccessTokenUseCase,
-);
+container.registerSingleton("RefreshAccessTokenUseCase", RefreshAccessTokenUseCase,);
 container.registerSingleton("RegisterUserUseCase", RegisterUserUseCase);
 container.registerSingleton("VerifyEmailUseCase", VerifyEmailUseCase);
-container.registerSingleton(
-  "RequestPasswordResetUseCase",
-  RequestPasswordResetUseCase,
-);
+container.registerSingleton("RequestPasswordResetUseCase", RequestPasswordResetUseCase,);
 container.registerSingleton("ResetPasswordUseCase", ResetPasswordUseCase);
 
 // User / Profile
@@ -236,14 +142,8 @@ import { UpdateCurrentLocationUseCase } from "@application/usecase/update-curren
 container.registerSingleton("GetProfileUseCase", GetProfileUseCase);
 container.registerSingleton("GetPublicProfileUseCase", GetPublicProfileUseCase);
 container.registerSingleton("UpdateProfileUseCase", UpdateProfileUseCase);
-container.registerSingleton(
-  "GetNotificationPreferencesUseCase",
-  GetNotificationPreferencesUseCase,
-);
-container.registerSingleton(
-  "UpdateNotificationPreferencesUseCase",
-  UpdateNotificationPreferencesUseCase,
-);
+container.registerSingleton("GetNotificationPreferencesUseCase", GetNotificationPreferencesUseCase);
+container.registerSingleton("UpdateNotificationPreferencesUseCase", UpdateNotificationPreferencesUseCase,);
 container.registerSingleton("AwardUserExpUseCase", AwardUserExpUseCase);
 container.registerSingleton("GetUserExperienceUseCase", GetUserExperienceUseCase);
 container.registerSingleton("UpdateCurrentLocationUseCase", UpdateCurrentLocationUseCase);
@@ -263,14 +163,8 @@ import { RegisterDeviceTokenUseCase } from "@application/usecase/register-device
 import { RemoveDeviceTokenUseCase } from "@application/usecase/remove-device-token/remove-device-token.usecase";
 import { SendPushToUserUseCase } from "@application/usecase/send-push-to-user/send-push-to-user.usecase";
 
-container.registerSingleton(
-  "RegisterDeviceTokenUseCase",
-  RegisterDeviceTokenUseCase,
-);
-container.registerSingleton(
-  "RemoveDeviceTokenUseCase",
-  RemoveDeviceTokenUseCase,
-);
+container.registerSingleton("RegisterDeviceTokenUseCase", RegisterDeviceTokenUseCase,);
+container.registerSingleton("RemoveDeviceTokenUseCase", RemoveDeviceTokenUseCase);
 container.registerSingleton("SendPushToUserUseCase", SendPushToUserUseCase);
 
 // Conversations
@@ -278,15 +172,9 @@ import { CreateConversationUseCase } from "@application/usecase/conversation-use
 import { GetConversationUseCase } from "@application/usecase/conversation-usecase/get-conversation.usecase";
 import { ListMyConversationsUseCase } from "@application/usecase/conversation-usecase/list-my-conversations.usecase";
 
-container.registerSingleton(
-  "CreateConversationUseCase",
-  CreateConversationUseCase,
-);
+container.registerSingleton("CreateConversationUseCase", CreateConversationUseCase,);
 container.registerSingleton("GetConversationUseCase", GetConversationUseCase);
-container.registerSingleton(
-  "ListConversationUseCase",
-  ListMyConversationsUseCase,
-);
+container.registerSingleton("ListConversationUseCase", ListMyConversationsUseCase,);
 
 // Messages
 import { SendMessageUseCase } from "@application/usecase/message-usecase/send-message.usecase";
@@ -300,10 +188,7 @@ import { GetMatchResultsUseCase } from "@application/usecase/match-results-useca
 import { GetUserMatchNotificationsUseCase } from "@application/usecase/match-results-usecase/get-user-match-notifications.usecase";
 
 container.registerSingleton("GetMatchResultsUseCase", GetMatchResultsUseCase);
-container.registerSingleton(
-  "GetUserMatchNotificationsUseCase",
-  GetUserMatchNotificationsUseCase,
-);
+container.registerSingleton("GetUserMatchNotificationsUseCase", GetUserMatchNotificationsUseCase,);
 
 import { MarkMatchSeenUseCase } from "@application/usecase/match-views-usecase/mark-match-seen.usecase";
 import { GetSeenMatchesUseCase } from "@application/usecase/match-views-usecase/get-seen-matches.usecase";
@@ -334,31 +219,16 @@ import { NotifyReportFollowersOfStatusChangeUseCase } from "@application/usecase
 
 container.registerSingleton("CreateReportUseCase", CreateReportUseCase);
 container.registerSingleton("GetReportUseCase", GetReportUseCase);
-container.registerSingleton(
-  "GetReportForModerationUseCase",
-  GetReportForModerationUseCase,
-);
-container.registerSingleton(
-  "GetFilteredReportsUseCase",
-  GetFilteredReportsUseCase,
-);
+container.registerSingleton("GetReportForModerationUseCase", GetReportForModerationUseCase,);
+container.registerSingleton("GetFilteredReportsUseCase",  GetFilteredReportsUseCase);
 container.registerSingleton("ListUserReportsUseCase", ListUserReportsUseCase);
-container.registerSingleton(
-  "ListReportsByUserUseCase",
-  ListReportsByUserUseCase,
-);
+container.registerSingleton("ListReportsByUserUseCase", ListReportsByUserUseCase,);
 container.registerSingleton("UpdateReportUseCase", UpdateReportUseCase);
 container.registerSingleton("UpdateStatusUseCase", UpdateStatus);
 container.registerSingleton("FollowReportUseCase", FollowReportUseCase);
 container.registerSingleton("UnfollowReportUseCase", UnfollowReportUseCase);
-container.registerSingleton(
-  "IsFollowingReportUseCase",
-  IsFollowingReportUseCase,
-);
-container.registerSingleton(
-  "NotifyReportFollowersOfStatusChangeUseCase",
-  NotifyReportFollowersOfStatusChangeUseCase,
-);
+container.registerSingleton("IsFollowingReportUseCase", IsFollowingReportUseCase);
+container.registerSingleton("NotifyReportFollowersOfStatusChangeUseCase", NotifyReportFollowersOfStatusChangeUseCase);
 
 // Payments
 import { CreateFeaturedPreferenceUseCase } from "@application/usecase/payment-usecase/create-featured-preference.usecase";
@@ -374,18 +244,9 @@ import { CreateContentReportUseCase } from "@application/usecase/content-report-
 import { GetContentReportQueueUseCase } from "@application/usecase/content-report-usecase/get-content-report-queue.usecase";
 import { ResolveContentReportUseCase } from "@application/usecase/content-report-usecase/resolve-content-report.usecase";
 
-container.registerSingleton(
-  "CreateContentReportUseCase",
-  CreateContentReportUseCase,
-);
-container.registerSingleton(
-  "GetContentReportQueueUseCase",
-  GetContentReportQueueUseCase,
-);
-container.registerSingleton(
-  "ResolveContentReportUseCase",
-  ResolveContentReportUseCase,
-);
+container.registerSingleton("CreateContentReportUseCase", CreateContentReportUseCase,);
+container.registerSingleton("GetContentReportQueueUseCase", GetContentReportQueueUseCase,);
+container.registerSingleton("ResolveContentReportUseCase", ResolveContentReportUseCase,);
 
 // Admin stats
 import { GetAdminStatsUseCase } from "@application/usecase/stats-usecase/get-admin-stats.usecase";
@@ -401,10 +262,7 @@ import { NotifyAppealResultUseCase } from "@application/usecase/notify-appeal-re
 container.registerSingleton("CreateAppealUseCase", CreateAppealUseCase);
 container.registerSingleton("GetAppealQueueUseCase", GetAppealQueueUseCase);
 container.registerSingleton("ResolveAppealUseCase", ResolveAppealUseCase);
-container.registerSingleton(
-  "NotifyAppealResultUseCase",
-  NotifyAppealResultUseCase,
-);
+container.registerSingleton("NotifyAppealResultUseCase", NotifyAppealResultUseCase,);
 
 // Notifications (push + email)
 import { NotifyNearbyLostOwnersUseCase } from "@application/usecase/notify-nearby-lost-owners/notify-nearby-lost-owners.usecase";
@@ -454,11 +312,6 @@ container.registerSingleton("GetColorsUseCase", GetColorsUseCase);
 // Missions
 import { MissionRepository } from "@domain/mission/repositories/mission.repository";
 import { PrismaMissionRepository } from "@infrastructure/repository/mission/mission.repository";
-container.registerSingleton<MissionRepository>(
-  "MissionRepository",
-  PrismaMissionRepository
-);
-
 import { CreateMissionUseCase } from "@application/usecase/mission-usecase/create-mission.usecase";
 import { GetMissionsUseCase } from "@application/usecase/mission-usecase/get-missions.usecase";
 import { GetMissionDetailUseCase } from "@application/usecase/mission-usecase/get-mission-detail.usecase";
@@ -468,7 +321,19 @@ import { CancelMissionUseCase } from "@application/usecase/mission-usecase/cance
 import { GetJoinedMissionsUseCase } from "@application/usecase/mission-usecase/get-joined-missions.usecase";
 import { GetJoinedMissionsController } from "@presentation/controller/mission/get-joined-missions.controller";
 import { UpdateMissionUseCase } from "@application/usecase/mission-usecase/update-mission.usecase";
+import { PrismaMissionUpdateRepository } from "@infrastructure/repository/mission/mission-update.repository";
+import { CreateMissionUpdateUseCase } from "@application/usecase/mission-usecase/create-mission-update.usecase";
+import { CreateMissionUpdateController } from "@presentation/controller/mission/create-mission-update.controller";
+import { GetMissionUpdatesUseCase } from "@application/usecase/mission-usecase/get-mission-updates.usecase";
+import { GetMissionUpdatesController } from "@presentation/controller/mission/get-mission-updates.controller";
 
+
+container.registerSingleton("MissionUpdateRepository", PrismaMissionUpdateRepository);
+container.registerSingleton("CreateMissionUpdateUseCase", CreateMissionUpdateUseCase);
+container.registerSingleton( CreateMissionUpdateController);
+container.registerSingleton("GetMissionUpdatesUseCase", GetMissionUpdatesUseCase);
+container.registerSingleton( GetMissionUpdatesController);
+container.registerSingleton<MissionRepository>("MissionRepository", PrismaMissionRepository);
 container.registerSingleton("CreateMissionUseCase", CreateMissionUseCase);
 container.registerSingleton("GetMissionsUseCase", GetMissionsUseCase);
 container.registerSingleton("GetMissionDetailUseCase", GetMissionDetailUseCase);
@@ -479,32 +344,4 @@ container.registerSingleton("GetJoinedMissionsUseCase", GetJoinedMissionsUseCase
 container.registerSingleton("UpdateMissionUseCase", UpdateMissionUseCase);
 container.registerSingleton(GetJoinedMissionsController);
 
-
-import { PrismaMissionUpdateRepository } from "@infrastructure/repository/mission/mission-update.repository";
-container.registerSingleton(
-  "MissionUpdateRepository",
-  PrismaMissionUpdateRepository
-);
-
-import { CreateMissionUpdateUseCase } from "@application/usecase/mission-usecase/create-mission-update.usecase";
-container.registerSingleton(
-  "CreateMissionUpdateUseCase",
-  CreateMissionUpdateUseCase
-);
-
-import { CreateMissionUpdateController } from "@presentation/controller/mission/create-mission-update.controller";
-container.registerSingleton(
-  CreateMissionUpdateController
-);
-
-import { GetMissionUpdatesUseCase } from "@application/usecase/mission-usecase/get-mission-updates.usecase";
-container.registerSingleton(
-  "GetMissionUpdatesUseCase",
-  GetMissionUpdatesUseCase
-);
-
-import { GetMissionUpdatesController } from "@presentation/controller/mission/get-mission-updates.controller";
-container.registerSingleton(
-  GetMissionUpdatesController
-);
 
