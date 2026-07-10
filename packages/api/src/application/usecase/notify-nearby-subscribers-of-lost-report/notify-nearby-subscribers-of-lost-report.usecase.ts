@@ -26,17 +26,7 @@ export class NotifyNearbySubscribersOfLostReportUseCase {
   ) {}
 
 async execute(reportPublicId: string): Promise<void> {
-  console.log("=== LOST NOTIFICATIONS ===");
-  console.log("Report:", reportPublicId);
-
   const subscribers = await this.eligibleSubscribers(reportPublicId);
-
-  console.log("Subscribers:", subscribers);
-
-  if (subscribers.length === 0) {
-    console.log("No eligible subscribers");
-    return;
-  }
 
   await this.notifySubscribers(subscribers, reportPublicId);
 }
@@ -57,19 +47,7 @@ const reportLocation = this.toPoint(
 
 const candidates =
   await this.userRepository.findNotificationCandidates();
-console.log("Candidates:", candidates);
 const now = new Date();
-
-for (const candidate of candidates) {
-  console.log("Checking:", candidate.publicId, {
-    role: candidate.role,
-    lostReportsEnabled: candidate.lostReportsEnabled,
-    lat: candidate.lastKnownLatitude,
-    lng: candidate.lastKnownLongitude,
-    radius: candidate.notificationRadius,
-    mutedUntil: candidate.mutedUntil,
-  });
-}
 
 return candidates
   .filter((candidate) => {
