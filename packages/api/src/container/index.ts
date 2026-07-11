@@ -449,6 +449,13 @@ container.registerSingleton<MissionRepository>(
   PrismaMissionRepository
 );
 
+import { MissionCoverageRepository } from "@domain/mission/repositories/mission-coverage.repository";
+import { PrismaMissionCoverageRepository } from "@infrastructure/repository/mission/mission-coverage.repository";
+container.registerSingleton<MissionCoverageRepository>(
+  "MissionCoverageRepository",
+  PrismaMissionCoverageRepository
+);
+
 import { CreateMissionUseCase } from "@application/usecase/mission-usecase/create-mission.usecase";
 import { GetMissionsUseCase } from "@application/usecase/mission-usecase/get-missions.usecase";
 import { GetMissionDetailUseCase } from "@application/usecase/mission-usecase/get-mission-detail.usecase";
@@ -458,6 +465,8 @@ import { CancelMissionUseCase } from "@application/usecase/mission-usecase/cance
 import { GetJoinedMissionsUseCase } from "@application/usecase/mission-usecase/get-joined-missions.usecase";
 import { GetJoinedMissionsController } from "@presentation/controller/mission/get-joined-missions.controller";
 import { UpdateMissionUseCase } from "@application/usecase/mission-usecase/update-mission.usecase";
+import { AddMissionCoverageUseCase } from "@application/usecase/mission-usecase/add-mission-coverage.usecase";
+import { GetMissionCoverageUseCase } from "@application/usecase/mission-usecase/get-mission-coverage.usecase";
 
 container.registerSingleton("CreateMissionUseCase", CreateMissionUseCase);
 container.registerSingleton("GetMissionsUseCase", GetMissionsUseCase);
@@ -467,6 +476,8 @@ container.registerSingleton("LeaveMissionUseCase", LeaveMissionUseCase);
 container.registerSingleton("CancelMissionUseCase", CancelMissionUseCase);
 container.registerSingleton("GetJoinedMissionsUseCase", GetJoinedMissionsUseCase);
 container.registerSingleton("UpdateMissionUseCase", UpdateMissionUseCase);
+container.registerSingleton("AddMissionCoverageUseCase", AddMissionCoverageUseCase);
+container.registerSingleton("GetMissionCoverageUseCase", GetMissionCoverageUseCase);
 container.registerSingleton(GetJoinedMissionsController);
 
 

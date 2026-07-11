@@ -12,6 +12,8 @@ import { LeaveMissionController } from "@presentation/controller/mission/leave-m
 import { CancelMissionController } from "@presentation/controller/mission/cancel-mission.controller";
 import { GetJoinedMissionsController } from "@presentation/controller/mission/get-joined-missions.controller";
 import { UpdateMissionController } from "@presentation/controller/mission/update-mission.controller";
+import { PostCoverageController } from "@presentation/controller/mission/post-coverage.controller";
+import { GetCoverageController } from "@presentation/controller/mission/get-coverage.controller";
 
 import { validateRequest } from "@presentation/middleware/validate.request";
 import { createMissionRequestSchema, updateMissionRequestSchema } from "@presentation/schemas/mission/mission.schema";
@@ -28,6 +30,8 @@ const leaveController = container.resolve(LeaveMissionController);
 const cancelController = container.resolve(CancelMissionController);
 const getJoinedController = container.resolve(GetJoinedMissionsController);
 const updateController = container.resolve(UpdateMissionController);
+const postCoverageController = container.resolve(PostCoverageController);
+const getCoverageController = container.resolve(GetCoverageController);
 
 router.get(
   "/",
@@ -77,6 +81,18 @@ router.post(
   "/:publicId/cancel",
   requireAuth(tokenSigner),
   cancelController.handle
+);
+
+router.post(
+  "/:publicId/coverage",
+  requireAuth(tokenSigner),
+  postCoverageController.handle
+);
+
+router.get(
+  "/:publicId/coverage",
+  requireAuth(tokenSigner),
+  getCoverageController.handle
 );
 
 export const missionRoute = router;
