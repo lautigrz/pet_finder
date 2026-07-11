@@ -19,6 +19,7 @@ export interface CreateMissionUpdateDTO {
     missionPublicId: string;
     comment: string;
     photoUrl?: string;
+    imageBuffer?: Buffer;
 }
 
 export interface CreateMissionUpdateResponse {

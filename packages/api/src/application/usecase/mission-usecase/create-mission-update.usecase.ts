@@ -4,6 +4,7 @@ import { MissionUpdate } from "@domain/mission/MissionUpdate";
 import type { MissionUpdateRepository } from "@domain/mission/repositories/mission-update.repository";
 import type { MissionRepository } from "@domain/mission/repositories/mission.repository";
 import type { IUserRepository } from "@domain/repositories/IUserRepository";
+import type { StorageService } from "@application/ports/StorageService";
 import { CreateMissionUpdateDTO } from "./dto/mission-update.dto";
 import { UserNotFoundError } from "@domain/errors/UserNotFoundError";
 import { MissionNotFoundError } from "@domain/errors/MissionNotFoundError";
@@ -19,7 +20,10 @@ export class CreateMissionUpdateUseCase {
     private readonly missionRepository: MissionRepository,
 
     @inject("UserRepository")
-    private readonly userRepository: IUserRepository
+    private readonly userRepository: IUserRepository,
+
+    @inject("StorageService")
+    private readonly storageService: StorageService
   ) { }
 
   async execute(
@@ -42,11 +46,20 @@ export class CreateMissionUpdateUseCase {
       throw new UserNotFoundError();
     }
 
+    let finalPhotoUrl = dto.photoUrl ?? null;
+    if (dto.imageBuffer) {
+      const uploadResult = await this.storageService.upload(
+        dto.imageBuffer,
+        "mission_updates"
+      );
+      finalPhotoUrl = uploadResult.url;
+    }
+
     const update = MissionUpdate.create({
       missionId: mission.missionId!,
       userId: user.requireInternalId(),
       comment: dto.comment,
-      photoUrl: dto.photoUrl ?? null
+      photoUrl: finalPhotoUrl
     });
 
     await this.updateRepository.save(update);

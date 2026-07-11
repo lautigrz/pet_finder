@@ -10,6 +10,7 @@ import { GetCommentPointValuesController } from "@presentation/controller/missio
 
 import { validateRequest } from "@presentation/middleware/validate.request";
 import { createMissionUpdateRequestSchema, scoreMissionUpdateRequestSchema } from "@presentation/schemas/mission/mission.schema";
+import upload from "@infrastructure/storage/CloudinaryMulterUpload";
 
 const router = Router();
 
@@ -35,6 +36,7 @@ router.get(
 router.post(
   "/",
   requireAuth(tokenSigner),
+  upload.array("photos", 1),
   validateRequest(createMissionUpdateRequestSchema),
   createController.handle
 );

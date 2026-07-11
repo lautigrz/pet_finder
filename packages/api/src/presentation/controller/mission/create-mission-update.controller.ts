@@ -19,12 +19,15 @@ export class CreateMissionUpdateController {
     if (!publicId) {
       throw new UserNotFoundError();
     }
+    const files = (req.files as Express.Multer.File[] | undefined) ?? [];
     const parsed = req.validated?.body as CreateMissionUpdateInput;
+    
     const result = await this.useCase.execute(
       {
         missionPublicId: parsed.missionPublicId,
         comment: parsed.comment,
-        photoUrl: parsed.photoUrl ?? undefined
+        photoUrl: parsed.photoUrl ?? undefined,
+        imageBuffer: files[0]?.buffer
       },
       publicId
     );
