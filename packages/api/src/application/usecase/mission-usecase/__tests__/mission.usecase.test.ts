@@ -26,6 +26,7 @@ describe("Pruebas Unitarias de Casos de Uso de Misiones", () => {
   let mockReportRepository: any;
   let mockUserRepository: any;
   let mockMissionUpdateRepository: any;
+  let mockStorageService: any;
 
   beforeEach(() => {
     mockMissionRepository = {
@@ -50,6 +51,11 @@ describe("Pruebas Unitarias de Casos de Uso de Misiones", () => {
       save: vi.fn(),
       findByMissionId: vi.fn(),
       findByUser: vi.fn()
+    };
+
+    mockStorageService = {
+      upload: vi.fn(),
+      delete: vi.fn()
     };
   });
 
@@ -343,7 +349,8 @@ describe("Pruebas Unitarias de Casos de Uso de Misiones", () => {
       const usecase = new CreateMissionUpdateUseCase(
         mockMissionUpdateRepository,
         mockMissionRepository,
-        mockUserRepository
+        mockUserRepository,
+        mockStorageService
       );
 
       const mission = Mission.create({
@@ -378,6 +385,54 @@ describe("Pruebas Unitarias de Casos de Uso de Misiones", () => {
 
       expect(result.publicId).toBeDefined();
       expect(mockMissionUpdateRepository.save).toHaveBeenCalled();
+    });
+
+    it("debe subir la imagen a Cloudinary si se proporciona un buffer", async () => {
+      const usecase = new CreateMissionUpdateUseCase(
+        mockMissionUpdateRepository,
+        mockMissionRepository,
+        mockUserRepository,
+        mockStorageService
+      );
+
+      const mission = Mission.create({
+        reportId: 1,
+        searchArea: SearchArea.create(-34.6037, -58.3816, 300),
+        title: "Search",
+        description: "Help"
+      });
+
+      const mockUser = User.reconstruct(
+        5,
+        "user-uuid",
+        "email@email.com",
+        "username",
+        "$2b$10$abcdefghijklmnopqrstuv",
+        true,
+        new Date(),
+        null,
+        null,
+        null
+      );
+
+      mockMissionRepository.findByPublicId.mockResolvedValue(mission);
+      mockUserRepository.findByPublicId.mockResolvedValue(mockUser);
+      mockStorageService.upload.mockResolvedValue({ publicId: "cloudinary-id", url: "https://cloudinary.com/url.jpg" });
+      mockMissionUpdateRepository.save.mockResolvedValue(200);
+
+      const imageBuffer = Buffer.from("fake-image");
+      const result = await usecase.execute({
+        missionPublicId: "mission-uuid",
+        comment: "I think I saw a track over here",
+        imageBuffer
+      }, "user-uuid");
+
+      expect(result.publicId).toBeDefined();
+      expect(mockStorageService.upload).toHaveBeenCalledWith(imageBuffer, "mission_updates");
+      expect(mockMissionUpdateRepository.save).toHaveBeenCalled();
+      
+      const savedUpdate = mockMissionUpdateRepository.save.mock.calls[0][0];
+      expect(savedUpdate.photoUrl).toBe("https://cloudinary.com/url.jpg");
     });
   });
 
