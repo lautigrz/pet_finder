@@ -43,6 +43,7 @@ model User {
 
   mission_updates    MissionUpdate[]
   mission_volunteers MissionVolunteer[]
+  mission_coverages  MissionCoverage[]
 
   payments Payment[]
 
@@ -524,6 +525,7 @@ model Mission {
   report     Report             @relation(fields: [report_id], references: [report_id], onDelete: Cascade)
   updates    MissionUpdate[]
   volunteers MissionVolunteer[]
+  coverages  MissionCoverage[]
 
   @@map("missions")
 }
@@ -647,4 +649,18 @@ model spatial_ref_sys {
   auth_srid Int?
   srtext    String? @db.VarChar(2048)
   proj4text String? @db.VarChar(2048)
+}
+
+model MissionCoverage {
+  mission_id       Int
+  user_id          Int
+  geohash_cell     String   @db.VarChar(8)
+  first_visited_at DateTime @default(now()) @db.Timestamp(6)
+  last_visited_at  DateTime @default(now()) @updatedAt @db.Timestamp(6)
+
+  mission Mission @relation(fields: [mission_id], references: [mission_id], onDelete: Cascade)
+  user    User    @relation(fields: [user_id], references: [user_id], onDelete: Cascade)
+
+  @@id([mission_id, user_id, geohash_cell])
+  @@map("mission_coverages")
 }
