@@ -3,6 +3,7 @@ import type { ContentReportRepository } from "@domain/content-report/repositorie
 import type { ReportRepository } from "@domain/report/repositories/report.repository";
 import type { ConversationRepository } from "@domain/conversation/repositories/conversation.repository";
 import type { IUserRepository } from "@domain/repositories/IUserRepository";
+import { ContentReport } from "@domain/content-report/ContentReport";
 import { ContentReportStatus } from "@domain/content-report/types/content-report-status";
 import { ContentReportTargetType } from "@domain/content-report/types/content-report-target-type";
 import { ContentReportNotFoundError } from "@domain/content-report/errors/ContentReportNotFoundError";
@@ -82,6 +83,10 @@ export class ResolveContentReportUseCase {
             return { autoSuspended: false, approvedCount: 0, suspendedCount };
         }
 
+        if (dto.status === ContentReportStatus.DISMISSED || dto.status === ContentReportStatus.PENDING) {
+            await this.revertSentence(contentReport);
+        }
+
         if (dto.status === ContentReportStatus.DISMISSED) {
             contentReport.dismiss();
         } else if (dto.status === ContentReportStatus.PENDING) {
@@ -90,6 +95,50 @@ export class ResolveContentReportUseCase {
 
         await this.contentReportRepository.update(contentReport);
         return { autoSuspended: false, approvedCount: 0, suspendedCount: 0 };
+    }
+
+    private async revertSentence(contentReport: ContentReport): Promise<void> {
+        const wasResolved =
+            contentReport.status === ContentReportStatus.REVIEWED ||
+            contentReport.status === ContentReportStatus.SUSPENDED;
+        if (!wasResolved) return;
+
+        if (contentReport.targetType === ContentReportTargetType.POST) {
+            await this.reopenPublication(contentReport.targetPublicId);
+            return;
+        }
+
+        if (contentReport.targetType === ContentReportTargetType.CHAT) {
+            await this.reopenReportedChat(contentReport.targetPublicId);
+            return;
+        }
+
+        await this.reopenAccount(contentReport.targetPublicId);
+    }
+
+    private async reopenPublication(targetPublicId: string): Promise<void> {
+        const report = await this.reportRepository.findByPublicId(targetPublicId);
+        if (!report || report.status !== ReportStatus.CLOSED) return;
+
+        report.reopen();
+        await this.reportRepository.update(report);
+    }
+
+    private async reopenReportedChat(targetPublicId: string): Promise<void> {
+        const conversation = await this.conversationRepository.findByPublicId(targetPublicId);
+        if (!conversation || !conversation.isSuspended) return;
+
+        conversation.unsuspend();
+        await this.conversationRepository.update(conversation);
+    }
+
+    private async reopenAccount(userPublicId: string): Promise<void> {
+        const user = await this.userRepository.findByPublicId(userPublicId);
+        if (!user) return;
+
+        const userId = user.requireInternalId();
+        await this.userRepository.unsuspend(userId);
+        await this.reportRepository.reopenModerationClosedByUserId(userId);
     }
 
     private async hideReportedPublication(targetPublicId: string): Promise<void> {
