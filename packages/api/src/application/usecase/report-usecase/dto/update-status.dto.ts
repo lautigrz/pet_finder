@@ -4,4 +4,5 @@ export interface UpdateStatusDTO {
     publicId: string;
     status: ReportStatus;
     resolved?: boolean;
+    resolvedAt?: Date;
 }
