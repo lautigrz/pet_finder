@@ -133,6 +133,16 @@ export class Report {
         }
     }
 
+    private static validateResolvedAt(resolvedAt: Date, createdAt: Date): void {
+        const atDay = (date: Date) => new Date(date.getFullYear(), date.getMonth(), date.getDate()).getTime();
+        if (atDay(resolvedAt) > atDay(new Date())) {
+            throw new InvalidFieldError('resolvedAt', 'cannot be in the future');
+        }
+        if (atDay(resolvedAt) < atDay(createdAt)) {
+            throw new InvalidFieldError('resolvedAt', 'cannot be before the report creation date');
+        }
+    }
+
     get idReport(): number | null {
         return this._idReport
     }
@@ -140,10 +150,12 @@ export class Report {
         return this._userPublicId
     }
 
-    resolve(reunited: boolean): void {
+    resolve(reunited: boolean, resolvedAt?: Date): void {
+        const resolutionDate = resolvedAt ?? new Date()
+        Report.validateResolvedAt(resolutionDate, this._createdAt)
         this.transitionTo(ReportStatus.RESOLVED)
         this._resolved = reunited
-        this._resolvedAt = new Date()
+        this._resolvedAt = resolutionDate
     }
 
     close(): void {
