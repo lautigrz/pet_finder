@@ -462,6 +462,7 @@ import { GetMissionDetailUseCase } from "@application/usecase/mission-usecase/ge
 import { JoinMissionUseCase } from "@application/usecase/mission-usecase/join-mission.usecase";
 import { LeaveMissionUseCase } from "@application/usecase/mission-usecase/leave-mission.usecase";
 import { CancelMissionUseCase } from "@application/usecase/mission-usecase/cancel-mission.usecase";
+import { RemoveVolunteerFromMissionUseCase } from "@application/usecase/mission-usecase/remove-volunteer-from-mission.usecase";
 import { GetJoinedMissionsUseCase } from "@application/usecase/mission-usecase/get-joined-missions.usecase";
 import { GetJoinedMissionsController } from "@presentation/controller/mission/get-joined-missions.controller";
 import { UpdateMissionUseCase } from "@application/usecase/mission-usecase/update-mission.usecase";
@@ -478,7 +479,9 @@ container.registerSingleton("GetJoinedMissionsUseCase", GetJoinedMissionsUseCase
 container.registerSingleton("UpdateMissionUseCase", UpdateMissionUseCase);
 container.registerSingleton("AddMissionCoverageUseCase", AddMissionCoverageUseCase);
 container.registerSingleton("GetMissionCoverageUseCase", GetMissionCoverageUseCase);
+container.registerSingleton("RemoveVolunteerFromMissionUseCase", RemoveVolunteerFromMissionUseCase);
 container.registerSingleton(GetJoinedMissionsController);
+
 
 
 import { PrismaMissionUpdateRepository } from "@infrastructure/repository/mission/mission-update.repository";
