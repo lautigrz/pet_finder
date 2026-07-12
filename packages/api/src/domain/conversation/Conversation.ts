@@ -35,6 +35,10 @@ export class Conversation {
         this.props.isSuspended = true;
     }
 
+    unsuspend(): void {
+        this.props.isSuspended = false;
+    }
+
     get conversationId() { return this.props.conversationId; }
     get publicId() { return this.props.publicId; }
     get userOneId() { return this.props.userOneId; }
