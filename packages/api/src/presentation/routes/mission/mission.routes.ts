@@ -14,9 +14,11 @@ import { GetJoinedMissionsController } from "@presentation/controller/mission/ge
 import { UpdateMissionController } from "@presentation/controller/mission/update-mission.controller";
 import { PostCoverageController } from "@presentation/controller/mission/post-coverage.controller";
 import { GetCoverageController } from "@presentation/controller/mission/get-coverage.controller";
+import { RemoveVolunteerFromMissionController } from "@presentation/controller/mission/remove-volunteer-from-mission.controller";
 
 import { validateRequest } from "@presentation/middleware/validate.request";
 import { createMissionRequestSchema, updateMissionRequestSchema } from "@presentation/schemas/mission/mission.schema";
+
 
 const router = Router();
 
@@ -32,6 +34,7 @@ const getJoinedController = container.resolve(GetJoinedMissionsController);
 const updateController = container.resolve(UpdateMissionController);
 const postCoverageController = container.resolve(PostCoverageController);
 const getCoverageController = container.resolve(GetCoverageController);
+const removeVolunteerController = container.resolve(RemoveVolunteerFromMissionController);
 
 router.get(
   "/",
@@ -94,5 +97,11 @@ router.get(
   requireAuth(tokenSigner),
   getCoverageController.handle
 );
+
+router.delete(
+  "/:publicId/volunteers/:volunteerPublicId",
+  requireAuth(tokenSigner),
+  removeVolunteerController.handle,
+)
 
 export const missionRoute = router;
