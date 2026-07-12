@@ -58,7 +58,8 @@ describe("Entidad del Dominio MissionUpdate (Actualización de Misión)", () => 
       comment: "Restored comment",
       photoUrl: null,
       status: "APPROVED",
-      createdAt: createdDate
+      createdAt: createdDate,
+      pointValue: null
     });
 
     expect(update.updateId).toBe(123);

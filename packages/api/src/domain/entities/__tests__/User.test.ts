@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { User } from "../User";
+import { EmailAddress } from "../../shared/email/email-address.vo";
 
 const VALID_HASH = "$2b$10$abcdefghijklmnopqrstuuJ2uVvKc3m1f0q7c8x9z0a1b2c3d4e5f6";
 
@@ -42,5 +43,22 @@ describe("User", () => {
 
     expect(() => user.addExperience(0)).toThrow("positive integer");
     expect(() => user.addExperience(1.5)).toThrow("positive integer");
+  });
+
+  describe("createFromGoogle", () => {
+    const email = EmailAddress.create("juan@example.com");
+
+    it("crea un usuario verificado, sin password y con googleId", () => {
+      const user = User.createFromGoogle(email, "juan", "google-sub-1", "https://pic");
+
+      expect(user.passwordHash).toBeNull();
+      expect(user.isVerified).toBe(true);
+      expect(user.googleId).toBe("google-sub-1");
+      expect(user.photoUrl).toBe("https://pic");
+    });
+
+    it("rechaza un username invalido", () => {
+      expect(() => User.createFromGoogle(email, "ab", "google-sub-1", null)).toThrow();
+    });
   });
 });

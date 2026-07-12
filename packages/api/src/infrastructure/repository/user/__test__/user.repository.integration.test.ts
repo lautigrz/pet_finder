@@ -247,4 +247,35 @@ describe("PrismaUserRepository (integration)", () => {
             });
         });
     });
+
+    describe("linkGoogleId()", () => {
+        it("vincula el google_id a un usuario existente", async () => {
+            const saved = await repository.save(makeUser());
+
+            await repository.linkGoogleId(saved.internalId!, "google-sub-123");
+
+            const found = await repository.findById(saved.internalId!);
+            expect(found!.googleId).toBe("google-sub-123");
+        });
+    });
+
+    describe("save() de una cuenta de Google", () => {
+        it("persiste y relee un usuario de Google verificado y sin password", async () => {
+            const googleUser = User.createFromGoogle(
+                EmailAddress.create("google@example.com"),
+                "googleuser",
+                "google-sub-456",
+                "https://example.com/g.png",
+            );
+
+            const saved = await repository.save(googleUser);
+            const found = await repository.findByEmail("google@example.com");
+
+            expect(saved.internalId).not.toBeNull();
+            expect(found!.googleId).toBe("google-sub-456");
+            expect(found!.passwordHash).toBeNull();
+            expect(found!.isVerified).toBe(true);
+            expect(found!.photoUrl).toBe("https://example.com/g.png");
+        });
+    });
 });

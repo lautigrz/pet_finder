@@ -40,3 +40,17 @@ export const updateMissionRequestSchema = z.object({
 
 export type UpdateMissionInput = z.infer<typeof updateMissionBodySchema>;
 
+export const scoreMissionUpdateBodySchema = z.object({
+  points: z.number().int().positive(),
+});
+
+export const scoreMissionUpdateRequestSchema = z.object({
+  params: z.object({
+    publicId: z.string().uuid(),
+  }),
+  body: scoreMissionUpdateBodySchema,
+});
+
+export type ScoreMissionUpdateInput = z.infer<typeof scoreMissionUpdateBodySchema>;
+
+

@@ -2,6 +2,7 @@ import { Mission } from "@domain/mission/Mission";
 import { Pet } from "@domain/pet/aggregates/PetAggregate";
 import { Report } from "@domain/report/aggregates/ReportAggregate";
 import { MissionCardOutput, MissionOutput, VolunteerOutput } from "../dto/mission.output";
+import { MissionUpdateOutput } from "../dto/mission-update.dto";
 
 export class MissionOutputMapper {
   static toOutput(params: {
@@ -10,8 +11,9 @@ export class MissionOutputMapper {
     pet?: Pet;
     reportPhotoUrl: string | null;
     volunteers: VolunteerOutput[];
+    comments: MissionUpdateOutput[];
   }): MissionOutput {
-    const { mission, report, pet, reportPhotoUrl, volunteers } = params;
+    const { mission, report, pet, reportPhotoUrl, volunteers, comments } = params;
 
     return {
       publicId: mission.publicId,
@@ -31,7 +33,8 @@ export class MissionOutputMapper {
         status: report.status,
         petDetails: this.mapPetDetails(pet)
       },
-      volunteers
+      volunteers,
+      comments
     };
   }
 

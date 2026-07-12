@@ -14,7 +14,5 @@ export interface MissionRepository {
 
   update(mission: Mission): Promise<void>;
 
-
-
-
+  findById(missionId: number): Promise<Mission | null>;
 }

@@ -141,4 +141,21 @@ export class PrismaMissionRepository implements MissionRepository {
             }
         });
     }
+
+    async findById(missionId: number): Promise<Mission | null> {
+        const record = await this.prisma.mission.findUnique({
+            where: {
+                mission_id: missionId
+            },
+            include: {
+                volunteers: true
+            }
+        });
+
+        if (!record) {
+            return null;
+        }
+
+        return MissionMapper.toDomain(record);
+    }
 }

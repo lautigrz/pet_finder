@@ -39,6 +39,8 @@ export function errorToHttpStatus(error: Error): HttpError {
             case 'INVALID_ANIMAL_TYPE': return { statusCode: 400, code: error.code, message: error.message };
             case 'INVALID_PASSWORD_RESET_TOKEN': return { statusCode: 400, code: error.code, message: error.message };
             case 'INVALID_CREDENTIALS': return { statusCode: 401, code: error.code, message: error.message };
+            case 'INVALID_GOOGLE_TOKEN': return { statusCode: 401, code: error.code, message: error.message };
+            case 'GOOGLE_EMAIL_NOT_VERIFIED': return { statusCode: 403, code: error.code, message: error.message };
             case 'VALIDATION_ERROR': return { statusCode: 400, code: error.code, message: error.message };
             case 'INVALID_NOTIFICATION_RADIUS': return { statusCode: 400, code: error.code, message: error.message };
             case 'INVALID_MUTED_UNTIL': return { statusCode: 400, code: error.code, message: error.message };

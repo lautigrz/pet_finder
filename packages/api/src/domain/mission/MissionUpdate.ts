@@ -1,4 +1,5 @@
 import { InvalidFieldError } from "../errors/InvalidFieldError";
+import { PointValue } from "./value-objects/point-value.vo";
 
 export class MissionUpdate {
   private constructor(
@@ -9,14 +10,16 @@ export class MissionUpdate {
     private readonly _comment: string,
     private readonly _photoUrl: string | null,
     private readonly _status: string,
-    private readonly _createdAt: Date
-  ) {}
+    private readonly _createdAt: Date,
+    private _point_value: PointValue | null
+  ) { }
 
   static create(params: {
     missionId: number;
     userId: number;
     comment: string;
     photoUrl: string | null;
+    pointValue?: PointValue | null;
   }): MissionUpdate {
     if (!params.comment || params.comment.trim() === "") {
       throw new InvalidFieldError("comment", "Comment must not be empty");
@@ -36,7 +39,8 @@ export class MissionUpdate {
       params.comment,
       params.photoUrl,
       "PENDING",
-      new Date()
+      new Date(),
+      params.pointValue ?? null,
     );
   }
 
@@ -49,6 +53,7 @@ export class MissionUpdate {
     photoUrl: string | null;
     status: string;
     createdAt: Date;
+    pointValue: PointValue | null;
   }): MissionUpdate {
     return new MissionUpdate(
       params.updateId,
@@ -58,7 +63,8 @@ export class MissionUpdate {
       params.comment,
       params.photoUrl,
       params.status,
-      params.createdAt
+      params.createdAt,
+      params.pointValue
     );
   }
 
@@ -92,5 +98,16 @@ export class MissionUpdate {
 
   get createdAt(): Date {
     return this._createdAt;
+  }
+
+  get pointValue(): PointValue | null {
+    return this._point_value ?? null;
+  }
+
+  score(pointValue: PointValue): void {
+    if (this._point_value !== null) {
+      throw new Error("This comment has already been scored");
+    }
+    this._point_value = pointValue;
   }
 }

@@ -19,13 +19,15 @@ import { User } from "@domain/entities/User";
 import { MissionNotFoundError } from "@domain/errors/MissionNotFoundError";
 import { UserNotFoundError } from "@domain/errors/UserNotFoundError";
 import { UnauthorizedMissionEditError } from "@domain/errors/UnauthorizedMissionEditError";
-import { ReportNotFoundError } from "@domain/errors/ReportNotFoundError";
+import { RemoveVolunteerFromMissionUseCase } from "../remove-volunteer-from-mission.usecase";
+
 
 describe("Pruebas Unitarias de Casos de Uso de Misiones", () => {
   let mockMissionRepository: any;
   let mockReportRepository: any;
   let mockUserRepository: any;
   let mockMissionUpdateRepository: any;
+  let mockStorageService: any;
 
   beforeEach(() => {
     mockMissionRepository = {
@@ -51,12 +53,17 @@ describe("Pruebas Unitarias de Casos de Uso de Misiones", () => {
       findByMissionId: vi.fn(),
       findByUser: vi.fn()
     };
+
+    mockStorageService = {
+      upload: vi.fn(),
+      delete: vi.fn()
+    };
   });
 
   describe("CreateMissionUseCase", () => {
     it("debe crear una nueva misión si no existe", async () => {
       const usecase = new CreateMissionUseCase(mockMissionRepository, mockReportRepository);
-      
+
       const mockReport = Report.restore({
         idReport: 1,
         publicId: "report-uuid",
@@ -142,14 +149,14 @@ describe("Pruebas Unitarias de Casos de Uso de Misiones", () => {
   describe("JoinMissionUseCase", () => {
     it("debe permitir a un voluntario unirse a la misión", async () => {
       const joinUsecase = new JoinMissionUseCase(mockMissionRepository, mockUserRepository);
-      
+
       const mission = Mission.create({
         reportId: 1,
         searchArea: SearchArea.create(-34.6037, -58.3816, 300),
         title: "Search",
         description: "Help"
       });
-      
+
       const mockUser = User.reconstruct(
         5,
         "user-uuid",
@@ -203,7 +210,7 @@ describe("Pruebas Unitarias de Casos de Uso de Misiones", () => {
   describe("LeaveMissionUseCase", () => {
     it("debe permitir a un voluntario abandonar la misión", async () => {
       const leaveUsecase = new LeaveMissionUseCase(mockMissionRepository, mockUserRepository);
-      
+
       const mission = Mission.restore({
         missionId: 100,
         publicId: "mission-uuid",
@@ -241,6 +248,347 @@ describe("Pruebas Unitarias de Casos de Uso de Misiones", () => {
     });
   });
 
+  describe("RemoveVolunteerFromMissionUseCase", () => {
+    it("debe permitir al dueño de la misión eliminar a un voluntario", async () => {
+      const usecase = new RemoveVolunteerFromMissionUseCase(
+        mockMissionRepository,
+        mockReportRepository,
+        mockUserRepository,
+      );
+
+      const mission = Mission.restore({
+        missionId: 100,
+        publicId: "mission-uuid",
+        reportId: 10,
+        searchArea: SearchArea.create(-34.6037, -58.3816, 300),
+        title: "Search",
+        description: "Help",
+        status: MissionStatus.IN_PROGRESS,
+        volunteerIds: [6],
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      });
+
+      const ownerUser = User.reconstruct(
+        5,
+        "owner-uuid",
+        "owner@email.com",
+        "owner",
+        "$2b$10$abcdefghijklmnopqrstuv",
+        true,
+        new Date(),
+        null,
+        null,
+        null,
+      );
+
+      const volunteerUser = User.reconstruct(
+        6,
+        "volunteer-uuid",
+        "volunteer@email.com",
+        "volunteer",
+        "$2b$10$abcdefghijklmnopqrstuv",
+        true,
+        new Date(),
+        null,
+        null,
+        null,
+      );
+
+      const mockReport = Report.restore({
+        idReport: 10,
+        publicId: "report-uuid",
+        userId: 5,
+        userPublicId: "owner-uuid",
+        type: ReportType.LOST,
+        currentStatus: "ACTIVE" as any,
+        description: null,
+        location: Location.create({
+          address: "Test address",
+          latitude: -34.6037,
+          longitude: -58.3816,
+        }),
+        details: {} as any,
+        occurredAt: new Date(),
+        createdAt: new Date(),
+        updatedAt: null,
+      });
+
+      mockMissionRepository.findByPublicId.mockResolvedValue(mission);
+
+      mockUserRepository.findByPublicId.mockImplementation((publicId: string) => {
+        if (publicId === "owner-uuid") return Promise.resolve(ownerUser);
+        if (publicId === "volunteer-uuid") return Promise.resolve(volunteerUser);
+        return Promise.resolve(null);
+      });
+
+      mockReportRepository.findDetailsByIds.mockResolvedValue([
+        { report: mockReport, pet: undefined },
+      ]);
+
+      await usecase.execute("mission-uuid", "owner-uuid", "volunteer-uuid");
+
+      expect(mission.volunteerIds).not.toContain(6);
+      expect(mission.status).toBe(MissionStatus.OPEN);
+      expect(mockMissionRepository.update).toHaveBeenCalledWith(mission);
+    });
+
+    it("debe lanzar MissionNotFoundError si la misión no existe", async () => {
+      const usecase = new RemoveVolunteerFromMissionUseCase(
+        mockMissionRepository,
+        mockReportRepository,
+        mockUserRepository,
+      );
+
+      mockMissionRepository.findByPublicId.mockResolvedValue(null);
+
+      await expect(
+        usecase.execute("non-existent-mission", "owner-uuid", "volunteer-uuid"),
+      ).rejects.toThrow(MissionNotFoundError);
+    });
+
+    it("debe lanzar UserNotFoundError si el dueño no existe", async () => {
+      const usecase = new RemoveVolunteerFromMissionUseCase(
+        mockMissionRepository,
+        mockReportRepository,
+        mockUserRepository,
+      );
+
+      const mission = Mission.restore({
+        missionId: 100,
+        publicId: "mission-uuid",
+        reportId: 10,
+        searchArea: SearchArea.create(-34.6037, -58.3816, 300),
+        title: "Search",
+        description: "Help",
+        status: MissionStatus.IN_PROGRESS,
+        volunteerIds: [6],
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      });
+
+      mockMissionRepository.findByPublicId.mockResolvedValue(mission);
+      mockUserRepository.findByPublicId.mockResolvedValue(null);
+
+      await expect(
+        usecase.execute("mission-uuid", "owner-uuid", "volunteer-uuid"),
+      ).rejects.toThrow(UserNotFoundError);
+    });
+
+    it("debe lanzar UserNotFoundError si el voluntario no existe", async () => {
+      const usecase = new RemoveVolunteerFromMissionUseCase(
+        mockMissionRepository,
+        mockReportRepository,
+        mockUserRepository,
+      );
+
+      const mission = Mission.restore({
+        missionId: 100,
+        publicId: "mission-uuid",
+        reportId: 10,
+        searchArea: SearchArea.create(-34.6037, -58.3816, 300),
+        title: "Search",
+        description: "Help",
+        status: MissionStatus.IN_PROGRESS,
+        volunteerIds: [6],
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      });
+
+      const ownerUser = User.reconstruct(
+        5,
+        "owner-uuid",
+        "owner@email.com",
+        "owner",
+        "$2b$10$abcdefghijklmnopqrstuv",
+        true,
+        new Date(),
+        null,
+        null,
+        null,
+      );
+
+      mockMissionRepository.findByPublicId.mockResolvedValue(mission);
+
+      mockUserRepository.findByPublicId.mockImplementation((publicId: string) => {
+        if (publicId === "owner-uuid") return Promise.resolve(ownerUser);
+        return Promise.resolve(null);
+      });
+
+      await expect(
+        usecase.execute("mission-uuid", "owner-uuid", "volunteer-uuid"),
+      ).rejects.toThrow(UserNotFoundError);
+    });
+
+    it("debe lanzar error si quien intenta eliminar no es dueño del reporte", async () => {
+      const usecase = new RemoveVolunteerFromMissionUseCase(
+        mockMissionRepository,
+        mockReportRepository,
+        mockUserRepository,
+      );
+
+      const mission = Mission.restore({
+        missionId: 100,
+        publicId: "mission-uuid",
+        reportId: 10,
+        searchArea: SearchArea.create(-34.6037, -58.3816, 300),
+        title: "Search",
+        description: "Help",
+        status: MissionStatus.IN_PROGRESS,
+        volunteerIds: [6],
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      });
+
+      const requesterUser = User.reconstruct(
+        5,
+        "requester-uuid",
+        "requester@email.com",
+        "requester",
+        "$2b$10$abcdefghijklmnopqrstuv",
+        true,
+        new Date(),
+        null,
+        null,
+        null,
+      );
+
+      const volunteerUser = User.reconstruct(
+        6,
+        "volunteer-uuid",
+        "volunteer@email.com",
+        "volunteer",
+        "$2b$10$abcdefghijklmnopqrstuv",
+        true,
+        new Date(),
+        null,
+        null,
+        null,
+      );
+
+      const mockReport = Report.restore({
+        idReport: 10,
+        publicId: "report-uuid",
+        userId: 999,
+        userPublicId: "real-owner-uuid",
+        type: ReportType.LOST,
+        currentStatus: "ACTIVE" as any,
+        description: null,
+        location: Location.create({
+          address: "Test address",
+          latitude: -34.6037,
+          longitude: -58.3816,
+        }),
+        details: {} as any,
+        occurredAt: new Date(),
+        createdAt: new Date(),
+        updatedAt: null,
+      });
+
+      mockMissionRepository.findByPublicId.mockResolvedValue(mission);
+
+      mockUserRepository.findByPublicId.mockImplementation((publicId: string) => {
+        if (publicId === "requester-uuid") return Promise.resolve(requesterUser);
+        if (publicId === "volunteer-uuid") return Promise.resolve(volunteerUser);
+        return Promise.resolve(null);
+      });
+
+      mockReportRepository.findDetailsByIds.mockResolvedValue([
+        { report: mockReport, pet: undefined },
+      ]);
+
+      await expect(
+        usecase.execute("mission-uuid", "requester-uuid", "volunteer-uuid"),
+      ).rejects.toThrow("Solo el dueño de la misión puede eliminar voluntarios");
+
+      expect(mockMissionRepository.update).not.toHaveBeenCalled();
+    });
+
+    it("debe lanzar error si el usuario no participa como voluntario", async () => {
+      const usecase = new RemoveVolunteerFromMissionUseCase(
+        mockMissionRepository,
+        mockReportRepository,
+        mockUserRepository,
+      );
+
+      const mission = Mission.restore({
+        missionId: 100,
+        publicId: "mission-uuid",
+        reportId: 10,
+        searchArea: SearchArea.create(-34.6037, -58.3816, 300),
+        title: "Search",
+        description: "Help",
+        status: MissionStatus.IN_PROGRESS,
+        volunteerIds: [],
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      });
+
+      const ownerUser = User.reconstruct(
+        5,
+        "owner-uuid",
+        "owner@email.com",
+        "owner",
+        "$2b$10$abcdefghijklmnopqrstuv",
+        true,
+        new Date(),
+        null,
+        null,
+        null,
+      );
+
+      const volunteerUser = User.reconstruct(
+        6,
+        "volunteer-uuid",
+        "volunteer@email.com",
+        "volunteer",
+        "$2b$10$abcdefghijklmnopqrstuv",
+        true,
+        new Date(),
+        null,
+        null,
+        null,
+      );
+
+      const mockReport = Report.restore({
+        idReport: 10,
+        publicId: "report-uuid",
+        userId: 5,
+        userPublicId: "owner-uuid",
+        type: ReportType.LOST,
+        currentStatus: "ACTIVE" as any,
+        description: null,
+        location: Location.create({
+          address: "Test address",
+          latitude: -34.6037,
+          longitude: -58.3816,
+        }),
+        details: {} as any,
+        occurredAt: new Date(),
+        createdAt: new Date(),
+        updatedAt: null,
+      });
+
+      mockMissionRepository.findByPublicId.mockResolvedValue(mission);
+
+      mockUserRepository.findByPublicId.mockImplementation((publicId: string) => {
+        if (publicId === "owner-uuid") return Promise.resolve(ownerUser);
+        if (publicId === "volunteer-uuid") return Promise.resolve(volunteerUser);
+        return Promise.resolve(null);
+      });
+
+      mockReportRepository.findDetailsByIds.mockResolvedValue([
+        { report: mockReport, pet: undefined },
+      ]);
+
+      await expect(
+        usecase.execute("mission-uuid", "owner-uuid", "volunteer-uuid"),
+      ).rejects.toThrow("El usuario no participa como voluntario en esta misión");
+
+      expect(mockMissionRepository.update).not.toHaveBeenCalled();
+    });
+  });
+
   describe("CancelMissionUseCase", () => {
     it("debe cancelar la misión si la solicita el dueño del reporte", async () => {
       const cancelUsecase = new CancelMissionUseCase(mockMissionRepository, mockReportRepository, mockUserRepository);
@@ -268,7 +616,7 @@ describe("Pruebas Unitarias de Casos de Uso de Misiones", () => {
       const mockReport = Report.restore({
         idReport: 10,
         publicId: "report-uuid",
-        userId: 5, // coincide con el ID del voluntario/solicitante
+        userId: 5,
         userPublicId: "user-uuid",
         type: ReportType.LOST,
         currentStatus: "ACTIVE" as any,
@@ -316,7 +664,7 @@ describe("Pruebas Unitarias de Casos de Uso de Misiones", () => {
       const mockReport = Report.restore({
         idReport: 10,
         publicId: "report-uuid",
-        userId: 999, // NO coincide con el ID del usuario ejecutor (5)
+        userId: 999,
         userPublicId: "owner-uuid",
         type: ReportType.LOST,
         currentStatus: "ACTIVE" as any,
@@ -343,7 +691,8 @@ describe("Pruebas Unitarias de Casos de Uso de Misiones", () => {
       const usecase = new CreateMissionUpdateUseCase(
         mockMissionUpdateRepository,
         mockMissionRepository,
-        mockUserRepository
+        mockUserRepository,
+        mockStorageService
       );
 
       const mission = Mission.create({
@@ -378,6 +727,54 @@ describe("Pruebas Unitarias de Casos de Uso de Misiones", () => {
 
       expect(result.publicId).toBeDefined();
       expect(mockMissionUpdateRepository.save).toHaveBeenCalled();
+    });
+
+    it("debe subir la imagen a Cloudinary si se proporciona un buffer", async () => {
+      const usecase = new CreateMissionUpdateUseCase(
+        mockMissionUpdateRepository,
+        mockMissionRepository,
+        mockUserRepository,
+        mockStorageService
+      );
+
+      const mission = Mission.create({
+        reportId: 1,
+        searchArea: SearchArea.create(-34.6037, -58.3816, 300),
+        title: "Search",
+        description: "Help"
+      });
+
+      const mockUser = User.reconstruct(
+        5,
+        "user-uuid",
+        "email@email.com",
+        "username",
+        "$2b$10$abcdefghijklmnopqrstuv",
+        true,
+        new Date(),
+        null,
+        null,
+        null
+      );
+
+      mockMissionRepository.findByPublicId.mockResolvedValue(mission);
+      mockUserRepository.findByPublicId.mockResolvedValue(mockUser);
+      mockStorageService.upload.mockResolvedValue({ publicId: "cloudinary-id", url: "https://cloudinary.com/url.jpg" });
+      mockMissionUpdateRepository.save.mockResolvedValue(200);
+
+      const imageBuffer = Buffer.from("fake-image");
+      const result = await usecase.execute({
+        missionPublicId: "mission-uuid",
+        comment: "I think I saw a track over here",
+        imageBuffer
+      }, "user-uuid");
+
+      expect(result.publicId).toBeDefined();
+      expect(mockStorageService.upload).toHaveBeenCalledWith(imageBuffer, "mission_updates");
+      expect(mockMissionUpdateRepository.save).toHaveBeenCalled();
+
+      const savedUpdate = mockMissionUpdateRepository.save.mock.calls[0][0];
+      expect(savedUpdate.photoUrl).toBe("https://cloudinary.com/url.jpg");
     });
   });
 
@@ -441,7 +838,12 @@ describe("Pruebas Unitarias de Casos de Uso de Misiones", () => {
 
   describe("GetMissionDetailUseCase", () => {
     it("debe retornar el detalle de la misión incluyendo reporte, mascota y voluntarios", async () => {
-      const usecase = new GetMissionDetailUseCase(mockMissionRepository, mockReportRepository, mockUserRepository);
+      const usecase = new GetMissionDetailUseCase(
+        mockMissionRepository,
+        mockReportRepository,
+        mockUserRepository,
+        mockMissionUpdateRepository
+      );
 
       const mission = Mission.restore({
         missionId: 100,
@@ -478,6 +880,7 @@ describe("Pruebas Unitarias de Casos de Uso de Misiones", () => {
       mockMissionRepository.findByPublicId.mockResolvedValue(mission);
       mockReportRepository.findDetailsByIds.mockResolvedValue([{ report: mockReport, pet: undefined }]);
       mockUserRepository.findByIds.mockResolvedValue(mockVolunteers);
+      mockMissionUpdateRepository.findByMissionId.mockResolvedValue([]);
 
       const result = await usecase.execute("mission-uuid");
 
@@ -487,7 +890,12 @@ describe("Pruebas Unitarias de Casos de Uso de Misiones", () => {
     });
 
     it("debe lanzar MissionNotFoundError si la misión no existe", async () => {
-      const usecase = new GetMissionDetailUseCase(mockMissionRepository, mockReportRepository, mockUserRepository);
+      const usecase = new GetMissionDetailUseCase(
+        mockMissionRepository,
+        mockReportRepository,
+        mockUserRepository,
+        mockMissionUpdateRepository
+      );
       mockMissionRepository.findByPublicId.mockResolvedValue(null);
 
       await expect(usecase.execute("non-existent")).rejects.toThrow(MissionNotFoundError);
@@ -519,7 +927,8 @@ describe("Pruebas Unitarias de Casos de Uso de Misiones", () => {
         comment: "Found tracks!",
         photoUrl: "http://photo.com/img.jpg",
         status: "APPROVED" as any,
-        createdAt: new Date()
+        createdAt: new Date(),
+        pointValue: null
       });
 
       const mockUsers = [
@@ -633,7 +1042,7 @@ describe("Pruebas Unitarias de Casos de Uso de Misiones", () => {
       const mockReport = Report.restore({
         idReport: 10,
         publicId: "report-uuid",
-        userId: 999, // diferente al usuario ejecutor (5)
+        userId: 999,
         userPublicId: "owner-uuid",
         type: ReportType.LOST,
         currentStatus: "ACTIVE" as any,

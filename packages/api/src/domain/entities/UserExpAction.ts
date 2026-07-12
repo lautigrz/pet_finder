@@ -5,6 +5,7 @@ export const UserExpAction = {
   FOLLOW_REPORT: "FOLLOW_REPORT",
   COMPLETE_PROFILE: "COMPLETE_PROFILE",
   SEND_HELPFUL_MESSAGE: "SEND_HELPFUL_MESSAGE",
+  VALUED_COMMENT: "VALUED_COMMENT",
 } as const;
 
 export type UserExpAction = typeof UserExpAction[keyof typeof UserExpAction];
@@ -16,6 +17,7 @@ export const USER_EXP_BY_ACTION: Record<UserExpAction, number> = {
   [UserExpAction.FOLLOW_REPORT]: 5,
   [UserExpAction.COMPLETE_PROFILE]: 15,
   [UserExpAction.SEND_HELPFUL_MESSAGE]: 10,
+  [UserExpAction.VALUED_COMMENT]: 0,
 };
 
 export function getExpForAction(action: UserExpAction): number {

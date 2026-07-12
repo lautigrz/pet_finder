@@ -9,7 +9,7 @@ import { readAuthConfig } from "@presentation/config/authConfig";
 import { readPaymentConfig, readMercadoPagoCredentials } from "@presentation/config/paymentConfig";
 import { PaymentConfig } from "@application/ports/PaymentConfig";
 
-const { jwtSecret, accessTtl, refreshTtlMs } = readAuthConfig();
+const { jwtSecret, accessTtl, refreshTtlMs, googleClientId, googleClientSecret } = readAuthConfig();
 container.registerInstance("RefreshTtlMs", refreshTtlMs);
 
 const paymentConfig = readPaymentConfig();
@@ -195,9 +195,24 @@ container.registerSingleton<StorageService>(
 const mpCredentials = readMercadoPagoCredentials();
 container.registerInstance<PaymentGateway>("PaymentGateway", new MercadoPagoGateway(mpCredentials.accessToken, mpCredentials.webhookSecret));
 
+// ─── Google auth ─────────────────────────────────────────────────────────────
+import { IGoogleAuthenticator } from "@domain/services/IGoogleAuthenticator";
+import { GoogleOAuthAuthenticator } from "@infrastructure/security/GoogleOAuthAuthenticator";
+import { IGoogleAccountLinker } from "@domain/repositories/IGoogleAccountLinker";
+
+container.registerInstance<IGoogleAuthenticator>(
+  "GoogleAuthenticator",
+  new GoogleOAuthAuthenticator(googleClientId, googleClientSecret),
+);
+container.registerSingleton<IGoogleAccountLinker>(
+  "GoogleAccountLinker",
+  PrismaUserRepository,
+);
+
 // ─── Use Cases ─────────────────────────────────────────────────────────────────
 // Auth
 import { LoginUserUseCase } from "@application/usecase/login-user/login-user.usecase";
+import { LoginWithGoogleUseCase } from "@application/usecase/login-with-google/login-with-google.usecase";
 import { LogoutUserUseCase } from "@application/usecase/logout-user/logout-user.usecase";
 import { RefreshAccessTokenUseCase } from "@application/usecase/refresh-access-token/refresh-access-token.usecase";
 import { RegisterUserUseCase } from "@application/usecase/register-user/register-user.usecase";
@@ -206,6 +221,7 @@ import { RequestPasswordResetUseCase } from "@application/usecase/request-passwo
 import { ResetPasswordUseCase } from "@application/usecase/reset-password/reset-password.usecase";
 
 container.registerSingleton("LoginUserUseCase", LoginUserUseCase);
+container.registerSingleton("LoginWithGoogleUseCase", LoginWithGoogleUseCase);
 container.registerSingleton("LogoutUserUseCase", LogoutUserUseCase);
 container.registerSingleton(
   "RefreshAccessTokenUseCase",
@@ -433,15 +449,25 @@ container.registerSingleton<MissionRepository>(
   PrismaMissionRepository
 );
 
+import { MissionCoverageRepository } from "@domain/mission/repositories/mission-coverage.repository";
+import { PrismaMissionCoverageRepository } from "@infrastructure/repository/mission/mission-coverage.repository";
+container.registerSingleton<MissionCoverageRepository>(
+  "MissionCoverageRepository",
+  PrismaMissionCoverageRepository
+);
+
 import { CreateMissionUseCase } from "@application/usecase/mission-usecase/create-mission.usecase";
 import { GetMissionsUseCase } from "@application/usecase/mission-usecase/get-missions.usecase";
 import { GetMissionDetailUseCase } from "@application/usecase/mission-usecase/get-mission-detail.usecase";
 import { JoinMissionUseCase } from "@application/usecase/mission-usecase/join-mission.usecase";
 import { LeaveMissionUseCase } from "@application/usecase/mission-usecase/leave-mission.usecase";
 import { CancelMissionUseCase } from "@application/usecase/mission-usecase/cancel-mission.usecase";
+import { RemoveVolunteerFromMissionUseCase } from "@application/usecase/mission-usecase/remove-volunteer-from-mission.usecase";
 import { GetJoinedMissionsUseCase } from "@application/usecase/mission-usecase/get-joined-missions.usecase";
 import { GetJoinedMissionsController } from "@presentation/controller/mission/get-joined-missions.controller";
 import { UpdateMissionUseCase } from "@application/usecase/mission-usecase/update-mission.usecase";
+import { AddMissionCoverageUseCase } from "@application/usecase/mission-usecase/add-mission-coverage.usecase";
+import { GetMissionCoverageUseCase } from "@application/usecase/mission-usecase/get-mission-coverage.usecase";
 
 container.registerSingleton("CreateMissionUseCase", CreateMissionUseCase);
 container.registerSingleton("GetMissionsUseCase", GetMissionsUseCase);
@@ -451,7 +477,11 @@ container.registerSingleton("LeaveMissionUseCase", LeaveMissionUseCase);
 container.registerSingleton("CancelMissionUseCase", CancelMissionUseCase);
 container.registerSingleton("GetJoinedMissionsUseCase", GetJoinedMissionsUseCase);
 container.registerSingleton("UpdateMissionUseCase", UpdateMissionUseCase);
+container.registerSingleton("AddMissionCoverageUseCase", AddMissionCoverageUseCase);
+container.registerSingleton("GetMissionCoverageUseCase", GetMissionCoverageUseCase);
+container.registerSingleton("RemoveVolunteerFromMissionUseCase", RemoveVolunteerFromMissionUseCase);
 container.registerSingleton(GetJoinedMissionsController);
+
 
 
 import { PrismaMissionUpdateRepository } from "@infrastructure/repository/mission/mission-update.repository";
@@ -480,5 +510,27 @@ container.registerSingleton(
 import { GetMissionUpdatesController } from "@presentation/controller/mission/get-mission-updates.controller";
 container.registerSingleton(
   GetMissionUpdatesController
+);
+
+import { ScoreMissionUpdateUseCase } from "@application/usecase/mission-usecase/score-mission-update.usecase";
+container.registerSingleton(
+  "ScoreMissionUpdateUseCase",
+  ScoreMissionUpdateUseCase
+);
+
+import { GetCommentPointValuesUseCase } from "@application/usecase/mission-usecase/get-comment-point-values.usecase";
+container.registerSingleton(
+  "GetCommentPointValuesUseCase",
+  GetCommentPointValuesUseCase
+);
+
+import { ScoreMissionUpdateController } from "@presentation/controller/mission/score-mission-update.controller";
+container.registerSingleton(
+  ScoreMissionUpdateController
+);
+
+import { GetCommentPointValuesController } from "@presentation/controller/mission/get-comment-point-values.controller";
+container.registerSingleton(
+  GetCommentPointValuesController
 );
 
