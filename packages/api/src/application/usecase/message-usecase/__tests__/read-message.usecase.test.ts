@@ -12,10 +12,27 @@ import type { IUserRepository } from "@domain/repositories/IUserRepository";
 const HASH = "$2b$12$abcdefghijklmnopqrstuv.wxyzabcdefghijklmnopqrstuvwxyz12";
 
 const makeUser = (id: number, pub: string): User =>
-  User.reconstruct(id, pub, "t@t.com", "user", HASH, true, new Date(), null, null, null);
+  User.reconstruct(
+    id,
+    pub,
+    "t@t.com",
+    "user",
+    HASH,
+    true,
+    new Date(),
+    null,
+    null,
+    null,
+  );
 
 const makeConv = (u1: number, u2: number): Conversation =>
-  Conversation.create({ conversationId: 1, publicId: "conv-uuid", userOneId: u1, userTwoId: u2, createdAt: new Date() });
+  Conversation.create({
+    conversationId: 1,
+    publicId: "conv-uuid",
+    userOneId: u1,
+    userTwoId: u2,
+    createdAt: new Date(),
+  });
 
 describe("ReadMessageUseCase", () => {
   let convRepo: ConversationRepository;
@@ -24,10 +41,42 @@ describe("ReadMessageUseCase", () => {
   let useCase: ReadMessageUseCase;
 
   beforeEach(() => {
-    convRepo = { findAllByUserId: vi.fn(), findByPublicId: vi.fn(), findByParticipants: vi.fn(), findById: vi.fn(), save: vi.fn(), update: vi.fn(), delete: vi.fn() };
-    msgRepo = { findById: vi.fn(), findByPublicId: vi.fn(), findByConversationId: vi.fn(), findLastMessageByConversationIds: vi.fn(), findUnreadByUserId: vi.fn(), countUnreadByConversationId: vi.fn(), save: vi.fn(), markAsRead: vi.fn(), delete: vi.fn() };
+    convRepo = {
+      findAllByUserId: vi.fn(),
+      findByPublicId: vi.fn(),
+      findByParticipants: vi.fn(),
+      findById: vi.fn(),
+      save: vi.fn(),
+      update: vi.fn(),
+      delete: vi.fn(),
+    };
+    msgRepo = {
+      findById: vi.fn(),
+      findByPublicId: vi.fn(),
+      findByConversationId: vi.fn(),
+      findLastMessageByConversationIds: vi.fn(),
+      findUnreadByUserId: vi.fn(),
+      countUnreadByConversationId: vi.fn(),
+      save: vi.fn(),
+      markAsRead: vi.fn(),
+      delete: vi.fn(),
+    };
     userRepo = {
-      save: vi.fn(), findByEmail: vi.fn(), findRoleByPublicId: vi.fn(), markVerified: vi.fn(), markSuspended: vi.fn(), unsuspend: vi.fn(), findByPublicId: vi.fn(), findByIds: vi.fn(), findById: vi.fn(), updateProfile: vi.fn(), updatePassword: vi.fn(), deleteById: vi.fn(), getProfileStatsByPublicId: vi.fn().mockResolvedValue({
+      save: vi.fn(),
+      findByEmail: vi.fn(),
+      findRoleByPublicId: vi.fn(),
+      markVerified: vi.fn(),
+      markSuspended: vi.fn(),
+      unsuspend: vi.fn(),
+      findByPublicId: vi.fn(),
+      findByIds: vi.fn(),
+      findById: vi.fn(),
+      updateProfile: vi.fn(),
+      updatePassword: vi.fn(),
+      deleteById: vi.fn(),
+      findNotificationCandidates: vi.fn(),
+      updateCurrentLocation: vi.fn(),
+      getProfileStatsByPublicId: vi.fn().mockResolvedValue({
         reportsCreated: 0,
         successfulReturns: 0,
         activeDays: 1,
@@ -59,7 +108,9 @@ describe("ReadMessageUseCase", () => {
   it("lanza ConversationNotFoundError cuando la conversación no existe o no tiene id", async () => {
     vi.mocked(convRepo.findByPublicId).mockResolvedValue(null);
 
-    await expect(useCase.execute("non-existent", "user-uuid")).rejects.toThrow(ConversationNotFoundError);
+    await expect(useCase.execute("non-existent", "user-uuid")).rejects.toThrow(
+      ConversationNotFoundError,
+    );
     expect(msgRepo.markAsRead).not.toHaveBeenCalled();
   });
 
@@ -68,7 +119,9 @@ describe("ReadMessageUseCase", () => {
     vi.mocked(convRepo.findByPublicId).mockResolvedValue(conv);
     vi.mocked(userRepo.findByPublicId).mockResolvedValue(null);
 
-    await expect(useCase.execute("conv-uuid", "non-existent")).rejects.toThrow(UserNotFoundError);
+    await expect(useCase.execute("conv-uuid", "non-existent")).rejects.toThrow(
+      UserNotFoundError,
+    );
     expect(msgRepo.markAsRead).not.toHaveBeenCalled();
   });
 
@@ -79,7 +132,9 @@ describe("ReadMessageUseCase", () => {
     vi.mocked(convRepo.findByPublicId).mockResolvedValue(conv);
     vi.mocked(userRepo.findByPublicId).mockResolvedValue(user);
 
-    await expect(useCase.execute("conv-uuid", "user-uuid")).rejects.toThrow(UnauthorizedConversationError);
+    await expect(useCase.execute("conv-uuid", "user-uuid")).rejects.toThrow(
+      UnauthorizedConversationError,
+    );
     expect(msgRepo.markAsRead).not.toHaveBeenCalled();
   });
 });

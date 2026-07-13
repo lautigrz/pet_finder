@@ -14,6 +14,7 @@ function makeNotification(overrides: Partial<MatchNotification> = {}): MatchNoti
         matchedReportPublicId: "sighting-1",
         matchedImage: "https://img.example.com/1.jpg",
         score: 0.9,
+        seen: false,
         createdAt: "2026-06-19T18:00:00.000Z",
         ...overrides,
     };
