@@ -14,8 +14,8 @@ import { IUserRepository } from "@domain/repositories/IUserRepository";
 import { PetRepository } from "@domain/pet/repositories/pet.repository";
 import { StorageService } from "@application/ports/StorageService";
 import { PetImage } from "@domain/pet/value-objects/image.vo";
-
-import { NotifyNearbyLostOwnersUseCase } from "@application/usecase/notify-nearby-lost-owners/notify-nearby-lost-owners.usecase";
+import type { NotifyNearbyLostOwnersUseCase } from "@application/usecase/notify-nearby-lost-owners/notify-nearby-lost-owners.usecase";
+import type { NotifyNearbySubscribersOfLostReportUseCase } from "@application/usecase/notify-nearby-subscribers-of-lost-report/notify-nearby-subscribers-of-lost-report.usecase";
 
 const TEST_EMAIL = "test.user@example.com";
 
@@ -29,7 +29,7 @@ const fakeUser = User.reconstruct(
   new Date(),
   "Lautaro",
   "Gerez",
-  null
+  null,
 );
 
 const fakePet = Pet.restore({
@@ -44,7 +44,12 @@ const fakePet = Pet.restore({
   hasIdCollar: true,
   isVaccinated: true,
   breed: "Labrador",
-  petImage: [PetImage.create({ cloudinaryId: "fake-id", photoUrl: "https://fake.com/img.jpg" })],
+  petImage: [
+    PetImage.create({
+      cloudinaryId: "fake-id",
+      photoUrl: "https://fake.com/img.jpg",
+    }),
+  ],
   createdAt: new Date(),
 });
 
@@ -61,6 +66,7 @@ describe("CreateReportUseCase", () => {
   let useCase: CreateReportUseCase;
   let storageService: StorageService;
   let notifyNearbyLostOwnersUseCase: NotifyNearbyLostOwnersUseCase;
+  let notifyNearbySubscribersOfLostReportUseCase: NotifyNearbySubscribersOfLostReportUseCase;
 
   beforeEach(() => {
     reportRepository = {
@@ -82,8 +88,8 @@ describe("CreateReportUseCase", () => {
 
     storageService = {
       upload: vi.fn().mockResolvedValue({
-        publicId: 'image1',
-        url: 'https://image1.com',
+        publicId: "image1",
+        url: "https://image1.com",
       }),
     } as unknown as StorageService;
 
@@ -91,12 +97,17 @@ describe("CreateReportUseCase", () => {
       execute: vi.fn().mockResolvedValue(undefined),
     } as unknown as NotifyNearbyLostOwnersUseCase;
 
+    notifyNearbySubscribersOfLostReportUseCase = {
+      execute: vi.fn().mockResolvedValue(undefined),
+    } as unknown as NotifyNearbySubscribersOfLostReportUseCase;
+
     useCase = new CreateReportUseCase(
       reportRepository,
       userRepository,
       petRepository,
       storageService,
-      notifyNearbyLostOwnersUseCase
+      notifyNearbyLostOwnersUseCase,
+      notifyNearbySubscribersOfLostReportUseCase,
     );
   });
 
@@ -110,7 +121,6 @@ describe("CreateReportUseCase", () => {
     };
 
     it("crea y guarda un reporte LOST correctamente", async () => {
-
       await useCase.execute(lostDto, TEST_EMAIL);
 
       expect(reportRepository.save).toHaveBeenCalledOnce();
@@ -119,33 +129,35 @@ describe("CreateReportUseCase", () => {
     it("busca la mascota por publicId si el tipo es LOST", async () => {
       await useCase.execute(lostDto, TEST_EMAIL);
 
-      expect(petRepository.findByPublicId).toHaveBeenCalledWith("pet-public-uuid");
+      expect(petRepository.findByPublicId).toHaveBeenCalledWith(
+        "pet-public-uuid",
+      );
     });
 
     it("lanza error si la mascota no existe", async () => {
-
       vi.mocked(petRepository.findByPublicId).mockResolvedValue(null);
 
-
-      await expect(useCase.execute(lostDto, TEST_EMAIL)).rejects.toThrow("Pet not found");
+      await expect(useCase.execute(lostDto, TEST_EMAIL)).rejects.toThrow(
+        "Pet not found",
+      );
     });
 
     it("lanza error si el usuario no existe", async () => {
       vi.mocked(userRepository.findByPublicId).mockResolvedValue(null);
 
-
-      await expect(useCase.execute(lostDto, TEST_EMAIL)).rejects.toThrow("User not found");
+      await expect(useCase.execute(lostDto, TEST_EMAIL)).rejects.toThrow(
+        "User not found",
+      );
     });
 
     it("lanza InvalidFieldError si occurredAt está en el futuro", async () => {
-
       const futureDto = {
         ...lostDto,
         occurredAt: new Date(Date.now() + 1000 * 60 * 60 * 24),
       };
 
       await expect(useCase.execute(futureDto, TEST_EMAIL)).rejects.toThrow(
-        InvalidFieldError
+        InvalidFieldError,
       );
     });
 
@@ -158,9 +170,7 @@ describe("CreateReportUseCase", () => {
       await useCase.execute(dtoWithImages, TEST_EMAIL);
 
       expect(storageService.upload).not.toHaveBeenCalled();
-      expect(reportRepository.save).toHaveBeenCalledWith(
-        expect.any(Object),
-      );
+      expect(reportRepository.save).toHaveBeenCalledWith(expect.any(Object));
     });
   });
 
@@ -174,11 +184,10 @@ describe("CreateReportUseCase", () => {
       occurredAt: new Date("2024-05-01"),
       location: validLocation,
       description: "Vi un perro suelto en el parque",
-      images: [Buffer.from("fake-img")]
+      images: [Buffer.from("fake-img")],
     };
 
     it("crea y guarda un reporte SIGHTING correctamente", async () => {
-
       await useCase.execute(sightingDto, TEST_EMAIL);
 
       expect(reportRepository.save).toHaveBeenCalledOnce();
@@ -215,7 +224,7 @@ describe("CreateReportUseCase", () => {
       };
 
       await expect(useCase.execute(futureDto, TEST_EMAIL)).rejects.toThrow(
-        InvalidFieldError
+        InvalidFieldError,
       );
     });
 
@@ -228,24 +237,31 @@ describe("CreateReportUseCase", () => {
       await useCase.execute(dtoWithImages, TEST_EMAIL);
 
       expect(storageService.upload).toHaveBeenCalledTimes(2);
-      expect(storageService.upload).toHaveBeenCalledWith(expect.any(Buffer), "reports");
+      expect(storageService.upload).toHaveBeenCalledWith(
+        expect.any(Buffer),
+        "reports",
+      );
     });
 
     it("lanza InvalidFieldError si el SIGHTING no tiene imágenes", async () => {
       await expect(
-        useCase.execute({ ...sightingDto, images: [] }, TEST_EMAIL)
+        useCase.execute({ ...sightingDto, images: [] }, TEST_EMAIL),
       ).rejects.toThrow(InvalidFieldError);
     });
 
     it("propaga el error si el storageService falla al subir imágenes", async () => {
-      vi.mocked(storageService.upload).mockRejectedValue(new Error("Cloudinary down"));
+      vi.mocked(storageService.upload).mockRejectedValue(
+        new Error("Cloudinary down"),
+      );
 
       const dtoWithImages = {
         ...sightingDto,
         images: [Buffer.from("img")],
       };
 
-      await expect(useCase.execute(dtoWithImages, TEST_EMAIL)).rejects.toThrow("Cloudinary down");
+      await expect(useCase.execute(dtoWithImages, TEST_EMAIL)).rejects.toThrow(
+        "Cloudinary down",
+      );
     });
   });
 
@@ -256,14 +272,14 @@ describe("CreateReportUseCase", () => {
         occurredAt: new Date("2024-05-01"),
         location: validLocation,
         description: "Se perdió mi perro",
-
       };
 
-
       await expect(
-        useCase.execute(lostDtoWithoutPetId as Parameters<typeof useCase.execute>[0], TEST_EMAIL)
+        useCase.execute(
+          lostDtoWithoutPetId as Parameters<typeof useCase.execute>[0],
+          TEST_EMAIL,
+        ),
       ).rejects.toThrow("Pet id is required for lost report");
     });
   });
 });
-

@@ -24,14 +24,24 @@ describe("SendPushToUserUseCase", () => {
 
   it("sends the notification to every token of the user", async () => {
     // Given un usuario con dos dispositivos registrados
-    vi.mocked(deviceTokenRepository.findTokensByUser).mockResolvedValue(["token-a", "token-b"]);
+    vi.mocked(deviceTokenRepository.findTokensByUser).mockResolvedValue([
+      "token-a",
+      "token-b",
+    ]);
 
     // When mando el push al usuario
-    await useCase.execute(new SendPushToUserInput("facundo-public-id", notification));
+    await useCase.execute(
+      new SendPushToUserInput("facundo-public-id", notification),
+    );
 
     // Then se busca por publicId y se envía a todos los tokens
-    expect(deviceTokenRepository.findTokensByUser).toHaveBeenCalledWith("facundo-public-id");
-    expect(pushSender.send).toHaveBeenCalledWith(["token-a", "token-b"], notification);
+    expect(deviceTokenRepository.findTokensByUser).toHaveBeenCalledWith(
+      "facundo-public-id",
+    );
+    expect(pushSender.send).toHaveBeenCalledWith(
+      ["token-a", "token-b"],
+      notification,
+    );
   });
 
   it("does not send when the user has no tokens", async () => {
@@ -39,9 +49,31 @@ describe("SendPushToUserUseCase", () => {
     vi.mocked(deviceTokenRepository.findTokensByUser).mockResolvedValue([]);
 
     // When intento mandar el push
-    await useCase.execute(new SendPushToUserInput("facundo-public-id", notification));
+    await useCase.execute(
+      new SendPushToUserInput("facundo-public-id", notification),
+    );
 
     // Then no se llama al sender (no hay a quién mandar)
     expect(pushSender.send).not.toHaveBeenCalled();
+  });
+
+  it("propagates the error when the push sender fails", async () => {
+    // Given
+    vi.mocked(deviceTokenRepository.findTokensByUser).mockResolvedValue([
+      "token-a",
+    ]);
+
+    vi.mocked(pushSender.send).mockRejectedValue(
+      new Error("Firebase unavailable"),
+    );
+
+    // When / Then
+    await expect(
+      useCase.execute(
+        new SendPushToUserInput("facundo-public-id", notification),
+      ),
+    ).rejects.toThrow("Firebase unavailable");
+
+    expect(pushSender.send).toHaveBeenCalledOnce();
   });
 });

@@ -9,11 +9,23 @@ import type { IEmailVerificationTokenRepository } from "../../../../domain/repos
 import type { ITokenGenerator } from "../../../../domain/services/ITokenGenerator";
 import type { IEmailService } from "../../../../domain/services/IEmailService";
 
-const VALID_BCRYPT_HASH = "$2b$12$abcdefghijklmnopqrstuv.wxyzabcdefghijklmnopqrstuvwxyz12";
+const VALID_BCRYPT_HASH =
+  "$2b$12$abcdefghijklmnopqrstuv.wxyzabcdefghijklmnopqrstuvwxyz12";
 const VALID_TOKEN = "a".repeat(64);
 
 const persistedUser = (email: string, username: string): User =>
-  User.reconstruct(42, "uuid-fake", email, username, VALID_BCRYPT_HASH, false, new Date(), null, null, null);
+  User.reconstruct(
+    42,
+    "uuid-fake",
+    email,
+    username,
+    VALID_BCRYPT_HASH,
+    false,
+    new Date(),
+    null,
+    null,
+    null,
+  );
 
 describe("RegisterUserUseCase", () => {
   let userRepository: IUserRepository;
@@ -25,9 +37,20 @@ describe("RegisterUserUseCase", () => {
 
   beforeEach(() => {
     userRepository = {
-      save: vi.fn(), findByEmail: vi.fn(), findRoleByPublicId: vi.fn(), markVerified: vi.fn(), markSuspended: vi.fn(), unsuspend: vi.fn(),
-      findByPublicId: vi.fn(), updateProfile: vi.fn(), findById: vi.fn(),
-      updatePassword: vi.fn(), findByIds: vi.fn(), deleteById: vi.fn(),
+      save: vi.fn(),
+      findByEmail: vi.fn(),
+      findRoleByPublicId: vi.fn(),
+      markVerified: vi.fn(),
+      markSuspended: vi.fn(),
+      unsuspend: vi.fn(),
+      findByPublicId: vi.fn(),
+      updateProfile: vi.fn(),
+      findById: vi.fn(),
+      updatePassword: vi.fn(),
+      findByIds: vi.fn(),
+      deleteById: vi.fn(),
+      findNotificationCandidates: vi.fn(),
+      updateCurrentLocation: vi.fn(),
       getProfileStatsByPublicId: vi.fn().mockResolvedValue({
         reportsCreated: 0,
         successfulReturns: 0,
@@ -36,24 +59,50 @@ describe("RegisterUserUseCase", () => {
       }),
     };
     passwordHasher = { hash: vi.fn(), verify: vi.fn() };
-    tokenRepository = { save: vi.fn(), findByValue: vi.fn(), markAsUsed: vi.fn() };
+    tokenRepository = {
+      save: vi.fn(),
+      findByValue: vi.fn(),
+      markAsUsed: vi.fn(),
+    };
     tokenGenerator = { generate: vi.fn() };
-    emailService = { sendVerificationLink: vi.fn(), sendPasswordResetLink: vi.fn(), sendMatchAlert: vi.fn(), sendFeaturedPaymentReceipt: vi.fn(), sendPublicationRemovedNotice: vi.fn(), sendAccountSuspendedNotice: vi.fn(), sendAppealAcceptedNotice: vi.fn(), sendAppealRejectedNotice: vi.fn() };
-    useCase = new RegisterUserUseCase(userRepository, passwordHasher, tokenRepository, tokenGenerator, emailService);
+    emailService = {
+      sendVerificationLink: vi.fn(),
+      sendPasswordResetLink: vi.fn(),
+      sendMatchAlert: vi.fn(),
+      sendFeaturedPaymentReceipt: vi.fn(),
+      sendPublicationRemovedNotice: vi.fn(),
+      sendAccountSuspendedNotice: vi.fn(),
+      sendAppealAcceptedNotice: vi.fn(),
+      sendAppealRejectedNotice: vi.fn(),
+    };
+    useCase = new RegisterUserUseCase(
+      userRepository,
+      passwordHasher,
+      tokenRepository,
+      tokenGenerator,
+      emailService,
+    );
   });
 
   describe("when email is available", () => {
     it("creates the user, sends the verification link and returns the public id", async () => {
       vi.mocked(userRepository.findByEmail).mockResolvedValue(null);
       vi.mocked(passwordHasher.hash).mockResolvedValue(VALID_BCRYPT_HASH);
-      vi.mocked(userRepository.save).mockResolvedValue(persistedUser("juan@example.com", "juancho"));
+      vi.mocked(userRepository.save).mockResolvedValue(
+        persistedUser("juan@example.com", "juancho"),
+      );
       vi.mocked(tokenGenerator.generate).mockReturnValue(VALID_TOKEN);
 
-      const output = await useCase.execute(new RegisterUserInput("juan@example.com", "juancho", "miPass123"));
+      const output = await useCase.execute(
+        new RegisterUserInput("juan@example.com", "juancho", "miPass123"),
+      );
 
       expect(userRepository.save).toHaveBeenCalledOnce();
       expect(tokenRepository.save).toHaveBeenCalledOnce();
-      expect(emailService.sendVerificationLink).toHaveBeenCalledWith("juan@example.com", VALID_TOKEN);
+      expect(emailService.sendVerificationLink).toHaveBeenCalledWith(
+        "juan@example.com",
+        VALID_TOKEN,
+      );
       expect(userRepository.deleteById).not.toHaveBeenCalled();
       expect(output.userId).toBe("uuid-fake");
     });
@@ -64,7 +113,9 @@ describe("RegisterUserUseCase", () => {
       vi.mocked(userRepository.findByEmail).mockResolvedValue({} as never);
 
       const accion = () =>
-        useCase.execute(new RegisterUserInput("juan@example.com", "juancho", "miPass123"));
+        useCase.execute(
+          new RegisterUserInput("juan@example.com", "juancho", "miPass123"),
+        );
 
       await expect(accion).rejects.toThrow(EmailAlreadyExistsError);
       expect(userRepository.save).not.toHaveBeenCalled();
@@ -76,12 +127,18 @@ describe("RegisterUserUseCase", () => {
     it("rolls back the created user and propagates the error", async () => {
       vi.mocked(userRepository.findByEmail).mockResolvedValue(null);
       vi.mocked(passwordHasher.hash).mockResolvedValue(VALID_BCRYPT_HASH);
-      vi.mocked(userRepository.save).mockResolvedValue(persistedUser("juan@example.com", "juancho"));
+      vi.mocked(userRepository.save).mockResolvedValue(
+        persistedUser("juan@example.com", "juancho"),
+      );
       vi.mocked(tokenGenerator.generate).mockReturnValue(VALID_TOKEN);
-      vi.mocked(emailService.sendVerificationLink).mockRejectedValue(new Error("smtp down"));
+      vi.mocked(emailService.sendVerificationLink).mockRejectedValue(
+        new Error("smtp down"),
+      );
 
       const accion = () =>
-        useCase.execute(new RegisterUserInput("juan@example.com", "juancho", "miPass123"));
+        useCase.execute(
+          new RegisterUserInput("juan@example.com", "juancho", "miPass123"),
+        );
 
       await expect(accion).rejects.toThrow("smtp down");
       expect(userRepository.deleteById).toHaveBeenCalledWith(42);

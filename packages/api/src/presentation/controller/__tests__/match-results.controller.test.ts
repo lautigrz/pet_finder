@@ -56,6 +56,7 @@ const fakeNotifications = [
         matchedReportPublicId: "sighting-uuid-1",
         matchedImage: "https://img.example.com/cat.jpg",
         score: 0.9,
+        seen: false,
         createdAt: "2026-06-19T18:00:00.000Z",
     },
 ];
