@@ -173,6 +173,14 @@ export class PrismaUserRepository implements IUserRepository, IUserExperienceRep
     return record?.role?.name.trim() ?? null;
   }
 
+  async findAdminEmails(): Promise<string[]> {
+    const records = await this.prisma.user.findMany({
+      where: { role: { name: "ADMIN" } },
+      select: { email: true },
+    });
+    return records.map((record) => record.email);
+  }
+
   async updateProfile(
     publicId: string,
     data: {

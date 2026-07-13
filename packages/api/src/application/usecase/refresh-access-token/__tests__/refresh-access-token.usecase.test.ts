@@ -47,6 +47,7 @@ describe("RefreshAccessTokenUseCase", () => {
       save: vi.fn(),
       findByEmail: vi.fn(),
       findRoleByPublicId: vi.fn(),
+      findAdminEmails: vi.fn(),
       markVerified: vi.fn(),
       markSuspended: vi.fn(),
       unsuspend: vi.fn(),

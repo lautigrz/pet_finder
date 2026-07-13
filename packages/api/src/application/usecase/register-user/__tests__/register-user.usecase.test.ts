@@ -40,6 +40,7 @@ describe("RegisterUserUseCase", () => {
       save: vi.fn(),
       findByEmail: vi.fn(),
       findRoleByPublicId: vi.fn(),
+      findAdminEmails: vi.fn(),
       markVerified: vi.fn(),
       markSuspended: vi.fn(),
       unsuspend: vi.fn(),
@@ -74,6 +75,7 @@ describe("RegisterUserUseCase", () => {
       sendAccountSuspendedNotice: vi.fn(),
       sendAppealAcceptedNotice: vi.fn(),
       sendAppealRejectedNotice: vi.fn(),
+      sendContentFlaggedAlert: vi.fn(),
     };
     useCase = new RegisterUserUseCase(
       userRepository,

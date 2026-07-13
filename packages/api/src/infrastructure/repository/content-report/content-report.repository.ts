@@ -227,7 +227,7 @@ export class PrismaContentReportRepository implements ContentReportRepository {
                 select: {
                     public_id: true,
                     report_type_id: true,
-                    user: { select: { username: true } },
+                    user: { select: { user_id: true, public_id: true, username: true, exp: true } },
                     lost_report_detail: { select: { pet: { select: { pet_name: true } } } },
                     sighting_report_detail: { select: { pet_name: true } },
                 },
@@ -238,13 +238,13 @@ export class PrismaContentReportRepository implements ContentReportRepository {
                     public_id: true,
                     user_one_id: true,
                     user_two_id: true,
-                    user_one: { select: { username: true } },
-                    user_two: { select: { username: true } },
+                    user_one: { select: { user_id: true, public_id: true, username: true, exp: true } },
+                    user_two: { select: { user_id: true, public_id: true, username: true, exp: true } },
                 },
             }),
             this.prisma.user.findMany({
                 where: { public_id: { in: userPublicIds } },
-                select: { public_id: true, username: true },
+                select: { user_id: true, public_id: true, username: true, exp: true },
             }),
             this.prisma.contentReport.groupBy({
                 by: ["target_type_id", "target_public_id"],
@@ -253,7 +253,7 @@ export class PrismaContentReportRepository implements ContentReportRepository {
             }),
         ]);
 
-        const ownerByPostPublicId = new Map(reports.map((r) => [r.public_id, r.user.username]));
+        const ownerByPostPublicId = new Map(reports.map((r) => [r.public_id, r.user]));
         const contentByPostPublicId = new Map(
             reports.map((r) => [
                 r.public_id,
@@ -267,31 +267,58 @@ export class PrismaContentReportRepository implements ContentReportRepository {
             ]),
         );
         const conversationByPublicId = new Map(conversations.map((c) => [c.public_id, c]));
-        const usernameByUserPublicId = new Map(reportedUsers.map((u) => [u.public_id, u.username]));
+        const userByPublicId = new Map(reportedUsers.map((u) => [u.public_id, u]));
         const countByTarget = new Map(
             grouped.map((g) => [`${g.target_type_id}:${g.target_public_id}`, g._count._all]),
         );
 
-        return rows.map((row) => {
-            let reportedUsername: string | null = null;
+        const resolveReportedUser = (row: (typeof rows)[number]) => {
             if (row.target_type_id === postTypeId) {
-                reportedUsername = ownerByPostPublicId.get(row.target_public_id) ?? null;
-            } else if (row.target_type_id === userTypeId) {
-                reportedUsername = usernameByUserPublicId.get(row.target_public_id) ?? null;
-            } else {
-                const conversation = conversationByPublicId.get(row.target_public_id);
-                if (conversation) {
-                    reportedUsername =
-                        conversation.user_one_id === row.reporter_user_id
-                            ? conversation.user_two.username
-                            : conversation.user_one.username;
-                }
+                return ownerByPostPublicId.get(row.target_public_id) ?? null;
             }
+            if (row.target_type_id === userTypeId) {
+                return userByPublicId.get(row.target_public_id) ?? null;
+            }
+            const conversation = conversationByPublicId.get(row.target_public_id);
+            if (!conversation) return null;
+            return conversation.user_one_id === row.reporter_user_id
+                ? conversation.user_two
+                : conversation.user_one;
+        };
 
+        const reportedUserByRow = rows.map(resolveReportedUser);
+        const reportedUserIds = [
+            ...new Set(reportedUserByRow.flatMap((u) => (u ? [u.user_id] : []))),
+        ];
+
+        const ratingGroups = reportedUserIds.length > 0
+            ? await this.prisma.userReview.groupBy({
+                by: ["reviewed_user_id"],
+                where: { reviewed_user_id: { in: reportedUserIds }, reviewer: { is_suspended: false } },
+                _avg: { rating: true },
+                _count: { rating: true },
+            })
+            : [];
+        const ratingByUserId = new Map(
+            ratingGroups.map((g) => [
+                g.reviewed_user_id,
+                { average: g._avg.rating ? Number(g._avg.rating.toFixed(2)) : 0, count: g._count.rating },
+            ]),
+        );
+
+        return rows.map((row, index) => {
+            const reported = reportedUserByRow[index];
             return {
                 report: ContentReportMapper.toDomain(row),
                 reporter: { publicId: row.reporter.public_id, username: row.reporter.username },
-                reportedUser: reportedUsername ? { username: reportedUsername } : null,
+                reportedUser: reported
+                    ? {
+                        username: reported.username,
+                        publicId: reported.public_id,
+                        xp: reported.exp,
+                        rating: ratingByUserId.get(reported.user_id) ?? { average: 0, count: 0 },
+                    }
+                    : null,
                 reportedContent:
                     row.target_type_id === postTypeId
                         ? contentByPostPublicId.get(row.target_public_id) ?? null

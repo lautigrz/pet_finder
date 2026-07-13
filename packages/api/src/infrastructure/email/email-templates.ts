@@ -1,5 +1,6 @@
 import { PETFINDER_LOGO_CID, PETFINDER_ISOTIPO_CID } from "./email-logo-asset";
 import { AppealTargetType } from "@domain/appeal/types/appeal-target-type";
+import { ContentReportTargetType } from "@domain/content-report/types/content-report-target-type";
 
 const ORANGE = "#E8842E";
 const NAVY = "#12355B";
@@ -81,6 +82,20 @@ export function appealRejectedEmail(targetType: AppealTargetType): string {
     heading("Tu apelación fue rechazada") +
     text(`Revisamos tu apelación y se mantuvo ${detail}. La decisión es definitiva.`) +
     note("Si tenés dudas, respondé a este correo."));
+}
+
+export function contentFlaggedEmail(targetType: ContentReportTargetType, adminUrl: string): string {
+  const label =
+    targetType === ContentReportTargetType.POST
+      ? "Una publicación"
+      : targetType === ContentReportTargetType.CHAT
+        ? "Un chat"
+        : "Un usuario";
+  return shell(
+    heading("Contenido marcado para revisión") +
+    text(`${label} acumuló varias denuncias y quedó marcado automáticamente para revisión en PetFinder.`) +
+    buttonRow("Ir al panel de moderación", adminUrl) +
+    note("Revisá el caso en el panel de administración."));
 }
 
 function shell(bodyHtml: string): string {

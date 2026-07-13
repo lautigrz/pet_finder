@@ -10,6 +10,12 @@ export interface ContentReportReporter {
 
 export interface ContentReportReportedUser {
     username: string;
+    publicId: string;
+    xp: number;
+    rating: {
+        average: number;
+        count: number;
+    };
 }
 
 export interface ContentReportReportedContent {

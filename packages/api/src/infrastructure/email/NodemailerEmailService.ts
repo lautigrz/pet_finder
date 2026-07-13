@@ -1,8 +1,9 @@
 import { Transporter } from "nodemailer";
 import { IEmailService } from "@domain/services/IEmailService";
 import { EmailAddress } from "@domain/shared/email/email-address.vo";
-import { verificationEmail, passwordResetEmail, matchAlertEmail, featuredPaymentReceiptEmail, publicationRemovedEmail, accountSuspendedEmail, appealAcceptedEmail, appealRejectedEmail } from "./email-templates";
+import { verificationEmail, passwordResetEmail, matchAlertEmail, featuredPaymentReceiptEmail, publicationRemovedEmail, accountSuspendedEmail, appealAcceptedEmail, appealRejectedEmail, contentFlaggedEmail } from "./email-templates";
 import { AppealTargetType } from "@domain/appeal/types/appeal-target-type";
+import { ContentReportTargetType } from "@domain/content-report/types/content-report-target-type";
 import { PETFINDER_LOGO_BASE64, PETFINDER_LOGO_CID, PETFINDER_ISOTIPO_BASE64, PETFINDER_ISOTIPO_CID } from "./email-logo-asset";
 
 type MailSender = Pick<Transporter, "sendMail">;
@@ -52,6 +53,10 @@ export class NodemailerEmailService implements IEmailService {
 
   async sendAppealRejectedNotice(toEmail: string, targetType: AppealTargetType): Promise<void> {
     await this.send(toEmail, "Novedades de tu apelación en PetFinder", appealRejectedEmail(targetType));
+  }
+
+  async sendContentFlaggedAlert(toEmail: string, targetType: ContentReportTargetType): Promise<void> {
+    await this.send(toEmail, "Contenido marcado para revisión en PetFinder", contentFlaggedEmail(targetType, `${this.appBaseUrl}/admin`));
   }
 
   private async send(toEmail: string, subject: string, html: string, extraImages: InlineImage[] = []): Promise<void> {

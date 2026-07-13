@@ -3,6 +3,8 @@ import type { ContentReportRepository } from "@domain/content-report/repositorie
 import { ContentReportStatus } from "@domain/content-report/types/content-report-status";
 import { ContentReportQueueItemOutput } from "./dto/content-report-queue.output";
 
+const XP_PER_LEVEL = 100;
+
 @injectable()
 export class GetContentReportQueueUseCase {
     constructor(
@@ -24,7 +26,15 @@ export class GetContentReportQueueUseCase {
             autoFlagged: report.autoFlagged,
             createdAt: report.createdAt,
             reportCount,
-            reportedUser,
+            reportedUser: reportedUser
+                ? {
+                    username: reportedUser.username,
+                    publicId: reportedUser.publicId,
+                    xp: reportedUser.xp,
+                    level: Math.floor(reportedUser.xp / XP_PER_LEVEL) + 1,
+                    rating: reportedUser.rating,
+                }
+                : null,
             reportedContent,
             reporter: {
                 publicId: reporter.publicId,

@@ -1,5 +1,6 @@
 import { IEmailService } from "../../domain/services/IEmailService";
 import { AppealTargetType } from "../../domain/appeal/types/appeal-target-type";
+import { ContentReportTargetType } from "../../domain/content-report/types/content-report-target-type";
 import { logger } from '@pet-alert/shared';
 
 const APP_BASE_URL = process.env.APP_BASE_URL ?? "http://localhost:4200";
@@ -39,5 +40,9 @@ export class LogEmailService implements IEmailService {
 
   async sendAppealRejectedNotice(toEmail: string, targetType: AppealTargetType): Promise<void> {
     logger.info(`[EMAIL MOCK] Apelación rechazada (${targetType}) para ${toEmail}`);
+  }
+
+  async sendContentFlaggedAlert(toEmail: string, targetType: ContentReportTargetType): Promise<void> {
+    logger.info(`[EMAIL MOCK] Contenido marcado para revisión (${targetType}) para ${toEmail}: ${APP_BASE_URL}/admin`);
   }
 }
