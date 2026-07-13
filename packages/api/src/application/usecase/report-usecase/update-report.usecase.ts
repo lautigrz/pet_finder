@@ -8,8 +8,10 @@ import { Location } from '@domain/report/value-objects/location.vo';
 import { LostReportDetails } from '@domain/report/value-objects/lost-report-details.vo';
 import { ReportNotFoundError } from '@domain/errors/ReportNotFoundError';
 import { UnauthorizedReportEditError } from '@domain/errors/UnauthorizedReportEditError';
+import { ReportClosedError } from '@domain/errors/ReportClosedError';
 import { InvalidFieldError } from '@application/errors/errors';
 import { ReportType, ReportTypeToNumber } from '@domain/report/types/report.type';
+import { ReportStatus } from '@domain/report/types/report.status';
 import { SightingReportDetails } from '@domain/report/value-objects/sighting-report-details.vo';
 import { SightingImage } from '@domain/report/value-objects/sighting.images';
 import type { StorageService } from '@application/ports/StorageService';
@@ -32,6 +34,7 @@ export class UpdateReportUseCase {
   async execute(dto: UpdateReportDTO, userPublicId: string): Promise<void> {
     const report = await this.findReportOrFail(dto.publicId);
     this.validateAuthorization(report, userPublicId);
+    this.validateEditable(report);
 
     const pet = await this.loadLostPetIfNeeded(dto, report);
     const { allImages, imagesChanged } = await this.handleImages(dto, report);
@@ -56,6 +59,12 @@ export class UpdateReportUseCase {
   private validateAuthorization(report: Report, userPublicId: string): void {
     if (report.userPublicId !== userPublicId) {
       throw new UnauthorizedReportEditError();
+    }
+  }
+
+  private validateEditable(report: Report): void {
+    if (report.status !== ReportStatus.ACTIVE) {
+      throw new ReportClosedError(report.publicId);
     }
   }
 
