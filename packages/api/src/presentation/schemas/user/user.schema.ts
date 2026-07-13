@@ -31,6 +31,14 @@ export const updateProfileRequestSchema = z.object({
     ),
 });
 
+
+export const updateCurrentLocationRequestSchema = z.object({
+    body: z.object({
+        latitude: z.number().min(-90).max(90),
+        longitude: z.number().min(-180).max(180),
+    }),
+});
+
 export const updateNotificationPreferencesRequestSchema = z.object({
     body: z.object({
         notificationRadius: z.number().int().min(1).max(100).optional(),
@@ -61,5 +69,6 @@ export const listUserReviewsRequestSchema = z.object({
 export type CreateUserBody = z.infer<typeof createUserRequestSchema>['body'];
 export type VerifyEmailBody = z.infer<typeof verifyEmailRequestSchema>['body'];
 export type UpdateProfileBody = z.infer<typeof updateProfileRequestSchema>['body'];
+export type UpdateCurrentLocationBody = z.infer<typeof updateCurrentLocationRequestSchema>['body'];
 export type UpdateNotificationPreferencesBody = z.infer<typeof updateNotificationPreferencesRequestSchema>['body'];
 export type CreateUserReviewBody = z.infer<typeof createUserReviewRequestSchema>['body'];

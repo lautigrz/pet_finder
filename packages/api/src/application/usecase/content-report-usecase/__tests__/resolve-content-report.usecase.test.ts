@@ -102,6 +102,7 @@ describe("ResolveContentReportUseCase", () => {
       findByPublicId: vi.fn(),
       update: vi.fn(),
       closeAllByUserId: vi.fn(),
+      reopenModerationClosedByUserId: vi.fn(),
       findPublicIdsByUserId: vi.fn().mockResolvedValue([]),
     } as unknown as ReportRepository;
 
@@ -251,15 +252,72 @@ describe("ResolveContentReportUseCase", () => {
     expect(contentReportRepository.suspendOpenByTarget).not.toHaveBeenCalled();
   });
 
-  it("revertir a PENDING marca la denuncia como PENDING sin tocar el reporte", async () => {
+  it("revertir a PENDING una denuncia aprobada reabre la publicación", async () => {
     const denuncia = fakeContentReport();
     denuncia.approve();
+    const publicacion = fakeReport(ReportStatus.CLOSED);
+    vi.mocked(contentReportRepository.findByPublicId).mockResolvedValue(denuncia);
+    vi.mocked(reportRepository.findByPublicId).mockResolvedValue(publicacion);
+
+    await useCase.execute({ publicId: "denuncia-uuid", status: ContentReportStatus.PENDING });
+
+    expect(denuncia.status).toBe(ContentReportStatus.PENDING);
+    expect(publicacion.status).toBe(ReportStatus.ACTIVE);
+    expect(publicacion.closedByModeration).toBe(false);
+    expect(reportRepository.update).toHaveBeenCalledWith(publicacion);
+  });
+
+  it("revertir a DISMISSED una denuncia aprobada reabre la publicación", async () => {
+    const denuncia = fakeContentReport();
+    denuncia.approve();
+    const publicacion = fakeReport(ReportStatus.CLOSED);
+    vi.mocked(contentReportRepository.findByPublicId).mockResolvedValue(denuncia);
+    vi.mocked(reportRepository.findByPublicId).mockResolvedValue(publicacion);
+
+    await useCase.execute({ publicId: "denuncia-uuid", status: ContentReportStatus.DISMISSED });
+
+    expect(denuncia.status).toBe(ContentReportStatus.DISMISSED);
+    expect(publicacion.status).toBe(ReportStatus.ACTIVE);
+    expect(reportRepository.update).toHaveBeenCalledWith(publicacion);
+  });
+
+  it("revertir a PENDING una denuncia de perfil suspendida reactiva la cuenta y sus publicaciones", async () => {
+    const denuncia = fakeContentReport(ContentReportTargetType.USER);
+    denuncia.suspend("motivo");
+    const usuario = fakeUser(true);
+    vi.mocked(contentReportRepository.findByPublicId).mockResolvedValue(denuncia);
+    vi.mocked(userRepository.findByPublicId).mockResolvedValue(usuario);
+
+    await useCase.execute({ publicId: "denuncia-uuid", status: ContentReportStatus.PENDING });
+
+    expect(denuncia.status).toBe(ContentReportStatus.PENDING);
+    expect(userRepository.unsuspend).toHaveBeenCalledWith(9);
+    expect(reportRepository.reopenModerationClosedByUserId).toHaveBeenCalledWith(9);
+  });
+
+  it("revertir a PENDING una denuncia de chat suspendida reactiva la conversación", async () => {
+    const denuncia = fakeContentReport(ContentReportTargetType.CHAT);
+    denuncia.suspend("motivo");
+    const conversacion = fakeConversation(true);
+    vi.mocked(contentReportRepository.findByPublicId).mockResolvedValue(denuncia);
+    vi.mocked(conversationRepository.findByPublicId).mockResolvedValue(conversacion);
+
+    await useCase.execute({ publicId: "denuncia-uuid", status: ContentReportStatus.PENDING });
+
+    expect(denuncia.status).toBe(ContentReportStatus.PENDING);
+    expect(conversacion.isSuspended).toBe(false);
+    expect(conversationRepository.update).toHaveBeenCalledWith(conversacion);
+  });
+
+  it("revertir a PENDING una denuncia que seguía pendiente no toca el contenido", async () => {
+    const denuncia = fakeContentReport();
     vi.mocked(contentReportRepository.findByPublicId).mockResolvedValue(denuncia);
 
     await useCase.execute({ publicId: "denuncia-uuid", status: ContentReportStatus.PENDING });
 
     expect(denuncia.status).toBe(ContentReportStatus.PENDING);
     expect(reportRepository.findByPublicId).not.toHaveBeenCalled();
+    expect(reportRepository.update).not.toHaveBeenCalled();
   });
 
   it("suspender una publicación suspende al autor y cascadea TODAS sus denuncias con el motivo", async () => {

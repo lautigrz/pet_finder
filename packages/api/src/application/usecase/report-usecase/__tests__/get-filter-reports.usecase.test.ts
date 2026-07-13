@@ -407,4 +407,45 @@ describe("GetFilteredReportsUseCase", () => {
 
     expect(result.map((r) => r.publicId)).toEqual(["report-cerca"]);
   });
+
+  it("ubica los reportes destacados primero y no pierde ni duplica ninguno", async () => {
+    const build = (idReport: number, publicId: string, featured: boolean) =>
+      Report.restore({
+        idReport,
+        publicId,
+        userId: 5,
+        userPublicId: "user-pub-id",
+        type: ReportType.SIGHTING,
+        currentStatus: ReportStatus.ACTIVE,
+        description: null,
+        details: SightingReportDetails.create({
+          animalType: AnimalType.DOG,
+          hasIdCollar: false,
+          color: "black",
+          isInTransit: false,
+          images: [SightingImage.create({ cloudinaryId: "fake-id", photoUrl: "https://fake.com/img.jpg" })],
+        }),
+        location: validLocation,
+        occurredAt: new Date("2024-05-01"),
+        createdAt: new Date("2024-05-01"),
+        updatedAt: null,
+        featured,
+      });
+
+    const reports = [
+      build(50, "normal-1", false),
+      build(51, "dest-1", true),
+      build(52, "normal-2", false),
+      build(53, "dest-2", true),
+    ];
+
+    vi.mocked(reportRepository.findIdsByQuery).mockResolvedValue(reports.map((r) => r.publicId));
+    vi.mocked(reportRepository.findByIds).mockResolvedValue(reports.map((report) => ({ report })));
+
+    const orderedIds = (await useCase.execute({})).map((r) => r.publicId);
+
+    expect(orderedIds.slice(0, 2).sort()).toEqual(["dest-1", "dest-2"]);
+    expect(orderedIds.slice(2).sort()).toEqual(["normal-1", "normal-2"]);
+    expect(new Set(orderedIds).size).toBe(4);
+  });
 });

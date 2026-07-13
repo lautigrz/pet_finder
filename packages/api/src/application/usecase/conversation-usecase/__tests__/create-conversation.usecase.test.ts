@@ -8,10 +8,22 @@ import { User } from "@domain/entities/User";
 import type { ConversationRepository } from "@domain/conversation/repositories/conversation.repository";
 import type { IUserRepository } from "@domain/repositories/IUserRepository";
 
-const VALID_BCRYPT_HASH = "$2b$12$abcdefghijklmnopqrstuv.wxyzabcdefghijklmnopqrstuvwxyz12";
+const VALID_BCRYPT_HASH =
+  "$2b$12$abcdefghijklmnopqrstuv.wxyzabcdefghijklmnopqrstuvwxyz12";
 
 const makeUser = (internalId: number, publicId: string): User =>
-  User.reconstruct(internalId, publicId, "test@test.com", "testuser", VALID_BCRYPT_HASH, true, new Date(), null, null, null);
+  User.reconstruct(
+    internalId,
+    publicId,
+    "test@test.com",
+    "testuser",
+    VALID_BCRYPT_HASH,
+    true,
+    new Date(),
+    null,
+    null,
+    null,
+  );
 
 const makeConversation = (): Conversation =>
   Conversation.create({
@@ -39,14 +51,22 @@ describe("CreateConversationUseCase", () => {
     };
     userRepository = {
       save: vi.fn(),
-      findByEmail: vi.fn(), findRoleByPublicId: vi.fn(),
-      markVerified: vi.fn(), markSuspended: vi.fn(), unsuspend: vi.fn(),
+      findByEmail: vi.fn(),
+      findRoleByPublicId: vi.fn(),
+      findAdminEmails: vi.fn(),
+      markVerified: vi.fn(),
+      markSuspended: vi.fn(),
+      unsuspend: vi.fn(),
       findByPublicId: vi.fn(),
       findByIds: vi.fn(),
       findById: vi.fn(),
       updateProfile: vi.fn(),
       updatePassword: vi.fn(),
       deleteById: vi.fn(),
+
+      findNotificationCandidates: vi.fn(),
+      updateCurrentLocation: vi.fn(),
+
       getProfileStatsByPublicId: vi.fn().mockResolvedValue({
         reportsCreated: 0,
         successfulReturns: 0,
@@ -54,7 +74,10 @@ describe("CreateConversationUseCase", () => {
         petsHelped: 0,
       }),
     };
-    useCase = new CreateConversationUseCase(conversationRepository, userRepository);
+    useCase = new CreateConversationUseCase(
+      conversationRepository,
+      userRepository,
+    );
   });
 
   it("crea una conversación y retorna publicId y createdAt", async () => {
@@ -64,8 +87,12 @@ describe("CreateConversationUseCase", () => {
     vi.mocked(userRepository.findByPublicId)
       .mockResolvedValueOnce(requester)
       .mockResolvedValueOnce(target);
-    vi.mocked(conversationRepository.findByParticipants).mockResolvedValue(null);
-    vi.mocked(conversationRepository.save).mockImplementation(async (conv) => conv);
+    vi.mocked(conversationRepository.findByParticipants).mockResolvedValue(
+      null,
+    );
+    vi.mocked(conversationRepository.save).mockImplementation(
+      async (conv) => conv,
+    );
 
     const result = await useCase.execute({
       publicRequesterId: "requester-uuid",
@@ -84,7 +111,7 @@ describe("CreateConversationUseCase", () => {
       useCase.execute({
         publicRequesterId: "non-existent",
         publicTargetId: "target-uuid",
-      })
+      }),
     ).rejects.toThrow(UserNotFoundError);
 
     expect(conversationRepository.save).not.toHaveBeenCalled();
@@ -100,7 +127,7 @@ describe("CreateConversationUseCase", () => {
       useCase.execute({
         publicRequesterId: "requester-uuid",
         publicTargetId: "non-existent",
-      })
+      }),
     ).rejects.toThrow(UserNotFoundError);
 
     expect(conversationRepository.save).not.toHaveBeenCalled();
@@ -117,7 +144,7 @@ describe("CreateConversationUseCase", () => {
       useCase.execute({
         publicRequesterId: "same-uuid",
         publicTargetId: "same-uuid",
-      })
+      }),
     ).rejects.toThrow(InvalidConversationWithItself);
 
     expect(conversationRepository.save).not.toHaveBeenCalled();
@@ -130,13 +157,15 @@ describe("CreateConversationUseCase", () => {
     vi.mocked(userRepository.findByPublicId)
       .mockResolvedValueOnce(requester)
       .mockResolvedValueOnce(target);
-    vi.mocked(conversationRepository.findByParticipants).mockResolvedValue(makeConversation());
+    vi.mocked(conversationRepository.findByParticipants).mockResolvedValue(
+      makeConversation(),
+    );
 
     await expect(
       useCase.execute({
         publicRequesterId: "requester-uuid",
         publicTargetId: "target-uuid",
-      })
+      }),
     ).rejects.toThrow(ConversationAlreadyExistsError);
 
     expect(conversationRepository.save).not.toHaveBeenCalled();

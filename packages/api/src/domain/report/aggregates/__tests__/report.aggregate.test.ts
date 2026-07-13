@@ -9,6 +9,7 @@ import { SightingReportDetails } from "@domain/report/value-objects/sighting-rep
 import { AnimalType } from "@domain/shared/animal-type/animal-type";
 import { InvalidStatusTransitionError } from "@domain/errors/InvalidStatusTransitionError";
 import { InvalidReportDetailsError } from "@domain/errors/InvalidReportDetailsError";
+import { InvalidFieldError } from "@domain/errors/InvalidFieldError";
 import { SightingImage } from "@domain/report/value-objects/sighting.images";
 
 const validLocation = Location.create({
@@ -155,6 +156,55 @@ describe("Report.resolve", () => {
     const report = Report.create(baseLostParams);
     report.close();
     expect(() => report.resolve(true)).toThrow(InvalidStatusTransitionError);
+  });
+
+  it("usa la fecha de cierre provista como resolvedAt", () => {
+    const report = Report.restore({
+      idReport: 1,
+      publicId: "report-uuid",
+      userId: 1,
+      userPublicId: "user-uuid",
+      type: ReportType.LOST,
+      currentStatus: ReportStatus.ACTIVE,
+      description: null,
+      details: lostDetails,
+      location: validLocation,
+      occurredAt: new Date("2024-03-10"),
+      createdAt: new Date("2024-03-10"),
+      updatedAt: null,
+    });
+
+    const closeDate = new Date("2024-03-15");
+    report.resolve(true, closeDate);
+
+    expect(report.resolvedAt).toBe(closeDate);
+  });
+
+  it("lanza InvalidFieldError si la fecha de cierre es futura", () => {
+    const report = Report.create(baseLostParams);
+    const future = new Date();
+    future.setDate(future.getDate() + 2);
+
+    expect(() => report.resolve(true, future)).toThrow(InvalidFieldError);
+  });
+
+  it("lanza InvalidFieldError si la fecha de cierre es anterior a la creación del reporte", () => {
+    const report = Report.restore({
+      idReport: 1,
+      publicId: "report-uuid",
+      userId: 1,
+      userPublicId: "user-uuid",
+      type: ReportType.LOST,
+      currentStatus: ReportStatus.ACTIVE,
+      description: null,
+      details: lostDetails,
+      location: validLocation,
+      occurredAt: new Date("2024-03-10"),
+      createdAt: new Date("2024-03-10"),
+      updatedAt: null,
+    });
+
+    expect(() => report.resolve(true, new Date("2024-03-05"))).toThrow(InvalidFieldError);
   });
 });
 

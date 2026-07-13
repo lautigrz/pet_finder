@@ -16,6 +16,13 @@ export interface ContentReportQueueItemOutput {
     reportCount: number;
     reportedUser: {
         username: string;
+        publicId: string;
+        xp: number;
+        level: number;
+        rating: {
+            average: number;
+            count: number;
+        };
     } | null;
     reportedContent: {
         petName: string | null;

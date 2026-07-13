@@ -16,9 +16,21 @@ describe("VerifyEmailUseCase", () => {
 
   beforeEach(() => {
     userRepository = {
-      save: vi.fn(), findByEmail: vi.fn(), findRoleByPublicId: vi.fn(), markVerified: vi.fn(), markSuspended: vi.fn(), unsuspend: vi.fn(),
-      findByPublicId: vi.fn(), updateProfile: vi.fn(), findById: vi.fn(), updatePassword: vi.fn(),
-      findByIds: vi.fn(), deleteById: vi.fn(),
+      save: vi.fn(),
+      findByEmail: vi.fn(),
+      findRoleByPublicId: vi.fn(),
+      findAdminEmails: vi.fn(),
+      markVerified: vi.fn(),
+      markSuspended: vi.fn(),
+      unsuspend: vi.fn(),
+      findByPublicId: vi.fn(),
+      updateProfile: vi.fn(),
+      findById: vi.fn(),
+      updatePassword: vi.fn(),
+      findByIds: vi.fn(),
+      deleteById: vi.fn(),
+      findNotificationCandidates: vi.fn(),
+      updateCurrentLocation: vi.fn(),
       getProfileStatsByPublicId: vi.fn().mockResolvedValue({
         reportsCreated: 0,
         successfulReturns: 0,
@@ -26,14 +38,25 @@ describe("VerifyEmailUseCase", () => {
         petsHelped: 0,
       }),
     };
-    tokenRepository = { save: vi.fn(), findByValue: vi.fn(), markAsUsed: vi.fn() };
+    tokenRepository = {
+      save: vi.fn(),
+      findByValue: vi.fn(),
+      markAsUsed: vi.fn(),
+    };
     useCase = new VerifyEmailUseCase(userRepository, tokenRepository);
   });
 
   describe("when token is valid", () => {
     it("marks the user as verified and consumes the token", async () => {
       // Given un token valido en la DB
-      const token = EmailVerificationToken.reconstruct(7, 42, VALID_TOKEN, FUTURE_DATE, null, new Date());
+      const token = EmailVerificationToken.reconstruct(
+        7,
+        42,
+        VALID_TOKEN,
+        FUTURE_DATE,
+        null,
+        new Date(),
+      );
       vi.mocked(tokenRepository.findByValue).mockResolvedValue(token);
 
       // When ejecuto el caso de uso
@@ -41,7 +64,10 @@ describe("VerifyEmailUseCase", () => {
 
       // Then se marca al usuario como verificado y el token como usado
       expect(userRepository.markVerified).toHaveBeenCalledWith(42);
-      expect(tokenRepository.markAsUsed).toHaveBeenCalledWith(7, expect.any(Date));
+      expect(tokenRepository.markAsUsed).toHaveBeenCalledWith(
+        7,
+        expect.any(Date),
+      );
     });
   });
 
@@ -65,7 +91,14 @@ describe("VerifyEmailUseCase", () => {
   describe("when token is already used", () => {
     it("throws InvalidVerificationTokenError with reason already_used", async () => {
       // Given un token con usedAt seteado
-      const token = EmailVerificationToken.reconstruct(7, 42, VALID_TOKEN, FUTURE_DATE, new Date(), new Date());
+      const token = EmailVerificationToken.reconstruct(
+        7,
+        42,
+        VALID_TOKEN,
+        FUTURE_DATE,
+        new Date(),
+        new Date(),
+      );
       vi.mocked(tokenRepository.findByValue).mockResolvedValue(token);
 
       // When intento verificar
@@ -83,7 +116,14 @@ describe("VerifyEmailUseCase", () => {
   describe("when token is expired", () => {
     it("throws InvalidVerificationTokenError with reason expired", async () => {
       // Given un token con expiracion en el pasado
-      const token = EmailVerificationToken.reconstruct(7, 42, VALID_TOKEN, PAST_DATE, null, new Date());
+      const token = EmailVerificationToken.reconstruct(
+        7,
+        42,
+        VALID_TOKEN,
+        PAST_DATE,
+        null,
+        new Date(),
+      );
       vi.mocked(tokenRepository.findByValue).mockResolvedValue(token);
 
       // When intento verificar

@@ -111,6 +111,7 @@ function toMatchNotification(
         score,
         imageScore,
         descriptionScore,
+        seen: false,
         createdAt: createdAt.toISOString(),
     };
 }

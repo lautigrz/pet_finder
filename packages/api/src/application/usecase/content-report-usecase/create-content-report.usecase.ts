@@ -13,6 +13,8 @@ import type { ConversationRepository } from "@domain/conversation/repositories/c
 import type { IUserRepository } from "@domain/repositories/IUserRepository";
 import { UserNotFoundError } from "@domain/errors/UserNotFoundError";
 import { CreateContentReportDTO } from "./dto/create-content-report.dto";
+import type { NotifyAdminsOfFlaggedContentUseCase } from "@application/usecase/notify-admins-of-flagged-content/notify-admins-of-flagged-content.usecase";
+import { logger } from "@pet-alert/shared";
 
 export interface CreateContentReportResult {
     publicId: string;
@@ -30,6 +32,8 @@ export class CreateContentReportUseCase {
         private reportRepository: ReportRepository,
         @inject("ConversationRepository")
         private conversationRepository: ConversationRepository,
+        @inject("NotifyAdminsOfFlaggedContentUseCase")
+        private notifyAdminsOfFlaggedContent: NotifyAdminsOfFlaggedContentUseCase,
     ) { }
 
     async execute(dto: CreateContentReportDTO, reporterPublicId: string): Promise<CreateContentReportResult> {
@@ -62,6 +66,9 @@ export class CreateContentReportUseCase {
         const autoFlagged = totalReports >= AUTO_FLAG_THRESHOLD;
         if (autoFlagged) {
             await this.contentReportRepository.flagTarget(dto.targetType, dto.targetPublicId);
+            void this.notifyAdminsOfFlaggedContent
+                .execute(dto.targetType)
+                .catch((error) => logger.error("Failed to notify admins of flagged content", { error }));
         }
 
         return { publicId: report.publicId, autoFlagged };

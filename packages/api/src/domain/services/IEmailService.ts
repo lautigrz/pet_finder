@@ -1,4 +1,5 @@
 import { AppealTargetType } from "../appeal/types/appeal-target-type";
+import { ContentReportTargetType } from "../content-report/types/content-report-target-type";
 
 export interface IEmailService {
   sendVerificationLink(toEmail: string, token: string): Promise<void>;
@@ -9,4 +10,5 @@ export interface IEmailService {
   sendAccountSuspendedNotice(toEmail: string, motive: string | null, appealToken: string): Promise<void>;
   sendAppealAcceptedNotice(toEmail: string, targetType: AppealTargetType): Promise<void>;
   sendAppealRejectedNotice(toEmail: string, targetType: AppealTargetType): Promise<void>;
+  sendContentFlaggedAlert(toEmail: string, targetType: ContentReportTargetType): Promise<void>;
 }

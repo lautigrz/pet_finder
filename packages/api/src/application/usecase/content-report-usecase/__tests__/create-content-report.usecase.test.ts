@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { CreateContentReportUseCase } from "@application/usecase/content-report-usecase/create-content-report.usecase";
+import { NotifyAdminsOfFlaggedContentUseCase } from "@application/usecase/notify-admins-of-flagged-content/notify-admins-of-flagged-content.usecase";
 import { ContentReportRepository } from "@domain/content-report/repositories/content-report.repository";
 import { ContentReportTargetType } from "@domain/content-report/types/content-report-target-type";
 import { ContentReportReason } from "@domain/content-report/types/content-report-reason";
@@ -56,6 +57,7 @@ describe("CreateContentReportUseCase", () => {
     let userRepository: IUserRepository;
     let reportRepository: ReportRepository;
     let conversationRepository: ConversationRepository;
+    let notifyAdminsOfFlaggedContent: NotifyAdminsOfFlaggedContentUseCase;
     let useCase: CreateContentReportUseCase;
 
     beforeEach(() => {
@@ -81,11 +83,16 @@ describe("CreateContentReportUseCase", () => {
             } as unknown as Conversation),
         } as unknown as ConversationRepository;
 
+        notifyAdminsOfFlaggedContent = {
+            execute: vi.fn().mockResolvedValue(undefined),
+        } as unknown as NotifyAdminsOfFlaggedContentUseCase;
+
         useCase = new CreateContentReportUseCase(
             contentReportRepository,
             userRepository,
             reportRepository,
             conversationRepository,
+            notifyAdminsOfFlaggedContent,
         );
     });
 
@@ -259,6 +266,7 @@ describe("CreateContentReportUseCase", () => {
 
             expect(result.autoFlagged).toBe(false);
             expect(contentReportRepository.flagTarget).not.toHaveBeenCalled();
+            expect(notifyAdminsOfFlaggedContent.execute).not.toHaveBeenCalled();
         });
 
         it("marca auto-flag al alcanzar el umbral de 5 reportes", async () => {
@@ -271,6 +279,14 @@ describe("CreateContentReportUseCase", () => {
                 ContentReportTargetType.POST,
                 POST_PUBLIC_ID,
             );
+        });
+
+        it("avisa a los admins cuando se auto-marca el contenido", async () => {
+            vi.mocked(contentReportRepository.countByTarget).mockResolvedValue(5);
+
+            await useCase.execute(postDto, REPORTER_PUBLIC_ID);
+
+            expect(notifyAdminsOfFlaggedContent.execute).toHaveBeenCalledWith(ContentReportTargetType.POST);
         });
     });
 });

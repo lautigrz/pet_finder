@@ -10,12 +10,15 @@ import type { IPasswordHasher } from "../../../../domain/services/IPasswordHashe
 import type { ITokenSigner } from "../../../../domain/services/ITokenSigner";
 import type { ITokenGenerator } from "../../../../domain/services/ITokenGenerator";
 
-const VALID_BCRYPT_HASH = "$2b$12$abcdefghijklmnopqrstuv.wxyzabcdefghijklmnopqrstuvwxyz12";
+const VALID_BCRYPT_HASH =
+  "$2b$12$abcdefghijklmnopqrstuv.wxyzabcdefghijklmnopqrstuvwxyz12";
 const REFRESH_TOKEN_VALUE = "a".repeat(64);
 const ACCESS_JWT = "header.payload.signature";
 const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
 
-const existingUser = (overrides: Partial<{ isVerified: boolean; isSuspended: boolean }> = {}): User =>
+const existingUser = (
+  overrides: Partial<{ isVerified: boolean; isSuspended: boolean }> = {},
+): User =>
   User.reconstruct(
     42,
     "uuid-fake",
@@ -40,9 +43,21 @@ describe("LoginUserUseCase", () => {
 
   beforeEach(() => {
     userRepository = {
-      save: vi.fn(), findByEmail: vi.fn(), findRoleByPublicId: vi.fn(), markVerified: vi.fn(), markSuspended: vi.fn(), unsuspend: vi.fn(),
-      findByPublicId: vi.fn(), updateProfile: vi.fn(), findById: vi.fn(), updatePassword: vi.fn(),
-      findByIds: vi.fn(), deleteById: vi.fn(),
+      save: vi.fn(),
+      findByEmail: vi.fn(),
+      findRoleByPublicId: vi.fn(),
+      findAdminEmails: vi.fn(),
+      markVerified: vi.fn(),
+      markSuspended: vi.fn(),
+      unsuspend: vi.fn(),
+      findByPublicId: vi.fn(),
+      updateProfile: vi.fn(),
+      findById: vi.fn(),
+      updatePassword: vi.fn(),
+      findByIds: vi.fn(),
+      deleteById: vi.fn(),
+      findNotificationCandidates: vi.fn(),
+      updateCurrentLocation: vi.fn(),
       getProfileStatsByPublicId: vi.fn().mockResolvedValue({
         reportsCreated: 0,
         successfulReturns: 0,
@@ -50,7 +65,12 @@ describe("LoginUserUseCase", () => {
         petsHelped: 0,
       }),
     };
-    refreshTokenRepository = { save: vi.fn(), findByValue: vi.fn(), revoke: vi.fn(), revokeAllByUser: vi.fn() };
+    refreshTokenRepository = {
+      save: vi.fn(),
+      findByValue: vi.fn(),
+      revoke: vi.fn(),
+      revokeAllByUser: vi.fn(),
+    };
     passwordHasher = { hash: vi.fn(), verify: vi.fn() };
     tokenSigner = { sign: vi.fn(), verify: vi.fn() };
     tokenGenerator = { generate: vi.fn() };
@@ -81,7 +101,8 @@ describe("LoginUserUseCase", () => {
       expect(output.accessToken).toBe(ACCESS_JWT);
       expect(output.refreshToken).toBe(REFRESH_TOKEN_VALUE);
       expect(refreshTokenRepository.save).toHaveBeenCalledOnce();
-      const savedToken = vi.mocked(refreshTokenRepository.save).mock.calls[0]![0];
+      const savedToken = vi.mocked(refreshTokenRepository.save).mock
+        .calls[0]![0];
       expect(savedToken.userId).toBe(42);
       expect(savedToken.value).toBe(REFRESH_TOKEN_VALUE);
       expect(savedToken.expiresAt.getTime()).toBeGreaterThan(Date.now());
@@ -89,13 +110,17 @@ describe("LoginUserUseCase", () => {
 
     it("signs the access token with the user public id, email and verified flag", async () => {
       // Given un usuario verificado
-      vi.mocked(userRepository.findByEmail).mockResolvedValue(existingUser({ isVerified: true }));
+      vi.mocked(userRepository.findByEmail).mockResolvedValue(
+        existingUser({ isVerified: true }),
+      );
       vi.mocked(passwordHasher.verify).mockResolvedValue(true);
       vi.mocked(tokenSigner.sign).mockReturnValue(ACCESS_JWT);
       vi.mocked(tokenGenerator.generate).mockReturnValue(REFRESH_TOKEN_VALUE);
 
       // When ejecuto el caso de uso
-      await useCase.execute(new LoginUserInput("juan@example.com", "miPass123"));
+      await useCase.execute(
+        new LoginUserInput("juan@example.com", "miPass123"),
+      );
 
       // Then el JWT se firma con el payload correcto
       expect(tokenSigner.sign).toHaveBeenCalledWith({
@@ -113,10 +138,14 @@ describe("LoginUserUseCase", () => {
       vi.mocked(tokenGenerator.generate).mockReturnValue(REFRESH_TOKEN_VALUE);
 
       // When ejecuto con email sucio
-      await useCase.execute(new LoginUserInput("  JUAN@Example.com  ", "miPass123"));
+      await useCase.execute(
+        new LoginUserInput("  JUAN@Example.com  ", "miPass123"),
+      );
 
       // Then el repo busca con el email normalizado
-      expect(userRepository.findByEmail).toHaveBeenCalledWith("juan@example.com");
+      expect(userRepository.findByEmail).toHaveBeenCalledWith(
+        "juan@example.com",
+      );
     });
   });
 
@@ -139,7 +168,9 @@ describe("LoginUserUseCase", () => {
   describe("when the account is suspended", () => {
     it("throws UserSuspendedError without issuing tokens", async () => {
       // Given un usuario con credenciales válidas pero suspendido por moderación
-      vi.mocked(userRepository.findByEmail).mockResolvedValue(existingUser({ isSuspended: true }));
+      vi.mocked(userRepository.findByEmail).mockResolvedValue(
+        existingUser({ isSuspended: true }),
+      );
       vi.mocked(passwordHasher.verify).mockResolvedValue(true);
 
       // When intento loguear
@@ -161,7 +192,9 @@ describe("LoginUserUseCase", () => {
 
       // When intento loguear con password equivocado
       const accion = () =>
-        useCase.execute(new LoginUserInput("juan@example.com", "passEquivocada"));
+        useCase.execute(
+          new LoginUserInput("juan@example.com", "passEquivocada"),
+        );
 
       // Then tira InvalidCredentialsError y NO se firman ni persisten tokens
       await expect(accion).rejects.toThrow(InvalidCredentialsError);
