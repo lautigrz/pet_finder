@@ -30,7 +30,12 @@ describe("GetContentReportQueueUseCase", () => {
                 {
                     report: fakeReport,
                     reporter: { publicId: "reporter-public-id", username: "reporter" },
-                    reportedUser: { username: "reported-user" },
+                    reportedUser: {
+                        username: "reported-user",
+                        publicId: "reported-user-public-id",
+                        xp: 250,
+                        rating: { average: 4.5, count: 8 },
+                    },
                     reportedContent: null,
                     reportCount: 3,
                 },
@@ -67,9 +72,31 @@ describe("GetContentReportQueueUseCase", () => {
             autoFlagged: true,
             createdAt: new Date("2026-06-20"),
             reportCount: 3,
-            reportedUser: { username: "reported-user" },
+            reportedUser: {
+                username: "reported-user",
+                publicId: "reported-user-public-id",
+                xp: 250,
+                level: 3,
+                rating: { average: 4.5, count: 8 },
+            },
             reportedContent: null,
             reporter: { publicId: "reporter-public-id", username: "reporter" },
         });
+    });
+
+    it("deja reportedUser en null cuando la denuncia no tiene usuario asociado", async () => {
+        vi.mocked(contentReportRepository.findQueueByStatus).mockResolvedValue([
+            {
+                report: fakeReport,
+                reporter: { publicId: "reporter-public-id", username: "reporter" },
+                reportedUser: null,
+                reportedContent: null,
+                reportCount: 1,
+            },
+        ] as never);
+
+        const result = await useCase.execute();
+
+        expect(result[0]!.reportedUser).toBeNull();
     });
 });
