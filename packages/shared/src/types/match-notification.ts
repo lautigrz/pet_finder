@@ -16,5 +16,6 @@ export type MatchNotification = {
   score: number;
   imageScore?: number | null;
   descriptionScore?: number | null;
+  seen: boolean;
   createdAt: string;
 };

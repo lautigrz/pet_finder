@@ -6,6 +6,18 @@ export interface UserProfileStats {
   activeDays: number;
   petsHelped: number;
 }
+
+export interface UserNotificationTarget {
+  publicId: string;
+  role: string;
+  lastKnownLatitude: number | null;
+  lastKnownLongitude: number | null;
+  lastKnownLocationAt: Date | null;
+  notificationRadius: number;
+  lostReportsEnabled: boolean;
+  mutedUntil: Date | null;
+}
+
 export interface IUserRepository {
   save(user: User): Promise<User>;
   findByEmail(email: string): Promise<User | null>;
@@ -27,4 +39,6 @@ export interface IUserRepository {
   updatePassword(internalUserId: number, passwordHash: string): Promise<void>;
   deleteById(internalUserId: number): Promise<void>;
   getProfileStatsByPublicId(publicId:string): Promise<UserProfileStats>;
+  findNotificationCandidates(): Promise<UserNotificationTarget[]>;
+  updateCurrentLocation(publicId: string, latitude: number, longitude: number, updatedAt: Date): Promise<void>;
 }

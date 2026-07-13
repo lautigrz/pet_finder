@@ -15,10 +15,27 @@ import type { StorageService } from "@application/ports/StorageService";
 const HASH = "$2b$12$abcdefghijklmnopqrstuv.wxyzabcdefghijklmnopqrstuvwxyz12";
 
 const makeUser = (id: number, pub: string): User =>
-  User.reconstruct(id, pub, "t@t.com", "user", HASH, true, new Date(), null, null, null);
+  User.reconstruct(
+    id,
+    pub,
+    "t@t.com",
+    "user",
+    HASH,
+    true,
+    new Date(),
+    null,
+    null,
+    null,
+  );
 
 const makeConv = (u1: number, u2: number): Conversation =>
-  Conversation.create({ conversationId: 1, publicId: "conv-uuid", userOneId: u1, userTwoId: u2, createdAt: new Date() });
+  Conversation.create({
+    conversationId: 1,
+    publicId: "conv-uuid",
+    userOneId: u1,
+    userTwoId: u2,
+    createdAt: new Date(),
+  });
 
 describe("SendMessageUseCase", () => {
   let convRepo: ConversationRepository;
@@ -28,10 +45,43 @@ describe("SendMessageUseCase", () => {
   let useCase: SendMessageUseCase;
 
   beforeEach(() => {
-    convRepo = { findAllByUserId: vi.fn(), findByPublicId: vi.fn(), findByParticipants: vi.fn(), findById: vi.fn(), save: vi.fn(), update: vi.fn(), delete: vi.fn() };
-    msgRepo = { findById: vi.fn(), findByPublicId: vi.fn(), findByConversationId: vi.fn(), findLastMessageByConversationIds: vi.fn(), findUnreadByUserId: vi.fn(), countUnreadByConversationId: vi.fn(), save: vi.fn(), markAsRead: vi.fn(), delete: vi.fn() };
+    convRepo = {
+      findAllByUserId: vi.fn(),
+      findByPublicId: vi.fn(),
+      findByParticipants: vi.fn(),
+      findById: vi.fn(),
+      save: vi.fn(),
+      update: vi.fn(),
+      delete: vi.fn(),
+    };
+    msgRepo = {
+      findById: vi.fn(),
+      findByPublicId: vi.fn(),
+      findByConversationId: vi.fn(),
+      findLastMessageByConversationIds: vi.fn(),
+      findUnreadByUserId: vi.fn(),
+      countUnreadByConversationId: vi.fn(),
+      save: vi.fn(),
+      markAsRead: vi.fn(),
+      delete: vi.fn(),
+    };
     userRepo = {
-      save: vi.fn(), findByEmail: vi.fn(), findRoleByPublicId: vi.fn(), findAdminEmails: vi.fn().mockResolvedValue([]), markVerified: vi.fn(), markSuspended: vi.fn(), unsuspend: vi.fn(), findByPublicId: vi.fn(), findByIds: vi.fn(), findById: vi.fn(), updateProfile: vi.fn(), updatePassword: vi.fn(), deleteById: vi.fn(), getProfileStatsByPublicId: vi.fn().mockResolvedValue({
+      save: vi.fn(),
+      findByEmail: vi.fn(),
+      findRoleByPublicId: vi.fn(),
+      findAdminEmails: vi.fn(),
+      markVerified: vi.fn(),
+      markSuspended: vi.fn(),
+      unsuspend: vi.fn(),
+      findByPublicId: vi.fn(),
+      findByIds: vi.fn(),
+      findById: vi.fn(),
+      updateProfile: vi.fn(),
+      updatePassword: vi.fn(),
+      deleteById: vi.fn(),
+      findNotificationCandidates: vi.fn(),
+      updateCurrentLocation: vi.fn(),
+      getProfileStatsByPublicId: vi.fn().mockResolvedValue({
         reportsCreated: 0,
         successfulReturns: 0,
         activeDays: 1,
@@ -39,7 +89,12 @@ describe("SendMessageUseCase", () => {
       }),
     };
     storageService = { upload: vi.fn(), delete: vi.fn() };
-    useCase = new SendMessageUseCase(convRepo, msgRepo, userRepo, storageService);
+    useCase = new SendMessageUseCase(
+      convRepo,
+      msgRepo,
+      userRepo,
+      storageService,
+    );
   });
 
   it("envía un mensaje y retorna MessageOutput", async () => {
@@ -75,7 +130,10 @@ describe("SendMessageUseCase", () => {
     vi.mocked(userRepo.findByPublicId).mockResolvedValue(sender);
     vi.mocked(convRepo.findByPublicId).mockResolvedValue(conv);
     vi.mocked(userRepo.findById).mockResolvedValue(receiver);
-    vi.mocked(storageService.upload).mockResolvedValue({ url: "https://example.com/uploaded.jpg", publicId: "uploaded-pub-id" });
+    vi.mocked(storageService.upload).mockResolvedValue({
+      url: "https://example.com/uploaded.jpg",
+      publicId: "uploaded-pub-id",
+    });
     vi.mocked(msgRepo.save).mockImplementation(async (msg) => msg);
 
     const buffer = Buffer.from("fake-image");
@@ -95,32 +153,61 @@ describe("SendMessageUseCase", () => {
 
   it("lanza UserNotFoundError cuando el remitente no existe", async () => {
     vi.mocked(userRepo.findByPublicId).mockResolvedValue(null);
-    await expect(useCase.execute({ publicUserId: "x", publicConversationId: "y", text: "hi" })).rejects.toThrow(UserNotFoundError);
+    await expect(
+      useCase.execute({
+        publicUserId: "x",
+        publicConversationId: "y",
+        text: "hi",
+      }),
+    ).rejects.toThrow(UserNotFoundError);
     expect(msgRepo.save).not.toHaveBeenCalled();
   });
 
   it("lanza ConversationNotFoundError cuando la conversación no existe", async () => {
     vi.mocked(userRepo.findByPublicId).mockResolvedValue(makeUser(10, "u"));
     vi.mocked(convRepo.findByPublicId).mockResolvedValue(null);
-    await expect(useCase.execute({ publicUserId: "u", publicConversationId: "x", text: "hi" })).rejects.toThrow(ConversationNotFoundError);
+    await expect(
+      useCase.execute({
+        publicUserId: "u",
+        publicConversationId: "x",
+        text: "hi",
+      }),
+    ).rejects.toThrow(ConversationNotFoundError);
     expect(msgRepo.save).not.toHaveBeenCalled();
   });
 
   it("lanza UnauthorizedConversationError cuando el usuario no es participante", async () => {
     vi.mocked(userRepo.findByPublicId).mockResolvedValue(makeUser(99, "u"));
     vi.mocked(convRepo.findByPublicId).mockResolvedValue(makeConv(10, 20));
-    await expect(useCase.execute({ publicUserId: "u", publicConversationId: "conv-uuid", text: "hi" })).rejects.toThrow(UnauthorizedConversationError);
+    await expect(
+      useCase.execute({
+        publicUserId: "u",
+        publicConversationId: "conv-uuid",
+        text: "hi",
+      }),
+    ).rejects.toThrow(UnauthorizedConversationError);
     expect(msgRepo.save).not.toHaveBeenCalled();
   });
 
   it("lanza ConversationSuspendedError cuando la conversación está suspendida", async () => {
     const sender = makeUser(10, "sender-uuid");
-    const suspendedConv = Conversation.create({ conversationId: 1, publicId: "conv-uuid", userOneId: 10, userTwoId: 20, createdAt: new Date(), isSuspended: true });
+    const suspendedConv = Conversation.create({
+      conversationId: 1,
+      publicId: "conv-uuid",
+      userOneId: 10,
+      userTwoId: 20,
+      createdAt: new Date(),
+      isSuspended: true,
+    });
     vi.mocked(userRepo.findByPublicId).mockResolvedValue(sender);
     vi.mocked(convRepo.findByPublicId).mockResolvedValue(suspendedConv);
 
     await expect(
-      useCase.execute({ publicUserId: "sender-uuid", publicConversationId: "conv-uuid", text: "hola" })
+      useCase.execute({
+        publicUserId: "sender-uuid",
+        publicConversationId: "conv-uuid",
+        text: "hola",
+      }),
     ).rejects.toThrow(ConversationSuspendedError);
     expect(msgRepo.save).not.toHaveBeenCalled();
   });
@@ -129,7 +216,13 @@ describe("SendMessageUseCase", () => {
     vi.mocked(userRepo.findByPublicId).mockResolvedValue(makeUser(10, "u"));
     vi.mocked(convRepo.findByPublicId).mockResolvedValue(makeConv(10, 20));
     vi.mocked(userRepo.findById).mockResolvedValue(null);
-    await expect(useCase.execute({ publicUserId: "u", publicConversationId: "conv-uuid", text: "hi" })).rejects.toThrow(UserNotFoundError);
+    await expect(
+      useCase.execute({
+        publicUserId: "u",
+        publicConversationId: "conv-uuid",
+        text: "hi",
+      }),
+    ).rejects.toThrow(UserNotFoundError);
     expect(msgRepo.save).not.toHaveBeenCalled();
   });
 
@@ -141,7 +234,11 @@ describe("SendMessageUseCase", () => {
     vi.mocked(userRepo.findById).mockResolvedValue(receiver);
 
     await expect(
-      useCase.execute({ publicUserId: "sender-uuid", publicConversationId: "conv-uuid", text: "Llamame al +54 11 1234 5678" })
+      useCase.execute({
+        publicUserId: "sender-uuid",
+        publicConversationId: "conv-uuid",
+        text: "Llamame al +54 11 1234 5678",
+      }),
     ).rejects.toThrow(InvalidMessageTextError);
     expect(msgRepo.save).not.toHaveBeenCalled();
   });

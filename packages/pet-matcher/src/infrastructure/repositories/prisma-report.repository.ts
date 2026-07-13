@@ -186,6 +186,7 @@ export class PrismaReportRepository implements IReportRepository {
         matchedReportPublicId: sighting.public_id,
         matchedImage: sighting.reportImages[0]?.photoUrl ?? null,
         score: row.score,
+        seen: false,
         createdAt: row.created_at.toISOString(),
       };
 

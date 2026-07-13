@@ -19,6 +19,7 @@ import { enqueueMatchingJob } from "@infrastructure/queue/embedding.queue";
 import { inject, injectable } from "tsyringe";
 import { TypeJob, logger } from "@pet-alert/shared";
 import type { NotifyNearbyLostOwnersUseCase } from "@application/usecase/notify-nearby-lost-owners/notify-nearby-lost-owners.usecase";
+import type { NotifyNearbySubscribersOfLostReportUseCase } from "@application/usecase/notify-nearby-subscribers-of-lost-report/notify-nearby-subscribers-of-lost-report.usecase";
 import { AwardUserExpInput } from "@application/usecase/award-user-exp/award-user-exp.input";
 import type { AwardUserExpUseCase } from "@application/usecase/award-user-exp/award-user-exp.usecase";
 
@@ -37,6 +38,8 @@ export class CreateReportUseCase {
         private storageService: StorageService,
         @inject("NotifyNearbyLostOwnersUseCase")
         private notifyNearbyLostOwnersUseCase: NotifyNearbyLostOwnersUseCase,
+        @inject("NotifyNearbySubscribersOfLostReportUseCase")
+        private notifyNearbySubscribersOfLostReportUseCase: NotifyNearbySubscribersOfLostReportUseCase,
         @inject("AwardUserExpUseCase")
         private awardUserExpUseCase?: AwardUserExpUseCase,
     ) { }
@@ -70,6 +73,14 @@ export class CreateReportUseCase {
                 .execute(report.publicId)
                 .catch((error) => logger.error("Failed to notify nearby lost owners", { error }));
         }
+
+        if (dto.type === ReportType.LOST) {
+            void this.notifyNearbySubscribersOfLostReportUseCase
+                .execute(report.publicId)
+                .catch((error) =>
+            logger.error("Failed to notify nearby subscribers", { error }),
+        );
+}
 
         return { publicId: report.publicId };
     }
