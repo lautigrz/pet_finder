@@ -55,7 +55,18 @@ export class GetFilteredReportsUseCase {
     private prioritizeFeatured(results: ReportWithPet[]): ReportWithPet[] {
         const featured = results.filter(item => item.report.isFeaturedActive());
         const rest = results.filter(item => !item.report.isFeaturedActive());
-        return [...featured, ...rest];
+        return [...this.shuffle(featured), ...rest];
+    }
+
+    private shuffle<T>(items: T[]): T[] {
+        const result = [...items];
+        for (let i = result.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            const temp = result[i]!;
+            result[i] = result[j]!;
+            result[j] = temp;
+        }
+        return result;
     }
 
     private applySort(results: ReportWithPet[], dto: GetFilteredReportsDTO): ReportWithPet[] {

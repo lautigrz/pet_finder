@@ -5,6 +5,7 @@ import { PetRepository } from '@domain/pet/repositories/pet.repository';
 import { StorageService } from '@application/ports/StorageService';
 import { ReportNotFoundError } from '@domain/errors/ReportNotFoundError';
 import { UnauthorizedReportEditError } from '@domain/errors/UnauthorizedReportEditError';
+import { ReportClosedError } from '@domain/errors/ReportClosedError';
 import { InvalidFieldError } from '@application/errors/errors';
 import { ReportType } from '@domain/report/types/report.type';
 import { SightingReportDetails } from '@domain/report/value-objects/sighting-report-details.vo';
@@ -38,6 +39,7 @@ function makeSightingReport() {
     idReport: 1,
     publicId: REPORT_ID,
     userPublicId: OWNER_ID,
+    status: 'ACTIVE',
     reportType: ReportType.SIGHTING,
     details,
     updateFields: vi.fn((params) => {
@@ -53,6 +55,7 @@ function makeLostReport() {
     idReport: 2,
     publicId: REPORT_ID,
     userPublicId: OWNER_ID,
+    status: 'ACTIVE',
     reportType: ReportType.LOST,
     details: { petId: 10 },
     updateFields: vi.fn((params) => {
@@ -124,6 +127,15 @@ describe('UpdateReportUseCase', () => {
 
       await expect(useCase.execute(baseDTO(), OTHER_ID))
         .rejects.toThrow(UnauthorizedReportEditError);
+    });
+
+    it('lanza ReportClosedError si el reporte no está activo (resuelto o cerrado)', async () => {
+      for (const status of ['RESOLVED', 'CLOSED'] as const) {
+        vi.mocked(reportRepository.findByPublicId).mockResolvedValue({ ...makeSightingReport(), status } as any);
+
+        await expect(useCase.execute(baseDTO(), OWNER_ID))
+          .rejects.toThrow(ReportClosedError);
+      }
     });
 
     it('lanza InvalidFieldError si occurredAt es una fecha futura', async () => {
