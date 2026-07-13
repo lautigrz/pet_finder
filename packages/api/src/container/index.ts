@@ -357,11 +357,6 @@ import { GetMissionCoverageUseCase } from "@application/usecase/mission-usecase/
 
 
 
-container.registerSingleton("MissionUpdateRepository", PrismaMissionUpdateRepository);
-container.registerSingleton("CreateMissionUpdateUseCase", CreateMissionUpdateUseCase);
-container.registerSingleton( CreateMissionUpdateController);
-container.registerSingleton("GetMissionUpdatesUseCase", GetMissionUpdatesUseCase);
-container.registerSingleton( GetMissionUpdatesController);
 container.registerSingleton<MissionRepository>("MissionRepository", PrismaMissionRepository);
 container.registerSingleton("CreateMissionUseCase", CreateMissionUseCase);
 container.registerSingleton("GetMissionsUseCase", GetMissionsUseCase);
