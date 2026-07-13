@@ -31,7 +31,7 @@ describe("ListMyConversationsUseCase", () => {
 
   beforeEach(() => {
     userRepo = {
-      save: vi.fn(), findByEmail: vi.fn(), findRoleByPublicId: vi.fn(), markVerified: vi.fn(), markSuspended: vi.fn(), unsuspend: vi.fn(), findByPublicId: vi.fn(), findById: vi.fn(), findByIds: vi.fn(), updateProfile: vi.fn(), updatePassword: vi.fn(), deleteById: vi.fn(), getProfileStatsByPublicId: vi.fn().mockResolvedValue({
+      save: vi.fn(), findByEmail: vi.fn(), findRoleByPublicId: vi.fn(), findAdminEmails: vi.fn().mockResolvedValue([]), markVerified: vi.fn(), markSuspended: vi.fn(), unsuspend: vi.fn(), findByPublicId: vi.fn(), findById: vi.fn(), findByIds: vi.fn(), updateProfile: vi.fn(), updatePassword: vi.fn(), deleteById: vi.fn(), getProfileStatsByPublicId: vi.fn().mockResolvedValue({
         reportsCreated: 0,
         successfulReturns: 0,
         activeDays: 1,

@@ -40,7 +40,7 @@ describe("LoginUserUseCase", () => {
 
   beforeEach(() => {
     userRepository = {
-      save: vi.fn(), findByEmail: vi.fn(), findRoleByPublicId: vi.fn(), markVerified: vi.fn(), markSuspended: vi.fn(), unsuspend: vi.fn(),
+      save: vi.fn(), findByEmail: vi.fn(), findRoleByPublicId: vi.fn(), findAdminEmails: vi.fn().mockResolvedValue([]), markVerified: vi.fn(), markSuspended: vi.fn(), unsuspend: vi.fn(),
       findByPublicId: vi.fn(), updateProfile: vi.fn(), findById: vi.fn(), updatePassword: vi.fn(),
       findByIds: vi.fn(), deleteById: vi.fn(),
       getProfileStatsByPublicId: vi.fn().mockResolvedValue({

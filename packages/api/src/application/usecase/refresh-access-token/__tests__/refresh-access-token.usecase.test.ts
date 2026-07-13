@@ -27,7 +27,7 @@ describe("RefreshAccessTokenUseCase", () => {
     refreshTokenRepository = { save: vi.fn(), findByValue: vi.fn(), revoke: vi.fn(), revokeAllByUser: vi.fn() };
     userRepository = {
       save: vi.fn(),
-      findByEmail: vi.fn(), findRoleByPublicId: vi.fn(),
+      findByEmail: vi.fn(), findRoleByPublicId: vi.fn(), findAdminEmails: vi.fn().mockResolvedValue([]),
       markVerified: vi.fn(), markSuspended: vi.fn(), unsuspend: vi.fn(),
       findByPublicId: vi.fn(),
       updateProfile: vi.fn(),

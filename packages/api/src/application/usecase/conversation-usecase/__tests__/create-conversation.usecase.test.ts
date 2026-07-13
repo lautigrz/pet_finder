@@ -39,7 +39,7 @@ describe("CreateConversationUseCase", () => {
     };
     userRepository = {
       save: vi.fn(),
-      findByEmail: vi.fn(), findRoleByPublicId: vi.fn(),
+      findByEmail: vi.fn(), findRoleByPublicId: vi.fn(), findAdminEmails: vi.fn().mockResolvedValue([]),
       markVerified: vi.fn(), markSuspended: vi.fn(), unsuspend: vi.fn(),
       findByPublicId: vi.fn(),
       findByIds: vi.fn(),

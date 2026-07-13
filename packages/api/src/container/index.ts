@@ -383,7 +383,12 @@ container.registerSingleton("ProcessPaymentWebhookUseCase", ProcessPaymentWebhoo
 import { CreateContentReportUseCase } from "@application/usecase/content-report-usecase/create-content-report.usecase";
 import { GetContentReportQueueUseCase } from "@application/usecase/content-report-usecase/get-content-report-queue.usecase";
 import { ResolveContentReportUseCase } from "@application/usecase/content-report-usecase/resolve-content-report.usecase";
+import { NotifyAdminsOfFlaggedContentUseCase } from "@application/usecase/notify-admins-of-flagged-content/notify-admins-of-flagged-content.usecase";
 
+container.registerSingleton(
+  "NotifyAdminsOfFlaggedContentUseCase",
+  NotifyAdminsOfFlaggedContentUseCase,
+);
 container.registerSingleton(
   "CreateContentReportUseCase",
   CreateContentReportUseCase,
