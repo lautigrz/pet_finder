@@ -6,7 +6,8 @@ import { asyncHandler } from "@presentation/handler/async-handler";
 @injectable()
 export class UpsertUserReviewController {
   constructor(
-    @inject("UpsertUserReviewUseCase") private readonly upsertUserReviewUseCase: UpsertUserReviewUseCase,
+    @inject("UpsertUserReviewUseCase")
+    private readonly upsertUserReviewUseCase: UpsertUserReviewUseCase,
   ) {}
 
   handle = asyncHandler(async (req: Request, res: Response): Promise<void> => {
