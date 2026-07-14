@@ -11,8 +11,7 @@ export class ListUserReviewsController {
   ) {}
 
   handle = asyncHandler(async (req: Request, res: Response): Promise<void> => {
-    const userId = Number(res.locals.user?.userId);
-
+  
     const reviews = await this.listUserReviewsUseCase.execute({
     publicId: req.auth!.sub,
     page: Number(req.query.page ?? 1),
