@@ -12,7 +12,7 @@ export const updateStatusReportSchema = z.object({
         resolved: z.boolean().optional(),
         resolvedAt: z.string()
             .regex(/^\d{4}-\d{2}-\d{2}$/, { message: 'Fecha inválida' })
-            .transform((val) => new Date(`${val}T12:00:00`))
+            .transform((val) => new Date(`${val}T12:00:00Z`))
             .optional(),
     })
 })

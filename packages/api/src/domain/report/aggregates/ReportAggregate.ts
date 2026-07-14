@@ -134,7 +134,12 @@ export class Report {
     }
 
     private static validateResolvedAt(resolvedAt: Date, createdAt: Date): void {
-        const atDay = (date: Date) => new Date(date.getFullYear(), date.getMonth(), date.getDate()).getTime();
+        // Comparamos por día en la zona del usuario (Argentina, UTC-3) para que
+        // el resultado sea igual sin importar la zona del servidor (local vs UTC en producción).
+        const atDay = (date: Date) => {
+            const argentina = new Date(date.getTime() - 3 * 60 * 60 * 1000);
+            return Date.UTC(argentina.getUTCFullYear(), argentina.getUTCMonth(), argentina.getUTCDate());
+        };
         if (atDay(resolvedAt) > atDay(new Date())) {
             throw new InvalidFieldError('resolvedAt', 'cannot be in the future');
         }

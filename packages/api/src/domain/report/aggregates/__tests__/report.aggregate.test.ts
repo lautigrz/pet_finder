@@ -206,6 +206,12 @@ describe("Report.resolve", () => {
 
     expect(() => report.resolve(true, new Date("2024-03-05"))).toThrow(InvalidFieldError);
   });
+
+  it("permite cerrar un reporte recién creado con la fecha de hoy (mismo día)", () => {
+    const report = Report.create(baseLostParams);
+
+    expect(() => report.resolve(true, new Date())).not.toThrow();
+  });
 });
 
 describe("Report.close", () => {
